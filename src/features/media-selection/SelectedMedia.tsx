@@ -40,9 +40,6 @@ export function SelectedMedia({ media, onChangeFile }: SelectedMediaProps) {
               {formatBytes(media.sizeBytes)}
             </span>
           </div>
-          <p className="file-card__path" title={media.path}>
-            {media.path}
-          </p>
         </div>
       </div>
 
