@@ -39,7 +39,7 @@ Objectifs :
 * sélection média ;
 * validation.
 
-Résultat : shell Tauri 2 fonctionnel avec sélection native et validation Rust (`inspect_media`). Interaction GUI (clics, drag & drop) non testable automatiquement dans l'environnement d'exécution de cette mission — voir rapport M1 pour le détail des vérifications réellement effectuées.
+Résultat : shell Tauri 2 fonctionnel avec sélection native et validation Rust (`inspect_media`). Interface alignée sur les mockups validés (Mission 1B) et vérifiée manuellement par l'utilisateur.
 
 ## M2 — Pipeline intégré
 
