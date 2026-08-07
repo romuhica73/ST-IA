@@ -1,16 +1,10 @@
-# Build artifacts
-/engine/whisper.cpp/build/
+# whisper.cpp: external clone of ggml-org/whisper.cpp (pinned tag/SHA documented
+# in docs/architecture/ADR-001-transcription-engine.md and the mission report).
+# Not vendored: it is its own git repo and includes multi-GB model binaries.
+/engine/whisper.cpp/
+
 *.o
 *.dSYM/
-
-# Models (large binaries, fetched on demand)
-/engine/models/*.bin
-/engine/models/*.gguf
-
-# Audio/video test samples and generated outputs
-/spike/samples/*
-!/spike/samples/.gitkeep
-/spike/out/
 
 # macOS
 .DS_Store
