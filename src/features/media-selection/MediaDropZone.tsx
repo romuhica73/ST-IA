@@ -1,4 +1,5 @@
 import { SUPPORTED_EXTENSIONS_LABEL } from "./constants";
+import { CloudUploadIcon, LockIcon } from "./icons";
 
 interface MediaDropZoneProps {
   isDragging: boolean;
@@ -12,16 +13,24 @@ export function MediaDropZone({
   onSelectClick,
 }: MediaDropZoneProps) {
   return (
-    <div className={`drop-zone ${isDragging ? "drop-zone--active" : ""}`}>
-      <p className="drop-zone__title">
-        Déposez votre vidéo ou votre audio ici
+    <div className="home">
+      <div className={`drop-zone ${isDragging ? "drop-zone--active" : ""}`}>
+        <CloudUploadIcon />
+        <p className="drop-zone__title">Déposez votre vidéo ici</p>
+        <button type="button" className="drop-zone__link" onClick={onSelectClick}>
+          ou sélectionner un fichier
+        </button>
+        <p className="drop-zone__hint">{SUPPORTED_EXTENSIONS_LABEL}</p>
+        {errorMessage && (
+          <p className="drop-zone__error" role="alert">
+            {errorMessage}
+          </p>
+        )}
+      </div>
+      <p className="home__footer">
+        <LockIcon />
+        Traitement 100&nbsp;% local
       </p>
-      <p className="drop-zone__or">ou</p>
-      <button type="button" className="button" onClick={onSelectClick}>
-        Sélectionner un fichier
-      </button>
-      <p className="drop-zone__hint">{SUPPORTED_EXTENSIONS_LABEL}</p>
-      {errorMessage && <p className="drop-zone__error">{errorMessage}</p>}
     </div>
   );
 }

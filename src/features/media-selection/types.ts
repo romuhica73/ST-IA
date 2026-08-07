@@ -20,3 +20,14 @@ export type MediaSelectionState =
   | { status: "dragging" }
   | { status: "selected"; media: MediaInfo }
   | { status: "error"; message: string };
+
+/**
+ * Job configuration state — local UI preference only in this mission.
+ * Not sent to Rust, not wired to a real transcription pipeline (M2+).
+ */
+export type TranscriptionMode = "fast" | "precise";
+
+export interface OutputSelection {
+  srt: boolean;
+  txt: boolean;
+}

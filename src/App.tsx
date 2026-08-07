@@ -4,20 +4,12 @@ import { useMediaSelection } from "./features/media-selection/useMediaSelection"
 import "./styles/App.css";
 
 function App() {
-  const { state, selectViaDialog, reset } = useMediaSelection();
+  const { state, selectViaDialog } = useMediaSelection();
 
   return (
     <main className="app">
-      <header className="app__header">
-        <h1>ST-IA</h1>
-      </header>
-
       {state.status === "selected" ? (
-        <SelectedMedia
-          media={state.media}
-          onChangeFile={selectViaDialog}
-          onRemove={reset}
-        />
+        <SelectedMedia media={state.media} onChangeFile={selectViaDialog} />
       ) : (
         <MediaDropZone
           isDragging={state.status === "dragging"}

@@ -13,6 +13,10 @@
 # derived from them. Transcripts (SRT/TXT) and run logs are still tracked.
 /spike/samples/fr_sample_16k_mono.wav
 
+# UI mockups: reference-only working files (includes a personal video),
+# not part of the shipped repository.
+/mockups/
+
 # Node / frontend
 node_modules
 dist
