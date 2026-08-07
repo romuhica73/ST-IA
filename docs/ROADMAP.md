@@ -27,6 +27,8 @@ Résultat : modèle MVP retenu `large-v3-turbo-q5_0` (voir [ADR-001](architectur
 
 ## M1 — Desktop shell
 
+Statut : `DONE`
+
 Objectifs :
 
 * Tauri 2 ;
@@ -36,6 +38,8 @@ Objectifs :
 * drag & drop ;
 * sélection média ;
 * validation.
+
+Résultat : shell Tauri 2 fonctionnel avec sélection native et validation Rust (`inspect_media`). Interaction GUI (clics, drag & drop) non testable automatiquement dans l'environnement d'exécution de cette mission — voir rapport M1 pour le détail des vérifications réellement effectuées.
 
 ## M2 — Pipeline intégré
 

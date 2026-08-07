@@ -13,3 +13,4 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et [Se
 * ADR-001 — décision du moteur de transcription local.
 * Gouvernance du projet : README, roadmap, index ADR, changelog.
 * Qualification française (Mission 0B) : comparaison `small` / `medium` / `large-v3-turbo-q5_0` sur un échantillon français réel ; modèle MVP retenu `large-v3-turbo-q5_0` ; ADR-001 promue à `ACCEPTED`.
+* Shell desktop Tauri 2 + React + TypeScript (Mission 1) : fenêtre unique, sélection native de fichier et drag & drop, validation de média côté Rust (`inspect_media`), gestion d'erreurs (format non supporté, fichier introuvable, fichier vide, fichier multiple). ADR-002 — architecture desktop du MVP.
