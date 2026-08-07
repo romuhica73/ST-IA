@@ -1,4 +1,4 @@
-# ADR-001 — Moteur de transcription local pour SousTitres
+# ADR-001 — Moteur de transcription local pour ST-IA
 
 ## Statut
 
@@ -8,7 +8,7 @@ Accepté comme candidat principal sur la base des preuves techniques recueillies
 
 ## 1. Contexte
 
-`SousTitres` est une application macOS (Apple Silicon) dont l'unique fonction MVP est :
+`ST-IA` est une application macOS (Apple Silicon) dont l'unique fonction MVP est :
 
 ```
 VIDEO/AUDIO → TRANSCRIPTION ENTIÈREMENT LOCALE → SRT + TXT
