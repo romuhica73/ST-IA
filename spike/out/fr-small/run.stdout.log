@@ -1,0 +1,40 @@
+
+[00:00:00.000 --> 00:00:04.420]   Bonjour à toutes et à tous. Aujourd'hui, je voudrais vous parler d'un sujet très concret
+[00:00:04.420 --> 00:00:08.680]   comment l'intelligence artificielle commence à s'intégrer dans notre quotidien aussi
+[00:00:08.680 --> 00:00:12.880]   bien dans notre vie professionnelle que personnelle. Quand on parle d'intelligence artificielle,
+[00:00:12.880 --> 00:00:16.780]   on pense immédiatement à Chajapiti, à Claude, à Gemini ou encore à Mistral. Pourtant,
+[00:00:16.780 --> 00:00:21.560]   ces derniers outils, pourtant derrière ces outils, il existe des technologies et des
+[00:00:21.560 --> 00:00:25.360]   usages très différents. Par exemple, un grand modèle de langage que l'on appelle souvent
+[00:00:25.360 --> 00:00:30.560]   LLM peut comprendre une consignée critique, analyser un document ou nous aider à produire
+[00:00:30.560 --> 00:00:35.960]   du contenu. Mais il faut garder en tête une chose en ciel. Le modèle ne comprend pas
+[00:00:35.960 --> 00:00:39.240]   le monde comme un être humain. Il travaille à partir dans le contexte d'un prompt, des
+[00:00:39.240 --> 00:00:43.120]   informations qu'on lui fournit. Dans mes projets de développement, j'utilise notamment Chajapiti,
+[00:00:43.120 --> 00:00:48.400]   Claude Code et Cursor. Claude Code peut travailler directement dans un projet, lire les fichiers,
+[00:00:48.400 --> 00:00:52.400]   modifier du code et exécuter certaines commandes. Cursor, de son côté, est un
+[00:00:52.400 --> 00:00:55.680]   environnement de développement qui permet d'utiliser l'intelligence artificielle directement dans
+[00:00:55.680 --> 00:01:00.720]   l'éditeur. Mais cela pose une question importante. Jusqu'où doit-on le laisser? Une intelligence
+[00:01:00.720 --> 00:01:04.800]   artificielle agir-selle? Personnellement, je préfère conserver un contrôle humain sur la
+[00:01:04.800 --> 00:01:09.000]   décision importante. L'intelligence artificielle peut proposer, analyser et exécuter certaines
+[00:01:09.000 --> 00:01:14.120]   actions, mais la décision finale doit rester compréhensible et vérifiable. Prenons un exemple.
+[00:01:14.120 --> 00:01:19.400]   Imaginez que je développe une application Mac OS appelée STIA. Ce m'objectif est très simple.
+[00:01:19.400 --> 00:01:24.800]   Je dépose une vidéo, l'application extrait la piste audio, puis publish-leur. Génère
+[00:01:24.800 --> 00:01:29.800]   automatiquement affiché de sous-titrofoma SRT, ainsi qu'une transfusion au format texte.
+[00:01:29.800 --> 00:01:35.480]   Tout doit être traité localement sur mon Macbook Pro et qui pénine plus Apple Silicon M4.
+[00:01:35.480 --> 00:01:40.640]   La vidéo ne doit jamais être envoyée avec verre au PNI, entropy ou une autre appel distante.
+[00:01:40.640 --> 00:01:43.840]   Pour réaliser cette application, nous pouvons utiliser Tori, React,
+[00:01:43.840 --> 00:01:51.040]   Tabscript ou REST. FFMPEG se charge de préparer l'audio, puis whisper.cpp réalise la
+[00:01:51.040 --> 00:01:55.160]   transcription directement sur la machine. Ensuite, le fichier SRT peut être importé
+[00:01:55.160 --> 00:02:01.000]   dans Davichi Resolve pour ajouter les sous-titres à la vidéo. Ce type d'architecture pose
+[00:02:01.000 --> 00:02:04.360]   aussi des questions de performance. Que se passe-t-il avec une vidéo de 10 minutes,
+[00:02:04.360 --> 00:02:08.680]   de 30 minutes ou même d'une heure? Combien de mémoire vif faut-il utiliser? Combien de temps
+[00:02:08.680 --> 00:02:13.200]   faut-il pour charger le modèle? Est-ce que le résultat reste fiable lorsqu'on prononce des
+[00:02:13.200 --> 00:02:16.240]   termes techniques, des noms propres ou des noms anglais au lieu d'une phrase française?
+[00:02:16.240 --> 00:02:21.240]   Essions justement quelques exemples. Open eye, charge APT, entropy, clothe code,
+[00:02:21.240 --> 00:02:27.720]   curseur, kit, whisper, FFMPEG, Davichi Resolve, Apple Silicon, API, LLM, prompt,
+[00:02:27.720 --> 00:02:33.520]   Tabscript et REST. Et maintenant quelques nombres. La vidéo a été enregistrée le 7 août 2026.
+[00:02:33.520 --> 00:02:39.200]   Elle dure environ 3 minutes. La machine peut être possède 16 giga octets de mémoire vif.
+[00:02:39.200 --> 00:02:45.200]   Un modèle peut peser 747 méga octets, tandis qu'un autre dépasse 1,4 giga octets.
+[00:02:45.200 --> 00:02:49.600]   Enfin une dernière question. Est-ce qu'une intelligence artificielle locale peut réellement
+[00:02:49.600 --> 00:02:53.800]   devenir un petit simple, rapide et fiable, sans envoyer de nos données dans le cloud?
+[00:02:53.800 --> 00:02:58.280]   C'est précisément ce que nous allons essayer de découvrir avec STiA.
+[00:02:58.280 --> 00:03:00.440]   Merci d'avoir regardé cette vidéo et à très bientôt !

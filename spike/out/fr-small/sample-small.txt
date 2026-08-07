@@ -1,0 +1,39 @@
+Bonjour à toutes et à tous. Aujourd'hui, je voudrais vous parler d'un sujet très concret
+comment l'intelligence artificielle commence à s'intégrer dans notre quotidien aussi
+bien dans notre vie professionnelle que personnelle. Quand on parle d'intelligence artificielle,
+on pense immédiatement à Chajapiti, à Claude, à Gemini ou encore à Mistral. Pourtant,
+ces derniers outils, pourtant derrière ces outils, il existe des technologies et des
+usages très différents. Par exemple, un grand modèle de langage que l'on appelle souvent
+LLM peut comprendre une consignée critique, analyser un document ou nous aider à produire
+du contenu. Mais il faut garder en tête une chose en ciel. Le modèle ne comprend pas
+le monde comme un être humain. Il travaille à partir dans le contexte d'un prompt, des
+informations qu'on lui fournit. Dans mes projets de développement, j'utilise notamment Chajapiti,
+Claude Code et Cursor. Claude Code peut travailler directement dans un projet, lire les fichiers,
+modifier du code et exécuter certaines commandes. Cursor, de son côté, est un
+environnement de développement qui permet d'utiliser l'intelligence artificielle directement dans
+l'éditeur. Mais cela pose une question importante. Jusqu'où doit-on le laisser? Une intelligence
+artificielle agir-selle? Personnellement, je préfère conserver un contrôle humain sur la
+décision importante. L'intelligence artificielle peut proposer, analyser et exécuter certaines
+actions, mais la décision finale doit rester compréhensible et vérifiable. Prenons un exemple.
+Imaginez que je développe une application Mac OS appelée STIA. Ce m'objectif est très simple.
+Je dépose une vidéo, l'application extrait la piste audio, puis publish-leur. Génère
+automatiquement affiché de sous-titrofoma SRT, ainsi qu'une transfusion au format texte.
+Tout doit être traité localement sur mon Macbook Pro et qui pénine plus Apple Silicon M4.
+La vidéo ne doit jamais être envoyée avec verre au PNI, entropy ou une autre appel distante.
+Pour réaliser cette application, nous pouvons utiliser Tori, React,
+Tabscript ou REST. FFMPEG se charge de préparer l'audio, puis whisper.cpp réalise la
+transcription directement sur la machine. Ensuite, le fichier SRT peut être importé
+dans Davichi Resolve pour ajouter les sous-titres à la vidéo. Ce type d'architecture pose
+aussi des questions de performance. Que se passe-t-il avec une vidéo de 10 minutes,
+de 30 minutes ou même d'une heure? Combien de mémoire vif faut-il utiliser? Combien de temps
+faut-il pour charger le modèle? Est-ce que le résultat reste fiable lorsqu'on prononce des
+termes techniques, des noms propres ou des noms anglais au lieu d'une phrase française?
+Essions justement quelques exemples. Open eye, charge APT, entropy, clothe code,
+curseur, kit, whisper, FFMPEG, Davichi Resolve, Apple Silicon, API, LLM, prompt,
+Tabscript et REST. Et maintenant quelques nombres. La vidéo a été enregistrée le 7 août 2026.
+Elle dure environ 3 minutes. La machine peut être possède 16 giga octets de mémoire vif.
+Un modèle peut peser 747 méga octets, tandis qu'un autre dépasse 1,4 giga octets.
+Enfin une dernière question. Est-ce qu'une intelligence artificielle locale peut réellement
+devenir un petit simple, rapide et fiable, sans envoyer de nos données dans le cloud?
+C'est précisément ce que nous allons essayer de découvrir avec STiA.
+Merci d'avoir regardé cette vidéo et à très bientôt !

@@ -13,7 +13,7 @@ Statut : `DONE`
 
 ## M0B — Qualification française
 
-Statut : `IN PROGRESS`
+Statut : `DONE`
 
 Objectifs :
 
@@ -22,6 +22,8 @@ Objectifs :
 * segmentation SRT ;
 * performances ;
 * choix modèle MVP.
+
+Résultat : modèle MVP retenu `large-v3-turbo-q5_0` (voir [ADR-001](architecture/ADR-001-transcription-engine.md#11-qualification-française-mission-0b)). Qualification basée sur un échantillon unique (~3 min) — à élargir avant M5.
 
 ## M1 — Desktop shell
 

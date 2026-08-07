@@ -1,0 +1,176 @@
+1
+00:00:00,920 --> 00:00:04,340
+ Bonjour à toutes et à tous, aujourd'hui je voudrais vous parler d'un sujet très concret,
+
+2
+00:00:04,820 --> 00:00:08,380
+ comment l'intelligence artificielle commence à s'intégrer dans notre quotidien,
+
+3
+00:00:08,560 --> 00:00:10,700
+ aussi bien dans notre vie professionnelle que personnelle.
+
+4
+00:00:11,320 --> 00:00:16,300
+ Quand on parle d'intelligence artificielle, on pense immédiatement à CHGPT, à Cloud, à Gemini ou encore Mistral.
+
+5
+00:00:16,680 --> 00:00:22,280
+ Pourtant derrière ces outils, il existe des technologies et des usages très différents.
+
+6
+00:00:22,580 --> 00:00:25,740
+ Par exemple, un grand modèle de langage, que l'on appelle souvent LLM,
+
+7
+00:00:25,740 --> 00:00:31,200
+ peut comprendre une consigne écrite, analyser un document ou nous aider à produire du contenu.
+
+8
+00:00:31,300 --> 00:00:37,000
+ Mais il faut garder en tête une chose essentielle, le modèle ne comprend pas le monde comme un être humain.
+
+9
+00:00:37,260 --> 00:00:40,500
+ Il travaille à partir d'un contexte, d'un prompt, des informations qu'on lui fournit.
+
+10
+00:00:41,160 --> 00:00:44,240
+ Dans mes projets de développement, j'utilise notamment CHGPT, Cloud Code et Cursor.
+
+11
+00:00:45,320 --> 00:00:50,580
+ Cloud Code peut travailler directement dans un projet, lire les fichiers, modifier du code et exécuter certaines commandes.
+
+12
+00:00:51,340 --> 00:00:55,020
+ Cursor, de son côté, est un environnement de développement qui permet d'utiliser l'intelligence artificielle
+
+13
+00:00:55,020 --> 00:00:56,220
+ directement dans l'éditeur.
+
+14
+00:00:57,000 --> 00:00:58,220
+ Mais cela pose une question importante.
+
+15
+00:00:58,820 --> 00:01:02,580
+ Jusqu'où doit-on le laisser, une intelligence artificielle, agir seule ?
+
+16
+00:01:02,580 --> 00:01:05,620
+ Personnellement, je préfère conserver un contrôle humain sur les décisions importantes.
+
+17
+00:01:05,900 --> 00:01:09,360
+ L'intelligence artificielle peut proposer, analyser et exécuter certaines actions,
+
+18
+00:01:09,900 --> 00:01:12,580
+ mais la décision finale doit rester compréhensible et vérifiable.
+
+19
+00:01:13,460 --> 00:01:14,160
+ Prenons un exemple.
+
+20
+00:01:14,640 --> 00:01:17,460
+ Imaginons que je développe une application macOS appelée STIA.
+
+21
+00:01:18,240 --> 00:01:19,440
+ Son objectif est très simple.
+
+22
+00:01:19,680 --> 00:01:27,540
+ Je dépose une vidéo, l'application extrait à la piste audio, puis Whishper génère automatiquement un fichier de sous-titres au format SRT,
+
+23
+00:01:27,900 --> 00:01:30,120
+ ainsi qu'une transmission au format texte.
+
+24
+00:01:31,000 --> 00:01:35,580
+ Tout doit être traité localement sur mon MacBook Pro, équipé Nipus, Apple, Silicon, M4.
+
+25
+00:01:36,420 --> 00:01:40,740
+ La vidéo ne doit jamais être envoyée vers OpenAI, Anthropik ou une autre appée distante.
+
+26
+00:01:41,540 --> 00:01:45,200
+ Pour réaliser cette application, nous pouvons utiliser Tori, React, TypeScript ou REST.
+
+27
+00:01:46,400 --> 00:01:52,560
+ FFmpeg se charge de préparer l'audio, puis Whishper.cpp réalise la transcription directement sur la machine.
+
+28
+00:01:53,360 --> 00:01:59,520
+ Ensuite, le fichier SRT peut être importé dans Davinci Resolve pour ajouter les sous-titres à la vidéo.
+
+29
+00:01:59,980 --> 00:02:02,020
+ Ce type d'architecture pose aussi des questions de performance.
+
+30
+00:02:02,680 --> 00:02:06,440
+ Que se passe-t-il avec une vidéo de 10 minutes, de 30 minutes ou même d'une heure ?
+
+31
+00:02:06,440 --> 00:02:08,340
+ Combien de mémoires vives faut-il utiliser ?
+
+32
+00:02:08,340 --> 00:02:10,680
+ Combien de temps faut-il pour charger le modèle ?
+
+33
+00:02:10,680 --> 00:02:17,200
+ Est-ce que le résultat reste fiable lorsqu'on prononce des termes techniques, des noms propres ou des noms anglais au lieu d'une phrase française ?
+
+34
+00:02:17,200 --> 00:02:18,600
+ Essayons justement quelques exemples.
+
+35
+00:02:18,980 --> 00:02:29,060
+ OpenAI, ChatGPT, Anthropik, Cloud Code, Cursor, GitHub, Whisper, FFmpeg, DaVinci Resolve, Apple Silicon, API, LLM, Prompt, TypeScript et REST.
+
+36
+00:02:29,580 --> 00:02:30,460
+ Et maintenant quelques nombres.
+
+37
+00:02:30,800 --> 00:02:33,640
+ La vidéo a été enregistrée le 7 août 2026.
+
+38
+00:02:34,260 --> 00:02:35,640
+ Elle dure environ 3 minutes.
+
+39
+00:02:36,800 --> 00:02:39,300
+ La machine possède 16 Go de mémoire vive.
+
+40
+00:02:39,660 --> 00:02:45,020
+ Un modèle peut peser 747 Mégaoctets, tandis qu'un autre dépasse 1,4 Go.
+
+41
+00:02:45,620 --> 00:02:46,780
+ Enfin, une dernière question.
+
+42
+00:02:47,480 --> 00:02:54,500
+ Est-ce qu'une intelligence artificielle locale peut réellement devenir un petit simple, rapide et fiable sans envoyer nos données dans le cloud ?
+
+43
+00:02:54,500 --> 00:02:58,300
+ C'est précisément ce que nous allons essayer de découvrir avec STI.
+
+44
+00:02:58,460 --> 00:03:00,440
+ Merci d'avoir regardé cette vidéo et à très bientôt.
+

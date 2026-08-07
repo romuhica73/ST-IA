@@ -1,0 +1,48 @@
+Bonjour à toutes et à tous, aujourd'hui je voudrais vous parler d'un sujet très concret,
+comment l'intelligence artificielle commence à s'intégrer dans notre quotidien, aussi
+bien dans notre vie professionnelle que personnelle.
+Quand on parle d'intelligence artificielle, on pense immédiatement à TchadGPT, à Claude,
+à Gemini ou encore Mistral, pourtant derrière ces outils, il existe des technologies et
+des usages très différents.
+Par exemple, un grand modèle de langage, que l'on appelle souvent LLM, peut comprendre
+comme une consigne écrite, analyser un document ou nous aider à produire du contenu.
+Mais il faut garder en tête une chose essentielle, le modèle ne comprend pas le monde comme
+un être humain.
+Il travaille à partir d'un contexte, d'un prompt, des informations qu'on lui fournit.
+Dans mes projets de développement, j'utilise notamment TchadGPT, Cloud Code et Cursor.
+Cloud Code peut travailler directement dans un projet, lire les fichiers, modifier du
+code et exécuter certaines commandes.
+Cursor, de son côté, est un environnement de développement qui permet d'utiliser l'intelligence
+artificielle directement dans l'éditeur.
+Mais cela pose une question importante, jusqu'où doit-on laisser une intelligence artificielle
+agir seule ?
+Personnellement, je préfère conserver un contrôle humain sur les décisions importantes.
+L'intelligence artificielle peut proposer, analyser et exécuter certaines actions, mais
+la décision finale doit rester compréhensible et vérifiable.
+Prenons un exemple, imaginons que je développe une application macOS appelée STIA.
+Son objectif est très simple, je dépose une vidéo, l'application extrait à la piste
+audio, puis Whisper génère automatiquement un fichier de sous-titre au format SRT ainsi
+qu'une transcription au format texte.
+Tout doit être traité localement sur mon Macbook Pro équipé Nipus Apple Silicon M4.
+La vidéo ne doit jamais être envoyée vers OpenAI, Anthropiq ou une autre API distante.
+Pour réaliser cette application, nous pouvons utiliser Tori, React, Tabscript ou REST.
+FFmpeg se charge de préparer l'audio, puis Whisper.cpp réalise la transcription
+directement sur la machine.
+Ensuite, le fichier SRT peut être importé dans DaVinci Resolve pour ajouter les sous-titres
+à la vidéo.
+Ce type d'architecture pose aussi des questions de performance.
+Que se passe-t-il avec une vidéo de 10 minutes, de 30 minutes ou même d'une heure ? Combien
+de mémoires vives faut-il utiliser ? Combien de temps faut-il pour charger le modèle ?
+Est-ce que le résultat reste fiable lorsqu'on prononce des termes techniques, des noms propres
+ou des noms anglais au lieu d'une phrase française ?
+Essayons justement quelques exemples, OpenAI, Chudgy Pity, Anthropiq, Cloud Code, Cursor,
+KitHub, Whisper, FFmpeg, DaVinci Resolve, Apple Silicon, API, LLM, Prompte, Tabscript
+et REST.
+Et maintenant quelques nombres.
+La vidéo a été enregistrée le 7 août 2026, elle dure environ 3 minutes.
+La machine possède 16 Go de mémoire vive.
+Un modèle peut peser 747 Go, tandis qu'un autre dépasse 1,4 Go.
+Enfin une dernière question, est-ce qu'une intelligence artificielle locale peut réellement
+devenir un petit simple, rapide et fiable sans s'envoyer de nos données dans le cloud ?
+C'est précisément ce que nous allons essayer de découvrir avec STIA.
+Merci d'avoir regardé cette vidéo et à très bientôt.

@@ -8,3 +8,7 @@
 
 # macOS
 .DS_Store
+
+# Personal test media (never committed): source recordings and any WAV
+# derived from them. Transcripts (SRT/TXT) and run logs are still tracked.
+/spike/samples/fr_sample_16k_mono.wav

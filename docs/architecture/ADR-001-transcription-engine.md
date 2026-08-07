@@ -2,9 +2,9 @@
 
 ## Statut
 
-**PROVISIONAL**
+**ACCEPTED**
 
-Accepté comme candidat principal sur la base des preuves techniques recueillies durant la Mission 0 (spike). Non promu à `ACCEPTED` tant que la qualité de transcription française n'a pas été mesurée sur un échantillon représentatif (`NEEDS_FRENCH_SAMPLE`, cf. rapport de mission).
+`whisper.cpp` est confirmé comme moteur de transcription pour le MVP, avec `large-v3-turbo-q5_0` comme modèle retenu. La décision technique (Mission 0) est désormais complétée par une qualification française mesurée sur un échantillon réel (Mission 0B, section 11). Voir section 11 pour les limites de cette qualification.
 
 ## 1. Contexte
 
@@ -34,7 +34,7 @@ Cette ADR documente le choix du moteur de transcription et l'architecture d'int�
 
 ## 3. Décision
 
-`whisper.cpp` est retenu comme **moteur candidat principal** pour la V1, sous réserve de la qualification de la qualité française (voir rapport Mission 0, section 8).
+`whisper.cpp` est retenu comme **moteur de transcription** pour la V1, avec `large-v3-turbo-q5_0` comme modèle MVP (voir section 11 pour la qualification française et le détail du choix de modèle).
 
 Preuves recueillies pendant le spike :
 
@@ -134,3 +134,61 @@ Non traité dans ce spike : implémentation du gestionnaire de téléchargement,
 - **Empaquetage FFmpeg** (licence, taille, build statique arm64) — non résolu, nécessite un spike ou une décision dédiée avant la V1.
 - **whisper.cpp est un projet tiers en développement actif** — nécessité de figer une version (commit/tag) et de revalider à chaque mise à jour.
 - **Alternative WhisperKit non comparée empiriquement** — la décision pourrait changer si le budget mémoire/énergie s'avère un problème réel sur du matériel contraint (ex. MacBook Air 8 Go, hors périmètre de la machine cible actuelle mais potentiellement pertinent plus tard).
+- **Échantillon français unique et court** (~3 min, une seule prise, un seul locuteur) — voir section 11 ; la qualification doit être élargie (médias plus longs, plusieurs locuteurs, conditions audio variées) avant M5.
+
+## 11. Qualification française (Mission 0B)
+
+### 11.1 Échantillon
+
+- Fichier fourni explicitement par l'utilisateur : vidéo iPhone (`.MOV`, H.264 3840×2160, AAC 48 kHz stéréo), 816 Mo, durée 181,2 s (~3 min 01 s).
+- Contenu : monologue face caméra en français naturel, vocabulaire IA/technique et anglicismes volontairement inclus (ChatGPT, Claude, Claude Code, Cursor, LLM, prompt, API, GitHub, Whisper, FFmpeg, DaVinci Resolve, Apple Silicon, TypeScript, OpenAI, Anthropic).
+- Conversion : FFmpeg → WAV mono 16 kHz PCM16, sans réduction de bruit ni normalisation.
+- Langue forcée explicitement à `fr` (pas de détection automatique) pour les trois modèles.
+- Écart avec l'échantillon idéal (5–10 min, section 15 du rapport de mission) : échantillon plus court que la cible, un seul locuteur, une seule prise, conditions d'enregistrement non variées.
+
+### 11.2 Mesures
+
+| Modèle | Taille disque | Durée média | Temps total (réel) | Temps chargement | Ratio total/durée | Mémoire pic (footprint) | Segments SRT |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `small` | 465 Mo | 181,2 s | 15,21 s | 4,82 s | 0,08× | ~880 Mo | 39 |
+| `medium` | 1,4 Go | 181,2 s | 40,08 s | 15,65 s | 0,22× | ~2 166 Mo | 48 |
+| `large-v3-turbo-q5_0` | 547 Mo | 181,2 s | 23,81 s | 5,56 s | 0,13× | ~912 Mo | 44 |
+
+Les ratios mesurés sur ce média de 3 minutes sont nettement inférieurs à ceux observés en Mission 0 sur l'échantillon anglais de 11 secondes (ex. `small` : 0,08× contre 0,90×), ce qui confirme la mise en garde initiale contre l'extrapolation des ratios courts (rapport Mission 0) : le coût fixe de chargement/initialisation Metal pèse beaucoup moins sur un média plus long.
+
+### 11.3 Qualité française
+
+- **`small`** : plusieurs erreurs significatives sur les termes techniques et noms propres, avec au moins un passage clairement incohérent ne correspondant à aucun terme prononcé (« *puis publish-leur. Génère automatiquement affiché de sous-titrofoma SRT* » à la place de « *puis Whisper génère automatiquement un fichier de sous-titre au format SRT* » ; « *verre au PNI, entropy* » à la place de « *vers OpenAI, Anthropic* »). `GitHub` est retranscrit en « *kit* » (perte totale du terme). Qualité la plus faible des trois sur ce critère.
+- **`medium`** : nettement plus stable que `small`, sans passage incohérent, mais avec des erreurs réelles sur les termes techniques (« *KitHub* » pour `GitHub`, « *Anthropiq* » pour `Anthropic`, « *Tabscript* » pour `TypeScript` répété deux fois) et une erreur de valeur numérique (« *747 Go* » au lieu de « *747 méga-octets* »).
+- **`large-v3-turbo-q5_0`** : la plus fiable sur les termes techniques testés — `TypeScript` et `GitHub` correctement retranscrits, unité numérique correcte (« *747 Mégaoctets* »). Quelques imprécisions mineures persistent (« *Cloud* » pour `Claude`, « *Whishper* » pour `Whisper`, « *Nipus* » pour « *puce* », « *STI* » pour `STIA` en toute fin de fichier), mais aucun passage incohérent comparable à celui observé sur `small`.
+
+Aucun résultat n'a été inventé pour un terme absent de l'audio ; seuls les termes effectivement prononcés (liste énumérée par le locuteur dans l'échantillon) ont été comparés.
+
+### 11.4 Qualité SRT
+
+| Modèle | Segments | Durée moy. | Durée max | Caractères moy./segment | Segments >6 s |
+|---|---:|---:|---:|---:|---:|
+| `small` | 39 | 4,63 s | 7,20 s | 87,3 | 2 |
+| `medium` | 48 | 3,76 s | 6,60 s | 69,6 | 3 |
+| `large-v3-turbo-q5_0` | 44 | 3,62 s | 10,08 s | 76,0 | 6 |
+
+Les trois modèles segmentent aux limites de phrases/propositions, sans coupure observée au milieu d'un mot. `medium` produit la segmentation la plus régulière (durée moyenne la plus courte, moins de segments longs). `large-v3-turbo-q5_0` contient le segment le plus long (10,08 s) mais celui-ci reste une proposition complète, pas une coupure incohérente. Les trois fichiers `.srt` et `.txt` sont conservés dans `spike/out/fr-small/`, `spike/out/fr-medium/`, `spike/out/fr-turbo/` pour comparaison manuelle dans DaVinci Resolve.
+
+### 11.5 Modèle retenu
+
+`large-v3-turbo-q5_0` est retenu comme modèle MVP :
+
+1. **Qualité française** (priorité 1) : meilleure fiabilité sur les termes techniques et noms propres testés, aucun passage incohérent contrairement à `small`.
+2. **Qualité SRT** (priorité 2) : segmentation par proposition complète, comparable aux deux autres modèles.
+3. **Performance** (priorité 3) : 23,81 s pour 181 s de média, plus rapide que `medium` (40,08 s).
+4. **Mémoire** (priorité 4) : ~912 Mo de pic, proche de `small` (~880 Mo) et très inférieur à `medium` (~2 166 Mo).
+5. **Taille disque** (priorité 5) : 547 Mo, entre `small` (465 Mo) et `medium` (1,4 Go).
+
+`small` est écarté malgré son avantage de vitesse/mémoire brut à cause d'erreurs de transcription qualitativement plus graves (passages incohérents). `medium` est écarté malgré une qualité française honorable à cause de son coût mémoire (~2,2 Go) et de temps (~2× plus lent que le modèle retenu) sans avantage de qualité mesuré face à `large-v3-turbo-q5_0`.
+
+### 11.6 Limites de cette qualification
+
+- Échantillon unique, ~3 minutes, un seul locuteur, une seule prise, conditions d'enregistrement non variées (pas de bruit de fond, pas de plusieurs voix, pas de qualité audio dégradée).
+- Pas de test sur média long (10–60 min) : le comportement mémoire/dérive de segmentation sur un média long reste à valider avant M5.
+- L'évaluation qualitative est manuelle et non chiffrée (pas de calcul de WER) — comparaison qualitative reproductible mais non statistique.
+- Ces résultats ne doivent pas être considérés comme définitifs : une validation complémentaire sur un corpus plus large est recommandée avant la V1 finale.

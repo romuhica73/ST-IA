@@ -1,0 +1,49 @@
+
+[00:00:00.000 --> 00:00:04.820]   Bonjour à toutes et à tous, aujourd'hui je voudrais vous parler d'un sujet très concret,
+[00:00:04.820 --> 00:00:08.720]   comment l'intelligence artificielle commence à s'intégrer dans notre quotidien, aussi
+[00:00:08.720 --> 00:00:10.700]   bien dans notre vie professionnelle que personnelle.
+[00:00:10.700 --> 00:00:15.040]   Quand on parle d'intelligence artificielle, on pense immédiatement à TchadGPT, à Claude,
+[00:00:15.040 --> 00:00:21.560]   à Gemini ou encore Mistral, pourtant derrière ces outils, il existe des technologies et
+[00:00:21.560 --> 00:00:22.560]   des usages très différents.
+[00:00:22.560 --> 00:00:26.520]   Par exemple, un grand modèle de langage, que l'on appelle souvent LLM, peut comprendre
+[00:00:26.520 --> 00:00:31.120]   comme une consigne écrite, analyser un document ou nous aider à produire du contenu.
+[00:00:31.120 --> 00:00:36.560]   Mais il faut garder en tête une chose essentielle, le modèle ne comprend pas le monde comme
+[00:00:36.560 --> 00:00:37.560]   un être humain.
+[00:00:37.560 --> 00:00:40.880]   Il travaille à partir d'un contexte, d'un prompt, des informations qu'on lui fournit.
+[00:00:40.880 --> 00:00:44.680]   Dans mes projets de développement, j'utilise notamment TchadGPT, Cloud Code et Cursor.
+[00:00:44.680 --> 00:00:49.160]   Cloud Code peut travailler directement dans un projet, lire les fichiers, modifier du
+[00:00:49.160 --> 00:00:50.600]   code et exécuter certaines commandes.
+[00:00:50.600 --> 00:00:55.000]   Cursor, de son côté, est un environnement de développement qui permet d'utiliser l'intelligence
+[00:00:55.000 --> 00:00:56.760]   artificielle directement dans l'éditeur.
+[00:00:56.760 --> 00:01:01.360]   Mais cela pose une question importante, jusqu'où doit-on laisser une intelligence artificielle
+[00:01:01.360 --> 00:01:02.360]   agir seule ?
+[00:01:02.360 --> 00:01:05.760]   Personnellement, je préfère conserver un contrôle humain sur les décisions importantes.
+[00:01:05.760 --> 00:01:10.080]   L'intelligence artificielle peut proposer, analyser et exécuter certaines actions, mais
+[00:01:10.080 --> 00:01:12.640]   la décision finale doit rester compréhensible et vérifiable.
+[00:01:12.640 --> 00:01:17.760]   Prenons un exemple, imaginons que je développe une application macOS appelée STIA.
+[00:01:17.760 --> 00:01:21.920]   Son objectif est très simple, je dépose une vidéo, l'application extrait à la piste
+[00:01:21.920 --> 00:01:28.200]   audio, puis Whisper génère automatiquement un fichier de sous-titre au format SRT ainsi
+[00:01:28.200 --> 00:01:29.920]   qu'une transcription au format texte.
+[00:01:29.920 --> 00:01:35.560]   Tout doit être traité localement sur mon Macbook Pro équipé Nipus Apple Silicon M4.
+[00:01:35.560 --> 00:01:40.880]   La vidéo ne doit jamais être envoyée vers OpenAI, Anthropiq ou une autre API distante.
+[00:01:40.880 --> 00:01:45.880]   Pour réaliser cette application, nous pouvons utiliser Tori, React, Tabscript ou REST.
+[00:01:45.880 --> 00:01:51.520]   FFmpeg se charge de préparer l'audio, puis Whisper.cpp réalise la transcription
+[00:01:51.520 --> 00:01:52.800]   directement sur la machine.
+[00:01:52.800 --> 00:01:57.680]   Ensuite, le fichier SRT peut être importé dans DaVinci Resolve pour ajouter les sous-titres
+[00:01:57.680 --> 00:01:59.720]   à la vidéo.
+[00:01:59.720 --> 00:02:02.320]   Ce type d'architecture pose aussi des questions de performance.
+[00:02:02.320 --> 00:02:06.680]   Que se passe-t-il avec une vidéo de 10 minutes, de 30 minutes ou même d'une heure ? Combien
+[00:02:06.680 --> 00:02:10.080]   de mémoires vives faut-il utiliser ? Combien de temps faut-il pour charger le modèle ?
+[00:02:10.080 --> 00:02:14.600]   Est-ce que le résultat reste fiable lorsqu'on prononce des termes techniques, des noms propres
+[00:02:14.600 --> 00:02:16.360]   ou des noms anglais au lieu d'une phrase française ?
+[00:02:16.360 --> 00:02:22.040]   Essayons justement quelques exemples, OpenAI, Chudgy Pity, Anthropiq, Cloud Code, Cursor,
+[00:02:22.040 --> 00:02:28.640]   KitHub, Whisper, FFmpeg, DaVinci Resolve, Apple Silicon, API, LLM, Prompte, Tabscript
+[00:02:28.640 --> 00:02:29.640]   et REST.
+[00:02:29.640 --> 00:02:30.640]   Et maintenant quelques nombres.
+[00:02:30.640 --> 00:02:35.720]   La vidéo a été enregistrée le 7 août 2026, elle dure environ 3 minutes.
+[00:02:35.720 --> 00:02:39.560]   La machine possède 16 Go de mémoire vive.
+[00:02:39.560 --> 00:02:45.520]   Un modèle peut peser 747 Go, tandis qu'un autre dépasse 1,4 Go.
+[00:02:45.520 --> 00:02:49.640]   Enfin une dernière question, est-ce qu'une intelligence artificielle locale peut réellement
+[00:02:49.640 --> 00:02:54.160]   devenir un petit simple, rapide et fiable sans s'envoyer de nos données dans le cloud ?
+[00:02:54.160 --> 00:02:58.520]   C'est précisément ce que nous allons essayer de découvrir avec STIA.
+[00:02:58.520 --> 00:03:00.520]   Merci d'avoir regardé cette vidéo et à très bientôt.
