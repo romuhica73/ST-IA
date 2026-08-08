@@ -31,6 +31,11 @@ yarn-error.log*
 /src-tauri/target/
 /src-tauri/gen/schemas
 
+# Sidecar build scratch space (FFmpeg source tree, object files). The
+# resulting binaries in src-tauri/binaries/ are committed (see ADR-003);
+# this intermediate tree is not.
+/build-tmp/
+
 # Editor
 .vscode/*
 !.vscode/extensions.json
