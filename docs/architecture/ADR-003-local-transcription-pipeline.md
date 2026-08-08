@@ -42,6 +42,14 @@ Tauri 2 est configuré via `bundle.externalBin` (`binaries/whisper-cli`, `binari
 
 Ce point a été découvert lors de la qualification M2 : un premier essai utilisait `.sidecar("binaries/ffmpeg")`, qui cherchait un fichier `target/debug/binaries/ffmpeg` inexistant, provoquant un échec silencieux classé `audioPreparationFailed`. Confirmé par lecture du code source de `tauri-build`/`tauri-plugin-shell` et par test isolé du sidecar (succès hors application) avant correction.
 
+### Qualification du build empaqueté
+
+`pnpm tauri build` produit `ST-IA.app` avec les deux sidecars placés à plat dans `Contents/MacOS/` (`ffmpeg`, `whisper-cli`), confirmant que la convention de nommage ci-dessus est identique en développement et en production. `otool -L` sur les deux binaires du bundle ne montre que des frameworks système Apple. L'application se lance sans blocage macOS (seul un message `spctl` informatif sur l'absence de ressources signées apparaît — pas un blocage de lancement). Pipeline testé deux fois depuis le `.app` empaqueté avec `IMG_8484.MOV` : SRT et TXT générés à l'identique du test en mode développement (4959 et 3428 octets), dossiers de sortie `-2`/`-3` créés correctement par la stratégie anti-collision.
+
+### Réserve de portabilité — `PORTABILITY_APPLE_SILICON_TO_REQUALIFY_BEFORE_PUBLIC_DISTRIBUTION`
+
+Le sidecar `whisper-cli` est compilé avec `-mcpu=native` (auto-détecté par le CMake de `ggml` en l'absence d'une cible explicite), ce qui optimise le binaire pour le CPU exact de la machine de build (Apple M4). Sa compatibilité avec d'autres puces Apple Silicon (M1/M2/M3, ou de futures générations) n'a pas été vérifiée et pourrait théoriquement provoquer une instruction illégale sur du matériel plus ancien. Cette réserve n'a pas été levée pendant M2 (hors périmètre) et devra être requalifiée au plus tard avant M5 (distribution publique) — soit en fixant une cible `-mcpu` compatible avec la plage Apple Silicon visée, soit en documentant une exigence matérielle minimale.
+
 ## Sécurité
 
 Le frontend appelle uniquement des commandes Rust métier (`start_transcription`, `get_transcription_status`, `open_output_folder`). Aucune capability `shell:allow-execute` n'est exposée au frontend ; l'exécution des sidecars passe par `tauri_plugin_shell::ShellExt` côté Rust (`app.shell().sidecar(...)`), pas par `@tauri-apps/plugin-shell` côté JavaScript. Les seules permissions shell déclarées dans les capabilities ciblent explicitement les deux sidecars nommés, jamais un binaire ou des arguments arbitraires. L'ouverture du dossier de sortie utilise `tauri-plugin-opener` (`opener:allow-open-path`, scope `$HOME/**` et `/Volumes/**`), pas l'API `shell.open` dépréciée.
