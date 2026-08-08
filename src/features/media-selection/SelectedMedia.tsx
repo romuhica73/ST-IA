@@ -14,15 +14,17 @@ import type { MediaInfo, OutputSelection, TranscriptionMode } from "./types";
 interface SelectedMediaProps {
   media: MediaInfo;
   onChangeFile: () => void;
+  onGenerate: (outputs: OutputSelection) => void;
 }
 
-export function SelectedMedia({ media, onChangeFile }: SelectedMediaProps) {
+export function SelectedMedia({ media, onChangeFile, onGenerate }: SelectedMediaProps) {
   const languageId = useId();
   const [mode, setMode] = useState<TranscriptionMode>("fast");
   const [outputs, setOutputs] = useState<OutputSelection>({
     srt: true,
     txt: true,
   });
+  const hasOutputSelected = outputs.srt || outputs.txt;
 
   return (
     <div className="job">
@@ -79,8 +81,10 @@ export function SelectedMedia({ media, onChangeFile }: SelectedMediaProps) {
             type="button"
             role="radio"
             aria-checked={mode === "precise"}
-            className={`segmented__option ${mode === "precise" ? "segmented__option--active" : ""}`}
-            onClick={() => setMode("precise")}
+            className="segmented__option"
+            disabled
+            title="Disponible ultérieurement — M2 utilise uniquement large-v3-turbo-q5_0"
+            onClick={(event) => event.preventDefault()}
           >
             <TargetIcon />
             Précis
@@ -114,6 +118,11 @@ export function SelectedMedia({ media, onChangeFile }: SelectedMediaProps) {
             TXT
           </label>
         </div>
+        {!hasOutputSelected && (
+          <p className="drop-zone__error" role="alert">
+            Sélectionnez au moins un format de sortie.
+          </p>
+        )}
       </section>
 
       <div className="actions">
@@ -123,9 +132,8 @@ export function SelectedMedia({ media, onChangeFile }: SelectedMediaProps) {
         <button
           type="button"
           className="button button--primary"
-          aria-disabled="true"
-          title="Disponible à partir de la Mission 2"
-          onClick={(event) => event.preventDefault()}
+          disabled={!hasOutputSelected}
+          onClick={() => onGenerate(outputs)}
         >
           Générer les sous-titres
         </button>
