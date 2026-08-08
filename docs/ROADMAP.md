@@ -43,6 +43,8 @@ Résultat : shell Tauri 2 fonctionnel avec sélection native et validation Rust 
 
 ## M2 — Pipeline intégré
 
+Statut : `DONE`
+
 Objectifs :
 
 * Rust orchestration ;
@@ -50,6 +52,8 @@ Objectifs :
 * whisper.cpp sidecar ;
 * traitement end-to-end ;
 * SRT/TXT.
+
+Résultat : pipeline local prouvé de bout en bout depuis l'application (voir [ADR-003](architecture/ADR-003-local-transcription-pipeline.md)). Sidecars FFmpeg 9.0 et whisper-cli statiques (aucune dépendance Homebrew/dev clone, vérifié `otool -L`), modèle `large-v3-turbo-q5_0` résolu via Application Support, SRT/TXT réels générés pour `IMG_8484.MOV`. Mode « Précis » et téléchargement de modèle restent hors périmètre (M3).
 
 ## M3 — Model manager
 

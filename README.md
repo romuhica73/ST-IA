@@ -33,7 +33,7 @@ SRT + TXT
 
 ## Statut
 
-Pré-MVP — shell desktop en cours (Mission 1).
+Pré-MVP — pipeline de transcription local intégré (Mission 2). Téléchargement/gestion du modèle à venir (Mission 3).
 
 ## Stack
 
@@ -54,10 +54,27 @@ cargo test           # depuis src-tauri/
 cargo fmt --check    # depuis src-tauri/
 ```
 
+### Sidecars et modèle (développement)
+
+Les sidecars FFmpeg/whisper.cpp sont commités dans `src-tauri/binaries/` ; pour les reconstruire :
+
+```bash
+scripts/build-whisper-sidecar.sh   # nécessite le clone engine/whisper.cpp au SHA pinné (voir ADR-001)
+scripts/build-ffmpeg-sidecar.sh    # télécharge et compile FFmpeg depuis la source officielle
+```
+
+Le modèle Whisper n'est jamais commité. Pour tester localement avant que Mission 3 implémente le téléchargement in-app :
+
+```bash
+scripts/provision-dev-model.sh /chemin/vers/ggml-large-v3-turbo-q5_0.bin
+```
+
 ## Documentation
 
 * [Roadmap](docs/ROADMAP.md)
 * [Index des ADR](docs/architecture/README.md)
 * [ADR-001 — Moteur de transcription](docs/architecture/ADR-001-transcription-engine.md)
 * [ADR-002 — Architecture desktop](docs/architecture/ADR-002-desktop-architecture.md)
+* [ADR-003 — Pipeline local et packaging des moteurs](docs/architecture/ADR-003-local-transcription-pipeline.md)
+* [FFmpeg — sidecar et licence](docs/third-party/FFMPEG.md)
 * [Changelog](CHANGELOG.md)
