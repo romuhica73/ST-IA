@@ -57,6 +57,8 @@ Résultat : pipeline local prouvé de bout en bout depuis l'application (voir [A
 
 ## M3 — Model manager
 
+Statut : `DONE`
+
 Objectifs :
 
 * modèle absent ;
@@ -65,6 +67,8 @@ Objectifs :
 * SHA-256 ;
 * stockage Application Support ;
 * fonctionnement offline.
+
+Résultat : gestionnaire de modèle prouvé de bout en bout, mode développement et `.app` empaqueté (voir [ADR-004](architecture/ADR-004-model-management.md)). Téléchargement réel depuis Hugging Face, SHA-256 vérifié exactement (`394221709c...`), promotion atomique, modèle corrompu détecté et rejeté, transcription réelle après installation, fonctionnement hors ligne prouvé (aucune requête réseau pendant le pipeline).
 
 ## M4 — Robustesse
 
