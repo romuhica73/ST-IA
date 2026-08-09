@@ -1,7 +1,6 @@
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
-pub const MODEL_FILE_NAME: &str = "ggml-large-v3-turbo-q5_0.bin";
 pub const LANGUAGE: &str = "fr";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
