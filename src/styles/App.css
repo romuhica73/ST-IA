@@ -556,3 +556,56 @@
   margin: 0;
   word-break: break-word;
 }
+
+/* ---------- Écran 3 — modèle requis ---------- */
+
+.model-gate {
+  align-items: center;
+  text-align: center;
+}
+
+.model-icon-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--accent-tint);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.model-gate__subtitle {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.model-card {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.model-card__name {
+  font-weight: 600;
+  margin: 0;
+}
+
+.model-card__size {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0.3rem 0 0;
+}
+
+.model-gate__info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0;
+}

@@ -13,11 +13,17 @@ import type { MediaInfo, OutputSelection, TranscriptionMode } from "./types";
 
 interface SelectedMediaProps {
   media: MediaInfo;
+  modelReady: boolean;
   onChangeFile: () => void;
   onGenerate: (outputs: OutputSelection) => void;
 }
 
-export function SelectedMedia({ media, onChangeFile, onGenerate }: SelectedMediaProps) {
+export function SelectedMedia({
+  media,
+  modelReady,
+  onChangeFile,
+  onGenerate,
+}: SelectedMediaProps) {
   const languageId = useId();
   const [mode, setMode] = useState<TranscriptionMode>("fast");
   const [outputs, setOutputs] = useState<OutputSelection>({
@@ -132,7 +138,8 @@ export function SelectedMedia({ media, onChangeFile, onGenerate }: SelectedMedia
         <button
           type="button"
           className="button button--primary"
-          disabled={!hasOutputSelected}
+          disabled={!hasOutputSelected || !modelReady}
+          title={!modelReady ? "Le modèle de transcription doit être installé au préalable." : undefined}
           onClick={() => onGenerate(outputs)}
         >
           Générer les sous-titres

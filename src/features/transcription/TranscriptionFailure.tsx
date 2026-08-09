@@ -6,6 +6,7 @@ interface TranscriptionFailureProps {
   fileName: string;
   onChooseAnother: () => void;
   onRetry: () => void;
+  onInstallModel: () => void;
 }
 
 const ERROR_TITLES: Record<TranscriptionErrorCode, string> = {
@@ -24,7 +25,10 @@ export function TranscriptionFailure({
   fileName,
   onChooseAnother,
   onRetry,
+  onInstallModel,
 }: TranscriptionFailureProps) {
+  const isModelMissing = code === "modelMissing";
+
   return (
     <div className="job">
       <div className="result-header">
@@ -33,20 +37,21 @@ export function TranscriptionFailure({
         </div>
         <p className="result-header__title">{ERROR_TITLES[code]}</p>
         <p className="result-header__subtitle">{message}</p>
-        {code === "modelMissing" && (
-          <p className="result-header__subtitle">
-            L'installation automatique sera ajoutée dans la prochaine étape.
-          </p>
-        )}
       </div>
 
       <div className="actions">
         <button type="button" className="button button--secondary" onClick={onChooseAnother}>
           Choisir un autre fichier
         </button>
-        <button type="button" className="button button--primary" onClick={onRetry}>
-          Réessayer
-        </button>
+        {isModelMissing ? (
+          <button type="button" className="button button--primary" onClick={onInstallModel}>
+            Installer le modèle
+          </button>
+        ) : (
+          <button type="button" className="button button--primary" onClick={onRetry}>
+            Réessayer
+          </button>
+        )}
       </div>
 
       <details className="tech-details">
