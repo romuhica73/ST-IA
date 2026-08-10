@@ -16,7 +16,8 @@ export type TranscriptionErrorCode =
   | "audioPreparationFailed"
   | "noAudioTrack"
   | "transcriptionFailed"
-  | "writeFailed";
+  | "writeFailed"
+  | "insufficientDiskSpace";
 
 export interface TranscriptionError {
   code: TranscriptionErrorCode;
@@ -34,7 +35,9 @@ export type JobStatus =
       files: OutputFile[];
       transcriptText: string | null;
     }
-  | { status: "failed"; code: TranscriptionErrorCode; message: string };
+  | { status: "failed"; code: TranscriptionErrorCode; message: string }
+  | { status: "cancelling" }
+  | { status: "cancelled" };
 
 export interface StartTranscriptionInput {
   mediaPath: string;

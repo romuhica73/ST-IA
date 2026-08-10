@@ -48,6 +48,7 @@ pub enum TranscriptionErrorCode {
     NoAudioTrack,
     TranscriptionFailed,
     WriteFailed,
+    InsufficientDiskSpace,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -113,11 +114,19 @@ impl TranscriptionError {
             "Les fichiers de sous-titres n'ont pas pu être enregistrés.",
         )
     }
+
+    pub fn insufficient_disk_space() -> Self {
+        Self::new(
+            TranscriptionErrorCode::InsufficientDiskSpace,
+            "L'espace disque disponible est insuffisant pour traiter ce fichier.",
+        )
+    }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Default)]
 #[serde(tag = "status", rename_all = "camelCase")]
 pub enum JobStatus {
+    #[default]
     Idle,
     PreparingAudio,
     Transcribing {
@@ -138,6 +147,61 @@ pub enum JobStatus {
         code: TranscriptionErrorCode,
         message: String,
     },
+    /// Cancellation requested, child process being stopped. Terminal state
+    /// `Cancelled` is only emitted once the process has actually exited and
+    /// the temporary workspace has been removed.
+    Cancelling,
+    Cancelled,
+}
+
+/// Maps a failed ffmpeg run to a business error.
+///
+/// The user never sees ffmpeg's stderr; it is only inspected here to tell
+/// "this file has no audio to transcribe" apart from "this file could not be
+/// decoded at all". The sentinels are the strings the pinned sidecar build
+/// actually produces (verified against real fixtures — see ADR-005).
+pub fn classify_ffmpeg_failure(stderr: &str) -> TranscriptionError {
+    let stderr = stderr.to_lowercase();
+    if stderr.contains("does not contain any stream") || stderr.contains("matches no streams") {
+        TranscriptionError::no_audio_track()
+    } else {
+        TranscriptionError::audio_preparation_failed()
+    }
+}
+
+/// Safety margin on top of the source size when estimating how much free
+/// space a job needs — covers the SRT/TXT outputs, filesystem overhead and
+/// whisper.cpp's own scratch usage.
+pub const DISK_SAFETY_MARGIN_BYTES: u64 = 256 * 1024 * 1024;
+
+/// Conservative estimate of the free space a transcription needs.
+///
+/// The intermediate WAV is 16 kHz mono s16 = 32 kB/s = 256 kbps. Any real
+/// audio/video file is encoded at a higher bitrate than that, so the source
+/// file's own size is an upper bound for the WAV we are about to extract.
+/// We require that upper bound plus a fixed margin — deliberately a coarse
+/// guard against a manifestly full disk, not a precise storage manager.
+pub fn required_free_bytes(source_size: u64) -> u64 {
+    source_size.saturating_add(DISK_SAFETY_MARGIN_BYTES)
+}
+
+/// Whether a temp entry is one ST-IA created and may therefore delete.
+///
+/// Guard rail for startup cleanup: the caller passes entries found directly
+/// inside ST-IA's *own* temp root, and this refuses anything that does not
+/// look like a job directory this app produced (`<pid>-<nanos>`). Nothing
+/// outside that root is ever considered, and no user file or model is ever
+/// matched by this predicate.
+pub fn is_removable_job_dir_name(name: &str) -> bool {
+    match name.split_once('-') {
+        Some((pid, nanos)) => {
+            !pid.is_empty()
+                && !nanos.is_empty()
+                && pid.chars().all(|c| c.is_ascii_digit())
+                && nanos.chars().all(|c| c.is_ascii_digit())
+        }
+        None => false,
+    }
 }
 
 /// Resolves the sibling output directory for a source media path, avoiding
@@ -431,7 +495,7 @@ mod tests {
         wav.extend_from_slice(&16u16.to_le_bytes()); // bits per sample
         wav.extend_from_slice(b"data");
         wav.extend_from_slice(&32000u32.to_le_bytes());
-        wav.extend(std::iter::repeat(0u8).take(32000));
+        wav.extend(std::iter::repeat_n(0u8, 32000));
 
         assert_eq!(wav_duration_secs(&wav), Some(1.0));
     }
@@ -439,6 +503,115 @@ mod tests {
     #[test]
     fn wav_duration_rejects_non_riff_bytes() {
         assert_eq!(wav_duration_secs(b"not a wav file"), None);
+    }
+
+    // The two stderr excerpts below are verbatim output from the pinned
+    // ffmpeg sidecar run with the production args, captured against real
+    // fixtures (a video-only .mov and a .mov of random bytes).
+    const REAL_NO_AUDIO_STDERR: &str = "\
+[out#0/wav @ 0xb3ec44180] Output file does not contain any stream
+Error opening output file /tmp/fixtures/no-audio.wav.
+Error opening output files: Invalid argument";
+
+    const REAL_CORRUPTED_STDERR: &str = "\
+[in#0 @ 0xb3b014000] moov atom not found
+[in#0 @ 0x90ac14000] Error opening input: Invalid data found when processing input
+Error opening input file /tmp/fixtures/corrupted.mov.
+Error opening input files: Invalid data found when processing input";
+
+    #[test]
+    fn video_without_audio_maps_to_no_audio_track() {
+        let err = classify_ffmpeg_failure(REAL_NO_AUDIO_STDERR);
+        assert_eq!(err.code, TranscriptionErrorCode::NoAudioTrack);
+    }
+
+    #[test]
+    fn undecodable_media_maps_to_audio_preparation_failed() {
+        // Must NOT be reported as "no audio track": the file is unreadable,
+        // which is a different thing to tell the user.
+        let err = classify_ffmpeg_failure(REAL_CORRUPTED_STDERR);
+        assert_eq!(err.code, TranscriptionErrorCode::AudioPreparationFailed);
+    }
+
+    #[test]
+    fn ffmpeg_stderr_never_leaks_into_the_user_message() {
+        for stderr in [REAL_NO_AUDIO_STDERR, REAL_CORRUPTED_STDERR] {
+            let message = classify_ffmpeg_failure(stderr).message;
+            assert!(!message.contains("0x"), "raw pointer leaked: {message}");
+            assert!(!message.contains("/tmp/"), "local path leaked: {message}");
+            assert!(
+                !message.contains("#0"),
+                "ffmpeg internals leaked: {message}"
+            );
+        }
+    }
+
+    #[test]
+    fn required_free_space_exceeds_source_size() {
+        // The extracted WAV is bounded by the source size (256 kbps), so the
+        // requirement must always be strictly above it.
+        assert!(required_free_bytes(1_000_000) > 1_000_000);
+        assert_eq!(
+            required_free_bytes(1_000_000),
+            1_000_000 + DISK_SAFETY_MARGIN_BYTES
+        );
+    }
+
+    #[test]
+    fn required_free_space_saturates_instead_of_overflowing() {
+        assert_eq!(required_free_bytes(u64::MAX), u64::MAX);
+    }
+
+    #[test]
+    fn job_dir_names_are_recognized() {
+        assert!(is_removable_job_dir_name("1234-56789"));
+        assert!(is_removable_job_dir_name("1-1"));
+    }
+
+    #[test]
+    fn non_job_dir_names_are_never_removable() {
+        // Guard rail: anything that is not exactly <pid>-<nanos> must be
+        // left alone, so an unrelated directory that happens to sit in the
+        // temp root is never deleted.
+        for name in [
+            "",
+            "models",
+            "ST-IA",
+            "-",
+            "1234-",
+            "-56789",
+            "abcd-56789",
+            "1234-abc",
+            "1234_56789",
+            "1234-56789-extra",
+            "../escape",
+            ".",
+        ] {
+            assert!(
+                !is_removable_job_dir_name(name),
+                "{name} must not be removable"
+            );
+        }
+    }
+
+    #[test]
+    fn cancelled_states_serialize_as_plain_tags() {
+        assert_eq!(
+            serde_json::to_value(JobStatus::Cancelling).unwrap()["status"],
+            "cancelling"
+        );
+        assert_eq!(
+            serde_json::to_value(JobStatus::Cancelled).unwrap()["status"],
+            "cancelled"
+        );
+    }
+
+    #[test]
+    fn insufficient_disk_space_is_a_business_error() {
+        let err = TranscriptionError::insufficient_disk_space();
+        assert_eq!(err.code, TranscriptionErrorCode::InsufficientDiskSpace);
+        // User-facing text, never a raw errno or stderr dump.
+        assert!(err.message.contains("espace disque"));
     }
 
     #[test]

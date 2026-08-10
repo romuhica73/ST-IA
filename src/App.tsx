@@ -19,7 +19,7 @@ function App() {
   const [bypassModelGate, setBypassModelGate] = useState(false);
 
   const { state: mediaState, selectViaDialog, reset: resetMedia } = useMediaSelection();
-  const { status: jobStatus, start, reset: resetJob } = useTranscription();
+  const { status: jobStatus, start, cancel: cancelJob, reset: resetJob } = useTranscription();
   const [jobMedia, setJobMedia] = useState<MediaInfo | null>(null);
   const [lastOutputs, setLastOutputs] = useState<OutputSelection | null>(null);
 
@@ -65,7 +65,8 @@ function App() {
   const isJobActive =
     jobStatus.status === "preparingAudio" ||
     jobStatus.status === "transcribing" ||
-    jobStatus.status === "writingOutputs";
+    jobStatus.status === "writingOutputs" ||
+    jobStatus.status === "cancelling";
 
   const displayFileName =
     jobMedia?.fileName ?? (mediaState.status === "selected" ? mediaState.media.fileName : "");
@@ -120,7 +121,11 @@ function App() {
   return (
     <main className="app">
       {isJobActive ? (
-        <TranscriptionProgress fileName={displayFileName} status={jobStatus} />
+        <TranscriptionProgress
+          fileName={displayFileName}
+          status={jobStatus}
+          onCancel={() => void cancelJob()}
+        />
       ) : jobStatus.status === "completed" ? (
         <TranscriptionSuccess
           outputDir={jobStatus.outputDir}

@@ -5,6 +5,7 @@ import type { JobStatus } from "./types";
 interface TranscriptionProgressProps {
   fileName: string;
   status: JobStatus;
+  onCancel: () => void;
 }
 
 const STEPS: { key: StageKey; label: string }[] = [
@@ -20,8 +21,13 @@ const STATE_LABEL: Record<ReturnType<typeof stageState>, string> = {
   pending: "En attente",
 };
 
-export function TranscriptionProgress({ fileName, status }: TranscriptionProgressProps) {
+export function TranscriptionProgress({
+  fileName,
+  status,
+  onCancel,
+}: TranscriptionProgressProps) {
   const progress = realProgress(status);
+  const cancelling = status.status === "cancelling";
 
   return (
     <div className="job">
@@ -55,30 +61,35 @@ export function TranscriptionProgress({ fileName, status }: TranscriptionProgres
         </div>
       </section>
 
-      <ul className="steps">
-        {STEPS.map((step) => {
-          const state = stageState(status, step.key);
-          return (
-            <li key={step.key} className={`steps__item steps__item--${state}`}>
-              <span className={`steps__marker steps__marker--${state}`} aria-hidden="true">
-                {state === "done" ? "✓" : ""}
-              </span>
-              <span className="steps__label">{step.label}</span>
-              <span className="steps__state">{STATE_LABEL[state]}</span>
-            </li>
-          );
-        })}
-      </ul>
+      {cancelling ? (
+        // The per-stage list is meaningless once we are tearing the job
+        // down, and showing every step as "done" would read as a success.
+        <p className="model-gate__subtitle">Arrêt du traitement en cours…</p>
+      ) : (
+        <ul className="steps">
+          {STEPS.map((step) => {
+            const state = stageState(status, step.key);
+            return (
+              <li key={step.key} className={`steps__item steps__item--${state}`}>
+                <span className={`steps__marker steps__marker--${state}`} aria-hidden="true">
+                  {state === "done" ? "✓" : ""}
+                </span>
+                <span className="steps__label">{step.label}</span>
+                <span className="steps__state">{STATE_LABEL[state]}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       <div className="actions actions--single">
         <button
           type="button"
           className="button button--secondary"
-          aria-disabled="true"
-          title="L'annulation sera disponible à partir de la Mission 4"
-          onClick={(event) => event.preventDefault()}
+          onClick={onCancel}
+          disabled={cancelling}
         >
-          Annuler
+          {cancelling ? "Annulation…" : "Annuler"}
         </button>
       </div>
 

@@ -33,9 +33,20 @@ export function useTranscription() {
     }
   }, []);
 
+  const cancel = useCallback(async () => {
+    // Optimistic: Rust emits `cancelling` too, but reflecting the click
+    // immediately is what stops the user from clicking twice.
+    setStatus({ status: "cancelling" });
+    try {
+      await invoke("cancel_transcription");
+    } catch (err) {
+      console.error("Failed to request cancellation:", err);
+    }
+  }, []);
+
   const reset = useCallback(() => {
     setStatus({ status: "idle" });
   }, []);
 
-  return { status, start, reset };
+  return { status, start, cancel, reset };
 }

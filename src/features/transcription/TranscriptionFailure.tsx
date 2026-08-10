@@ -17,6 +17,7 @@ const ERROR_TITLES: Record<TranscriptionErrorCode, string> = {
   writeFailed: "Impossible d'enregistrer les fichiers",
   noOutputSelected: "Aucune sortie sélectionnée",
   alreadyRunning: "Transcription déjà en cours",
+  insufficientDiskSpace: "Espace disque insuffisant",
 };
 
 export function TranscriptionFailure({

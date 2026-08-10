@@ -11,35 +11,26 @@ pub struct StartTranscriptionInput {
     pub output_txt: bool,
 }
 
-fn is_busy(status: &JobStatus) -> bool {
-    matches!(
-        status,
-        JobStatus::PreparingAudio | JobStatus::Transcribing { .. } | JobStatus::WritingOutputs
-    )
-}
-
 #[tauri::command]
 pub async fn start_transcription(
     app: AppHandle,
     state: State<'_, JobState>,
     input: StartTranscriptionInput,
 ) -> Result<(), TranscriptionError> {
-    {
-        let current = state
-            .0
-            .lock()
-            .map_err(|_| TranscriptionError::transcription_failed())?;
-        if is_busy(&current) {
-            return Err(TranscriptionError::already_running());
-        }
-    }
-
     let outputs = OutputSelection {
         srt: input.output_srt,
         txt: input.output_txt,
     };
     if outputs.is_empty() {
         return Err(TranscriptionError::no_output_selected());
+    }
+
+    // Atomic test-and-set: claiming the slot and spawning the task are not
+    // separated by a window in which a second call could also see "idle".
+    // Two rapid clicks therefore produce exactly one job, regardless of what
+    // the frontend does with its button.
+    if !state.try_claim() {
+        return Err(TranscriptionError::already_running());
     }
 
     let request = StartRequest {
@@ -54,11 +45,16 @@ pub async fn start_transcription(
 
 #[tauri::command]
 pub fn get_transcription_status(state: State<'_, JobState>) -> Result<JobStatus, String> {
-    state
-        .0
-        .lock()
-        .map(|guard| guard.clone())
-        .map_err(|_| "transcription state lock poisoned".to_string())
+    Ok(state.status())
+}
+
+/// Requests cancellation of the running job: kills the active sidecar and
+/// lets the pipeline settle into `Cancelled` once the process is actually
+/// gone and the temp workspace has been removed. A no-op when idle.
+#[tauri::command]
+pub fn cancel_transcription(app: AppHandle, state: State<'_, JobState>) -> Result<(), String> {
+    pipeline::cancel(&app, &state);
+    Ok(())
 }
 
 /// Reveals a generated output file in Finder. `path` is expected to be one
