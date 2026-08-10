@@ -66,6 +66,7 @@ impl ModelError {
 #[serde(tag = "status", rename_all = "camelCase")]
 pub enum ModelStatus {
     Missing,
+    #[serde(rename_all = "camelCase")]
     Downloading {
         downloaded_bytes: u64,
         total_bytes: Option<u64>,
@@ -158,5 +159,23 @@ mod tests {
         // Defensive: a server that reports a total smaller than what we
         // actually received should never produce a >100% progress value.
         assert_eq!(compute_progress(300, Some(200)), Some(1.0));
+    }
+
+    #[test]
+    fn downloading_status_serializes_fields_as_camel_case() {
+        // Regression: an internally-tagged enum's `rename_all` only renames
+        // variant names, not struct-variant field names — those need their
+        // own `rename_all` on the variant itself, or fields silently stay
+        // snake_case and the frontend reads `undefined`.
+        let status = ModelStatus::Downloading {
+            downloaded_bytes: 12_345_678,
+            total_bytes: Some(574_041_195),
+            progress: Some(0.5),
+        };
+        let json = serde_json::to_value(&status).unwrap();
+        assert_eq!(json["downloadedBytes"], 12_345_678);
+        assert_eq!(json["totalBytes"], 574_041_195);
+        assert!(json.get("downloaded_bytes").is_none());
+        assert!(json.get("total_bytes").is_none());
     }
 }

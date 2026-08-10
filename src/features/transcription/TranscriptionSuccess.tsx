@@ -17,12 +17,18 @@ export function TranscriptionSuccess({
   onNewFile,
 }: TranscriptionSuccessProps) {
   const [copied, setCopied] = useState(false);
+  const [openFolderError, setOpenFolderError] = useState(false);
 
   async function handleOpenFolder() {
+    // Reveal one of the generated files rather than the bare directory, so
+    // Finder opens directly on the output folder with its content visible.
+    const target = files[0]?.path ?? outputDir;
+    setOpenFolderError(false);
     try {
-      await invoke("open_output_folder", { path: outputDir });
-    } catch {
-      // Non-critical: the folder path is still shown to the user below.
+      await invoke("open_output_folder", { path: target });
+    } catch (error) {
+      console.error("Failed to reveal output folder in Finder:", error);
+      setOpenFolderError(true);
     }
   }
 
@@ -65,6 +71,11 @@ export function TranscriptionSuccess({
         <button type="button" className="button button--primary" onClick={handleOpenFolder}>
           Ouvrir le dossier
         </button>
+        {openFolderError && (
+          <p className="drop-zone__error" role="alert">
+            Impossible d'ouvrir le dossier.
+          </p>
+        )}
         <button
           type="button"
           className="button button--secondary"

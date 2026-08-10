@@ -61,9 +61,14 @@ pub fn get_transcription_status(state: State<'_, JobState>) -> Result<JobStatus,
         .map_err(|_| "transcription state lock poisoned".to_string())
 }
 
+/// Reveals a generated output file in Finder. `path` is expected to be one
+/// of the `.srt`/`.txt` files just written (not the bare directory) — the
+/// opener plugin reveals the containing folder with that file selected,
+/// which is the officially recommended way to "open a folder" and avoids
+/// depending on the plugin's separate open-path permission/scope.
 #[tauri::command]
 pub fn open_output_folder(app: AppHandle, path: String) -> Result<(), String> {
     app.opener()
-        .open_path(path, None::<&str>)
+        .reveal_item_in_dir(path)
         .map_err(|e| e.to_string())
 }

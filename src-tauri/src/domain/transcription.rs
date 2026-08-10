@@ -125,6 +125,7 @@ pub enum JobStatus {
         progress: Option<f32>,
     },
     WritingOutputs,
+    #[serde(rename_all = "camelCase")]
     Completed {
         output_dir: String,
         files: Vec<OutputFile>,
@@ -438,5 +439,24 @@ mod tests {
     #[test]
     fn wav_duration_rejects_non_riff_bytes() {
         assert_eq!(wav_duration_secs(b"not a wav file"), None);
+    }
+
+    #[test]
+    fn completed_status_serializes_fields_as_camel_case() {
+        // Regression: an internally-tagged enum's `rename_all` only renames
+        // variant names, not struct-variant field names — those need their
+        // own `rename_all` on the variant itself, or fields silently stay
+        // snake_case and the frontend reads `undefined` (this broke both the
+        // progress display and "Ouvrir le dossier").
+        let status = JobStatus::Completed {
+            output_dir: "/videos/Emission-IA-sous-titres".to_string(),
+            files: vec![],
+            transcript_text: Some("bonjour".to_string()),
+        };
+        let json = serde_json::to_value(&status).unwrap();
+        assert_eq!(json["outputDir"], "/videos/Emission-IA-sous-titres");
+        assert_eq!(json["transcriptText"], "bonjour");
+        assert!(json.get("output_dir").is_none());
+        assert!(json.get("transcript_text").is_none());
     }
 }
