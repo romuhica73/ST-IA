@@ -6,8 +6,12 @@ pub const MODEL_ID: &str = "large-v3-turbo-q5_0";
 pub const MODEL_FILE_NAME: &str = "ggml-large-v3-turbo-q5_0.bin";
 pub const MODEL_EXPECTED_SIZE: u64 = 574_041_195;
 pub const MODEL_SHA256: &str = "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2";
-pub const MODEL_DOWNLOAD_URL: &str =
-    "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin";
+/// Pinned to the exact commit of ggerganov/whisper.cpp on Hugging Face that
+/// was verified (both locally and via the server's own x-linked-size/
+/// x-linked-etag headers) to serve the qualified model — not `main`, which
+/// is a moving branch pointer that could be repointed to a different
+/// upload. See ADR-004 for the verification evidence.
+pub const MODEL_DOWNLOAD_URL: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-large-v3-turbo-q5_0.bin";
 
 /// Frontend-facing manifest info — no sha256 (irrelevant to the UI) and no
 /// generic catalog, just enough to render "Modèle requis" (name, size).

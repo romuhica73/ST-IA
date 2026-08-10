@@ -35,9 +35,13 @@ Représentation canonique unique (pas de structure générique multi-modèles) :
 | `file_name` | `ggml-large-v3-turbo-q5_0.bin` |
 | `expected_size` | `574041195` octets |
 | `sha256` | `394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2` |
-| `download_url` | `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin` |
+| `download_url` | `https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-large-v3-turbo-q5_0.bin` |
 
 Provenance : source officielle utilisée par le script `download-ggml-model.sh` du projet `ggml-org/whisper.cpp` lui-même (organisation Hugging Face `ggerganov/whisper.cpp`). Taille et SHA-256 calculés à partir du modèle déjà qualifié en M0B/M2 (`shasum -a 256`), puis confirmés indépendamment par les en-têtes HTTP du serveur (`x-linked-size: 574041195`, `x-linked-etag` identique) — le fichier hébergé est bit-à-bit identique à celui déjà qualifié.
+
+### Révision immuable
+
+L'URL n'utilise plus `resolve/main/...` (pointeur de branche mobile, potentiellement repointé vers un autre upload) mais `resolve/<commit>/...` avec le commit exact `5359861c739e955e79d9a303bcbc70fb988958b1` — révélé par l'en-tête `x-repo-commit` du serveur lors de la résolution de `main` au moment de la qualification. Les commits Git étant immuables, cette URL référence pour toujours le même fichier. Vérifié deux fois : (1) en-têtes HTTP sur l'URL épinglée (`x-linked-size: 574041195`, `x-linked-etag` identique au SHA-256 attendu) ; (2) téléchargement complet réel via cette URL épinglée, SHA-256 du fichier obtenu strictement identique à la valeur attendue. Le SHA-256 du manifeste reste la source de vérité pour l'intégrité — l'épinglage de révision est une protection supplémentaire, pas un remplacement de la vérification.
 
 ## États du modèle
 
@@ -67,7 +71,7 @@ Le frontend n'a accès à aucune primitive réseau générique. Trois commandes 
 
 ## Qualification du build empaqueté
 
-`pnpm tauri build` produit `ST-IA.app` avec le même code de gestion de modèle que le mode développement (aucune logique spécifique au packaging). Testé directement sur le binaire empaqueté (hors `pnpm tauri dev`) : détection `ready` correcte avec le modèle en place, démarrage sans erreur avec le modèle absent (fichier déplacé puis restauré de façon non destructive). Le téléchargement réel n'a pas été répété depuis le `.app` empaqueté : le code de téléchargement (`model.rs`) ne dépend d'aucune ressource propre au bundle (ni sidecar, ni chemin relatif à l'exécutable) et a déjà été prouvé de bout en bout en mode développement — le retester intégralement aurait seulement dupliqué un téléchargement de 547 Mo sans preuve supplémentaire.
+`pnpm tauri build` produit `ST-IA.app` avec le même code de gestion de modèle que le mode développement (aucune logique spécifique au packaging). Le workflow complet a été rejoué directement sur le binaire empaqueté (hors `pnpm tauri dev`, hors `scripts/provision-dev-model.sh`) : modèle déplacé hors de son emplacement canonique (sauvegarde non destructive conservée) → écran « Modèle requis » → téléchargement réel déclenché par clic utilisateur → taille reçue et SHA-256 strictement identiques aux valeurs attendues → promotion atomique confirmée (aucun `.download` résiduel) → transcription réelle de `IMG_8484.MOV` immédiatement enchaînée sans nouveau téléchargement → SRT/TXT produits, identiques aux tests précédents. Le `.app` empaqueté installe donc son propre modèle et transcrit sans aucune aide développeur.
 
 ## Interaction avec M2
 
