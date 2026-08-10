@@ -1,6 +1,7 @@
 mod cleanup;
 mod commands;
 mod domain;
+mod migration;
 mod model;
 mod pipeline;
 
@@ -18,6 +19,10 @@ pub fn run() {
             // Recover from a previous run that was killed mid-job before the
             // window is even shown.
             cleanup::run(app.handle());
+            // Adopt an existing model from the pre-release bundle identifier
+            // before the model manager runs its first detection, so an
+            // upgrading user is never asked to download it again.
+            migration::run(app.handle());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

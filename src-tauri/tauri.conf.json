@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "ST-IA",
   "version": "0.1.0",
-  "identifier": "com.romainbourbon.st-ia.dev",
+  "identifier": "com.romainbourbon.stia",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -34,6 +34,10 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": ["binaries/whisper-cli", "binaries/ffmpeg"]
+    "externalBin": ["binaries/whisper-cli", "binaries/ffmpeg"],
+    "resources": {
+      "../licenses/": "licenses/",
+      "../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md"
+    }
   }
 }
