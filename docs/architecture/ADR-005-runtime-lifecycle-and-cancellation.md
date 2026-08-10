@@ -2,9 +2,9 @@
 
 ## Statut
 
-**PROVISIONAL**
+**ACCEPTED**
 
-Le raisonnement, l'implémentation et les tests automatisés sont en place ; la qualification manuelle depuis l'application (annulation réelle pendant Whisper, fermeture pendant un job, retry sans redémarrage) reste à confirmer par l'utilisateur. Promotion en `ACCEPTED` uniquement après ces preuves.
+Qualifié manuellement depuis le `.app` empaqueté (voir Qualification manuelle) : annulation réelle pendant Whisper, retry sans redémarrage, fermeture de l'application pendant un job, média invalide. Les quatre scénarios sont passés, avec preuves au niveau processus et au niveau journal applicatif.
 
 ## Contexte
 
@@ -143,14 +143,31 @@ La fixture « vidéo sans audio » a été fabriquée avec un FFmpeg système, *
 
 Couverts par des tests unitaires : refus du double démarrage, libération de l'emplacement (retry), remise à zéro du drapeau d'annulation entre deux jobs, annulation sans effet à vide, suivi du workspace pour la fermeture, suppression du workspace par le garde RAII, non-publication d'un dossier de sortie partiel, publication des seules sorties demandées, sûreté des chemins de nettoyage (noms de workspace acceptés/refusés), classification des échecs FFmpeg, absence de fuite de stderr dans les messages utilisateur, sérialisation des états `cancelling`/`cancelled`, formule d'espace disque.
 
-Non couvert par des tests automatisés : la mort effective d'un processus enfant réel. Le type `CommandChild` du plugin shell ne peut pas être construit hors d'un contexte Tauri (`Command::new` est `pub(crate)`), ce qui rend ce scénario intestable en unitaire. Il relève donc de la qualification manuelle ci-dessous.
+Non couvert par des tests automatisés : la mort effective d'un processus enfant réel. Le type `CommandChild` du plugin shell ne peut pas être construit hors d'un contexte Tauri (`Command::new` est `pub(crate)`), ce qui rend ce scénario intestable en unitaire. Il a donc été qualifié manuellement (ci-dessous).
 
-### Qualification manuelle requise (à réaliser par l'utilisateur)
+### Qualification manuelle
 
-1. annulation pendant Whisper : processus vivant avant, absent après, aucun orphelin, workspace supprimé, aucune sortie publiée, aucun faux succès ;
-2. nouveau job après annulation, sans redémarrage, jusqu'au succès ;
-3. fermeture de l'application pendant un job : aucun `ffmpeg`/`whisper-cli` survivant, workspace nettoyé, réouverture saine ;
-4. média invalide : erreur métier, retry possible.
+Réalisée sur le `.app` empaqueté (jamais `pnpm tauri dev`), clics utilisateur réels, surveillance système en parallèle. Les processus enfants ont été identifiés par le **chemin de leur exécutable dans le bundle**, afin qu'un `ffmpeg` appartenant à une autre application ne puisse jamais être confondu avec un processus ST-IA.
+
+**Test A — annulation pendant Whisper.** whisper-cli PID 89075 actif pendant au moins 8 s (transcription en cours), puis clic sur « Annuler ». Après : processus absent, workspace `27712-…`-équivalent supprimé, **aucun dossier de sortie créé** par ce cycle, aucun orphelin. La terminaison est bien prématurée : un job mené à terme publie son dossier de sortie, ce qui n'a pas eu lieu.
+
+**Test B — retry sans redémarrage.** Dans la **même session applicative** (PID inchangé), un nouveau job a été accepté après l'annulation et mené jusqu'au bout : `IMG_8484.srt` (4959 o) et `IMG_8484.txt` (3428 o), SRT couvrant l'intégralité du média (premier segment à 00:00:00,920, dernier à 00:03:00,440). L'emplacement de job est donc bien libéré par le garde RAII.
+
+**Test C — fermeture pendant Whisper (⌘Q).** Preuve directe au niveau du journal applicatif :
+
+```text
+[st-ia] whisper-cli pid 44374
+[st-ia] shutdown: killed child pid 44374
+[st-ia] shutdown: removed temp workspace …/ST-IA/27712-1786366990859354000
+```
+
+Après fermeture : aucun `st-ia`, `ffmpeg` ni `whisper-cli` résiduel ; workspace supprimé ; aucune sortie incomplète publiée. À la réouverture : démarrage normal, `0 stale job dir(s)`, modèle toujours `valid=true`, application utilisable. Le scénario s'est reproduit à l'identique lors d'une seconde fermeture (`killed child pid 52965`).
+
+**Test D — média invalide.** Fixture de 8 Ko de données aléatoires en `.mov`. FFmpeg échoue (`exit 183`, `moov atom not found`, aucun WAV), la sentinelle « no audio » est absente donc l'erreur est classée `audioPreparationFailed` et non `noAudioTrack`. **whisper-cli n'est jamais lancé.** Le stderr de FFmpeg reste dans le journal développeur ; l'interface n'affiche que le message métier. Workspace supprimé, aucune sortie. Un nouveau fichier a ensuite pu être choisi et transcrit sans redémarrage.
+
+### Limite de couverture assumée
+
+L'annulation **pendant l'étape FFmpeg** n'a pas été observée en conditions réelles : sur les médias qualifiés, l'extraction audio dure moins de deux secondes, soit moins que l'intervalle d'échantillonnage. Le chemin de code est identique à celui de Whisper (même enregistrement de handle, même `kill`, même point de contrôle), et le Test D prouve que FFmpeg est bien lancé avec un PID suivi et un code de sortie exploité — mais la mort d'un FFmpeg sous annulation reste non mesurée.
 
 ## Conséquences
 

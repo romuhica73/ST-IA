@@ -45,3 +45,6 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Local, non-committed media fixtures used for manual qualification.
+test-media/private/
