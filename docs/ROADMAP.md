@@ -72,6 +72,8 @@ Résultat : gestionnaire de modèle prouvé de bout en bout, mode développement
 
 ## M4 — Robustesse
 
+Statut : `IN PROGRESS`
+
 Objectifs :
 
 * annulation ;
@@ -82,6 +84,8 @@ Objectifs :
 * absence audio ;
 * espace disque ;
 * modèle corrompu.
+
+Avancement : cycle de vie des jobs implémenté et couvert par tests unitaires (voir [ADR-005](architecture/ADR-005-runtime-lifecycle-and-cancellation.md)) — emplacement de job unique avec revendication atomique (double lancement refusé côté Rust), handles FFmpeg/whisper-cli détenus et tuables, annulation réelle, nettoyage des temporaires à la fermeture et récupération au démarrage, garde d'espace disque, classification des échecs FFmpeg vérifiée contre le sidecar réel. Qualification manuelle depuis l'application (annulation pendant Whisper, retry sans redémarrage, fermeture pendant un job, média invalide) à confirmer avant passage à `DONE` et promotion de l'ADR-005 en `ACCEPTED`.
 
 ## M5 — MVP macOS
 
