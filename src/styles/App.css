@@ -21,7 +21,7 @@
 .icon--xl {
   width: 56px;
   height: 56px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* ---------- Écran 1 — état vide ---------- */
@@ -61,7 +61,7 @@
 .drop-zone__link {
   font-size: 1rem;
   font-weight: 500;
-  color: var(--accent);
+  color: var(--accent-text);
   background: none;
   border: none;
   padding: 0;
@@ -202,7 +202,7 @@
 }
 
 .segmented__option--active {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-tint);
 }
 
@@ -335,7 +335,7 @@
   justify-content: center;
   border-radius: 10px;
   background: var(--accent-tint);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 1.3rem;
 }
 
@@ -354,7 +354,7 @@
 .progress-field__percent {
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .progress-bar {
@@ -507,7 +507,7 @@
 
 .output-badge--txt {
   background: var(--accent-tint);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .output-list__name {
@@ -569,7 +569,7 @@
   height: 72px;
   border-radius: 50%;
   background: var(--accent-tint);
-  color: var(--accent);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   justify-content: center;

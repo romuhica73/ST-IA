@@ -6,6 +6,10 @@
   --muted: #6e6e73;
   --border: #d8d8dc;
   --accent: #2f6fed;
+  /* Accent used as *text*. Split from --accent because that one also serves
+     as a button/checkbox background: lightening it for dark mode would wreck
+     the contrast of the white label sitting on top of it. */
+  --accent-text: #2f6fed;
   --accent-tint: rgba(47, 111, 237, 0.08);
   --error: #c0392b;
   --file-icon-bg: #e4e4e7;
@@ -19,6 +23,12 @@
     --fg: #f5f5f7;
     --muted: #9a9a9e;
     --border: #3a3a3c;
+    /* The light-mode blue and red only reach 3.7:1 and 3.1:1 against the dark
+       background — below the 4.5:1 needed for normal-size text. These lift
+       them to 6.1:1 and 6.0:1. --accent itself is unchanged so buttons keep
+       their white-on-blue contrast. */
+    --accent-text: #5b9dff;
+    --error: #ff6b5e;
     --accent-tint: rgba(47, 111, 237, 0.16);
     --file-icon-bg: #3a3a3c;
     --file-icon-border: #4c4c4e;
