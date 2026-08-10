@@ -4,6 +4,8 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et [Se
 
 ## [Unreleased]
 
+Cible de la release candidate : **0.1.0** (macOS Apple Silicon, MVP local). Aucun tag ni release publiée à ce stade.
+
 ### Added
 
 * Initialisation du repository ST-IA.
@@ -19,6 +21,8 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et [Se
 * Gestionnaire de modèle local (Mission 3) : téléchargement explicite du modèle `large-v3-turbo-q5_0` depuis Hugging Face (`get_model_status`, `get_model_manifest`, `install_model`), fichier temporaire pendant le téléchargement, vérification SHA-256, promotion atomique, écrans « Modèle requis » / téléchargement / vérification / modèle endommagé conformes au mockup 3. Fonctionnement hors ligne prouvé après installation. `scripts/provision-dev-model.sh` conservé comme outil développeur uniquement. ADR-004 — gestion et intégrité du modèle local, `ACCEPTED`.
 
 * Robustesse runtime et annulation (Mission 4) : emplacement de job unique avec revendication atomique côté Rust (double lancement réellement impossible, plus seulement un bouton désactivé), propriété explicite des processus enfants FFmpeg et whisper-cli (handles détenus dans l'état du job, jamais exposés au frontend), bouton « Annuler » fonctionnel tuant le processus actif avec états `cancelling`/`cancelled` émis après terminaison effective, nettoyage des workspaces temporaires à la fermeture de l'application (`RunEvent::ExitRequested`/`Exit`) et récupération au démarrage bornée aux répertoires ST-IA avec garde-fous stricts sur les noms, suppression des téléchargements `.download` interrompus au lancement suivant, garde d'espace disque avant lancement de FFmpeg (`statvfs`, `taille source + 256 Mio`), refus d'un téléchargement de modèle pendant une transcription, non-publication d'un dossier de sortie partiel en cas d'échec de copie, classification des échecs FFmpeg en erreurs métier sans fuite de stderr. Qualifié manuellement sur le `.app` empaqueté : annulation d'un Whisper en cours (processus tué, workspace supprimé, aucune sortie publiée), retry sans redémarrage jusqu'au succès, fermeture applicative pendant un job (aucun orphelin, workspace nettoyé, réouverture saine), média invalide (erreur métier, Whisper jamais lancé, retry possible). ADR-005 — cycle de vie des jobs, annulation et nettoyage, `ACCEPTED`.
+
+* Release candidate macOS 0.1.0 (Mission 5) : identifiant de production `com.romainbourbon.stia` (l'ancien `com.romainbourbon.st-ia.dev` était explicitement provisoire depuis l'ADR-002), avec migration automatique du modèle déjà installé sous l'ancien identifiant — déplacement atomique, vérifié, idempotent, sans aucun retéléchargement des 574 Mo. Réserve de portabilité Apple Silicon close : `whisper-cli` reconstruit avec `GGML_NATIVE=OFF`, sans `-mcpu=native` ni extensions SME/SME2 propres à la machine de build (qui auraient fauté sur M1/M2/M3), Metal conservé, sorties octet pour octet identiques pour environ 10 % de temps de transcription en plus. Garde-fou ajouté dans le script de build pour empêcher toute régression. Notices et textes de licence tiers embarqués dans le bundle (`THIRD_PARTY_NOTICES.md`, `licenses/`), checklist de release, validateur SRT, endurance qualifiée jusqu'à 60 minutes. ADR-006 — identité de production, portabilité du moteur et migration des données.
 
 ### Fixed
 

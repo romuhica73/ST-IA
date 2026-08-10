@@ -89,6 +89,8 @@ Résultat : cycle de vie des jobs prouvé de bout en bout sur le `.app` empaquet
 
 ## M5 — MVP macOS
 
+Statut : `IN PROGRESS`
+
 Objectifs :
 
 * UX finale ;
@@ -96,6 +98,8 @@ Objectifs :
 * `.app` ;
 * tests médias longs ;
 * validation DaVinci Resolve.
+
+Avancement : identité de production `com.romainbourbon.stia` adoptée et migration des données depuis l'ancien identifiant `.dev` prouvée sans retéléchargement (voir [ADR-006](architecture/ADR-006-release-identity-and-data-migration.md)). Réserve de portabilité Apple Silicon close : `whisper-cli` reconstruit avec `GGML_NATIVE=OFF`, sans `-mcpu=native` ni extension SME propre à la machine de build, Metal conservé, sorties octet pour octet identiques. Endurance 5/15/30/60 min mesurée, `.app` et `.dmg` produits, notices de licence embarquées. Restent le gate humain DaVinci Resolve et l'asset d'icône définitif avant passage à `DONE`.
 
 ## Post-MVP
 

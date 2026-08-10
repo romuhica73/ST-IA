@@ -33,9 +33,18 @@ whisper.cpp sidecar
 SRT + TXT
 ```
 
+## Configuration requise
+
+* macOS sur Apple Silicon (arm64) — M1 ou plus récent ;
+* environ 600 Mo d'espace disque pour le modèle, plus l'espace de travail temporaire d'une transcription.
+
+Intel n'est pas pris en charge. Il n'existe pas de build Windows.
+
 ## Statut
 
-Pré-MVP — pipeline de transcription local intégré avec gestionnaire de modèle (Mission 3).
+Release candidate locale `0.1.0` (Mission 5) : pipeline local complet, gestionnaire de modèle, annulation et récupération, endurance qualifiée jusqu'à 60 minutes.
+
+Non signée et non notarisée à ce stade : macOS affichera un avertissement Gatekeeper à la première ouverture. Voir [checklist de release](docs/release/RELEASE_CHECKLIST.md).
 
 ## Stack
 
@@ -79,5 +88,9 @@ scripts/provision-dev-model.sh /chemin/vers/ggml-large-v3-turbo-q5_0.bin
 * [ADR-002 — Architecture desktop](docs/architecture/ADR-002-desktop-architecture.md)
 * [ADR-003 — Pipeline local et packaging des moteurs](docs/architecture/ADR-003-local-transcription-pipeline.md)
 * [ADR-004 — Gestion et intégrité du modèle local](docs/architecture/ADR-004-model-management.md)
+* [ADR-005 — Cycle de vie des jobs, annulation et nettoyage](docs/architecture/ADR-005-runtime-lifecycle-and-cancellation.md)
+* [ADR-006 — Identité de production, portabilité et migration](docs/architecture/ADR-006-release-identity-and-data-migration.md)
+* [Checklist de release](docs/release/RELEASE_CHECKLIST.md)
+* [Composants tiers et licences](THIRD_PARTY_NOTICES.md)
 * [FFmpeg — sidecar et licence](docs/third-party/FFMPEG.md)
 * [Changelog](CHANGELOG.md)
