@@ -33,11 +33,20 @@ if [ "$ACTUAL_SHA" != "$PINNED_SHA" ]; then
   exit 1
 fi
 
-echo "==> Configuring whisper.cpp (static, Metal, arm64) at $ACTUAL_SHA"
+# GGML_NATIVE=OFF is the portability switch, and it is not optional for a
+# distributable build. With it ON (ggml's default), ggml asks clang to resolve
+# -mcpu=native and bakes the *build machine's* CPU into the binary — on an M4
+# that enables SME/SME2, which do not exist on M1/M2/M3 and would fault there.
+# With it OFF, ggml emits no -march/-mcpu at all and clang's arm64-apple-darwin
+# baseline applies, which still gives NEON/FMA/FP16/DOTPROD on every Apple
+# Silicon generation. See ADR-006 for the measured trade-off.
+echo "==> Configuring whisper.cpp (static, Metal, arm64, portable) at $ACTUAL_SHA"
+rm -rf "$BUILD_DIR"
 cmake -B "$BUILD_DIR" -S "$ENGINE_DIR" \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=OFF \
   -DGGML_STATIC=ON \
+  -DGGML_NATIVE=OFF \
   -DGGML_METAL=ON \
   -DGGML_METAL_EMBED_LIBRARY=ON \
   -DWHISPER_BUILD_EXAMPLES=ON \
@@ -49,6 +58,13 @@ echo "==> Building whisper-cli (Release)"
 cmake --build "$BUILD_DIR" --config Release --target whisper-cli -j"$(sysctl -n hw.ncpu)"
 
 BIN="$BUILD_DIR/bin/whisper-cli"
+
+echo "==> Verifying no build-machine-specific CPU targeting"
+if grep -rqE 'mcpu=native|march=native' "$BUILD_DIR" --include=flags.make --include=link.txt; then
+  echo "error: build used -mcpu=native/-march=native; binary would not be portable" >&2
+  grep -rnE 'mcpu=native|march=native' "$BUILD_DIR" --include=flags.make --include=link.txt >&2
+  exit 1
+fi
 
 echo "==> Verifying architecture and linkage"
 file "$BIN"
