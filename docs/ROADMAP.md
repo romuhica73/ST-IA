@@ -158,25 +158,36 @@ Correctif final : icône Settings remplacée (se lisait comme un soleil, pas des
 
 Voir [ADR-007](architecture/ADR-007-local-preferences-and-interface-localization.md) (`ACCEPTED`) pour le détail des décisions.
 
-## M8 — Open Source & Security Readiness (après M7, non commencée)
+## M8 — Open Source & Security Readiness (IN PROGRESS)
 
-Périmètre indicatif à couvrir lors d'une mission dédiée :
+Audit complet mené avant toute modification de code (findings first). Résultats dans
+[`docs/security/M8_SECURITY_REVIEW.md`](security/M8_SECURITY_REVIEW.md) et
+[`docs/security/OPEN_SOURCE_READINESS.md`](security/OPEN_SOURCE_READINESS.md).
 
-* secrets Git/historique ;
-* Tauri capabilities ;
-* CSP ;
-* IPC ;
-* dépendances Rust ;
-* dépendances JS ;
-* supply chain ;
-* sidecars ;
-* modèle ;
-* scripts de build ;
-* privacy ;
-* configuration sécurité GitHub ;
-* `SECURITY.md`.
+Couvert : threat model, audit du HEAD, audit exhaustif de l'historique Git, secrets,
+PII, `.gitignore`, surface des commandes Tauri, capabilities, validation des entrées
+IPC, sécurité du système de fichiers et du nettoyage, réglages, injection frontend,
+CSP, réseau/privacy, sécurité du modèle, sidecars, dépendances JS et Rust, supply
+chain, licences, fichiers open source, CI et Dependabot.
 
-Audit non commencé.
+Résultats : **0 secret** dans le dépôt et dans les 43 commits de l'historique
+(`gitleaks` + extraction manuelle des 265 blobs texte) — **aucune réécriture
+d'historique nécessaire**. **0 vulnérabilité** de dépendance (npm et Rust).
+3 findings MEDIUM, 2 LOW et 1 HARDENING corrigés : validation du chemin média à la
+frontière IPC, CSP restrictive appliquée et vérifiée sur build empaquetée, suppression
+du paramètre de chemin de `open_output_folder`, plafond de taille au téléchargement du
+modèle, refus des liens symboliques au nettoyage, client HTTPS strict. 11 tests
+supplémentaires (78 tests Rust au total), dont des tests adversariaux (traversée,
+liens symboliques, noms de fichiers hostiles, chaînes d'URL).
+
+**Réserve bloquante, non technique** : le projet n'a pas de licence principale
+(`PROJECT_LICENSE_DECISION_REQUIRED`). Un dépôt public sans licence reste sous
+copyright exclusif. Cette décision appartient à l'auteur et n'a pas été prise par M8.
+
+Reste à faire : qualification produit interactive sur le `.app` (gate humain), décision
+de licence, puis paramètres GitHub (recommandés dans
+[`docs/release/GITHUB_PUBLICATION_CHECKLIST.md`](release/GITHUB_PUBLICATION_CHECKLIST.md),
+non appliqués par M8).
 
 ## M9 — Public Release 0.1.0 (après M8, non commencée)
 
