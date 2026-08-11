@@ -16,6 +16,7 @@ import { useModelManager } from "./features/model-manager/useModelManager";
 import { useSettings } from "./features/settings/useSettings";
 import { useApplySettings } from "./features/settings/useApplySettings";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
+import { ThemeQuickAction } from "./features/settings/ThemeQuickAction";
 import { GearIcon } from "./features/settings/icons";
 import "./styles/App.css";
 
@@ -172,11 +173,13 @@ function App() {
   return (
     <main className="app">
       <div className="app-header">
+        <ThemeQuickAction theme={settings.theme} onChange={setTheme} />
         <button
           type="button"
-          className="app-header__gear"
+          className="app-header__button"
           onClick={() => setShowSettings(true)}
           aria-label={t("settings.open")}
+          title={t("settings.open")}
         >
           <GearIcon />
         </button>

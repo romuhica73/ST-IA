@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveLanguage, resolveMotion, resolveTheme } from "./resolve";
+import { nextThemePreference, resolveLanguage, resolveMotion, resolveTheme } from "./resolve";
 
 describe("resolveTheme", () => {
   it("explicit light/dark always wins over the system state", () => {
@@ -25,6 +25,20 @@ describe("resolveMotion", () => {
   it("system follows the OS query", () => {
     expect(resolveMotion("system", true)).toBe("reduce");
     expect(resolveMotion("system", false)).toBe("full");
+  });
+});
+
+describe("nextThemePreference", () => {
+  it("cycles system -> light -> dark -> system", () => {
+    expect(nextThemePreference("system")).toBe("light");
+    expect(nextThemePreference("light")).toBe("dark");
+    expect(nextThemePreference("dark")).toBe("system");
+  });
+
+  it("a full cycle of 3 clicks from the default returns to the default", () => {
+    let theme: Parameters<typeof nextThemePreference>[0] = "system";
+    for (let i = 0; i < 3; i++) theme = nextThemePreference(theme);
+    expect(theme).toBe("system");
   });
 });
 

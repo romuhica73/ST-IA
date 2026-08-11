@@ -89,14 +89,30 @@ export function SettingsPanel({
 
         <section className="settings-section">
           <h3 className="settings-section__title">{t("settings.about")}</h3>
-          <p className="settings-panel__tagline">{t("about.tagline")}</p>
-          {version && <p className="model-gate__subtitle">{t("about.version", { version })}</p>}
-          <p className="model-gate__subtitle">{t("about.localProcessing")}</p>
-          <details className="tech-details">
-            <summary>{t("about.licenses")}</summary>
-            <p className="settings-panel__license">FFmpeg 9.0 — LGPL-2.1</p>
-            <p className="settings-panel__license">whisper.cpp v1.9.2 — MIT</p>
-          </details>
+
+          <div className="about-group">
+            <p className="settings-panel__app-name">ST-IA</p>
+            {version && <p className="model-gate__subtitle">{t("about.version", { version })}</p>}
+            <p className="settings-panel__tagline">{t("about.tagline")}</p>
+          </div>
+
+          <div className="about-group about-group--divided">
+            <p className="model-gate__subtitle">{t("about.localProcessing")}</p>
+          </div>
+
+          <div className="about-group about-group--divided">
+            <p className="about-group__heading">{t("about.licenses")}</p>
+            <div className="third-party-list">
+              <div className="third-party-list__row">
+                <span className="third-party-list__name">FFmpeg 9.0</span>
+                <span className="third-party-list__license">LGPL-2.1</span>
+              </div>
+              <div className="third-party-list__row">
+                <span className="third-party-list__name">whisper.cpp v1.9.2</span>
+                <span className="third-party-list__license">MIT</span>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </div>

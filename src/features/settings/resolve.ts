@@ -31,3 +31,13 @@ export function resolveLanguage(
   if (preference === "fr" || preference === "en") return preference;
   return resolveSystemLanguage(systemLocale);
 }
+
+const THEME_CYCLE: readonly ThemePreference[] = ["system", "light", "dark"];
+
+/** One click of the header's quick-theme action: system → light → dark →
+ * system. Cycles the *preference*, the same one Settings → Appearance
+ * reads and writes — there is no second state to keep in sync. */
+export function nextThemePreference(current: ThemePreference): ThemePreference {
+  const index = THEME_CYCLE.indexOf(current);
+  return THEME_CYCLE[(index + 1) % THEME_CYCLE.length];
+}

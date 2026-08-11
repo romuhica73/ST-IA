@@ -164,6 +164,9 @@ const fr = {
     languageSystem: "Système",
     languageFrench: "Français",
     languageEnglish: "English",
+    themeQuickSystem: "Thème : Système. Passer en mode clair.",
+    themeQuickLight: "Thème : Clair. Passer en mode sombre.",
+    themeQuickDark: "Thème : Sombre. Revenir au thème système.",
   },
   about: {
     title: "À propos",

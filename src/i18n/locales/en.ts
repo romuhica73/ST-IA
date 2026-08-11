@@ -163,6 +163,9 @@ const en = {
     languageSystem: "System",
     languageFrench: "Français",
     languageEnglish: "English",
+    themeQuickSystem: "Theme: System. Switch to light mode.",
+    themeQuickLight: "Theme: Light. Switch to dark mode.",
+    themeQuickDark: "Theme: Dark. Return to system theme.",
   },
   about: {
     title: "About",
