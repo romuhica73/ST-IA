@@ -1,0 +1,80 @@
+name: CI
+
+# Gate de PR. Volontairement limité à ce qui est déterministe et reproductible :
+# rien ici ne dépend d'une base d'advisories externe qui pourrait changer sous nos
+# pieds et faire échouer une PR sans rapport avec son contenu (voir security.yml,
+# qui tourne séparément pour cette raison).
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend (build, types, tests)
+    # macOS arm64 : la seule cible qualifiée du projet. Le frontend seul
+    # tournerait sur ubuntu, mais garder un runner unique évite de laisser
+    # croire qu'une autre plateforme est supportée.
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # `pnpm build` est `tsc && vite build` : les erreurs de type font échouer
+      # la CI, il n'y a pas d'étape de typecheck séparée à ajouter.
+      - name: Build (typecheck + bundle)
+        run: pnpm build
+
+      - name: Unit tests
+        run: pnpm test
+
+  rust:
+    name: Rust (fmt, clippy, tests)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      # Tauri lit `frontendDist: ../dist` au moment de la compilation, donc le
+      # crate ne compile pas sans un dist/ présent. On le fabrique plutôt que
+      # de construire tout le frontend une seconde fois : ces jobs vérifient le
+      # Rust, et le job `frontend` couvre déjà le vrai build.
+      - name: Stub frontend dist
+        run: mkdir -p dist && echo '<!doctype html><title>ci</title>' > dist/index.html
+
+      - name: Format
+        working-directory: src-tauri
+        run: cargo fmt --check
+
+      - name: Clippy
+        working-directory: src-tauri
+        run: cargo clippy --all-targets -- -D warnings
+
+      # Couvre aussi tests/version_consistency.rs : package.json, Cargo.toml et
+      # tauri.conf.json doivent déclarer la même version.
+      - name: Tests
+        working-directory: src-tauri
+        run: cargo test

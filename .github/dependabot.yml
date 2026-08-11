@@ -1,0 +1,46 @@
+version: 2
+
+# Cadence hebdomadaire délibérée. ST-IA a ~165 paquets npm et ~505 crates
+# transitives ; une cadence quotidienne produirait un flux de PR que personne ne
+# relit sérieusement, ce qui est pire que pas de Dependabot du tout.
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # Ces paquets bougent ensemble ; les séparer produit des PR qui se
+      # cassent mutuellement.
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      tauri-js:
+        patterns: ["@tauri-apps/*"]
+      i18n:
+        patterns: ["i18next", "react-i18next"]
+      dev-tooling:
+        dependency-type: development
+    commit-message:
+      prefix: "chore"
+      include: scope
+
+  - package-ecosystem: cargo
+    directory: "/src-tauri"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      tauri:
+        patterns: ["tauri", "tauri-build", "tauri-plugin-*"]
+    commit-message:
+      prefix: "chore"
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "chore"

@@ -48,3 +48,50 @@ yarn-error.log*
 
 # Local, non-committed media fixtures used for manual qualification.
 test-media/private/
+test-media/
+
+# Secrets and local credentials. ST-IA has no account, no API key and no
+# backend, so nothing here should ever exist — these rules are here so that a
+# contributor experimenting locally cannot commit one by accident.
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.key
+*.keystore
+*.mobileprovision
+*.cer
+*.certSigningRequest
+secrets.json
+credentials.json
+
+# Signing / notarization material (M9). Never committed.
+*.entitlements.local
+notarization-*.json
+
+# Build artifacts produced by `pnpm tauri build`. The bundle lives under
+# src-tauri/target/ (already ignored); these cover a copy left at the root.
+*.dmg
+*.app/
+*.pkg
+
+# Downloaded Whisper models. The real location is Application Support, but a
+# 574 MB .bin must never be committable from anywhere in the tree.
+*.bin
+!src-tauri/icons/*.bin
+models/
+
+# Logs and crash dumps. The tracked spike logs under spike/out/ are
+# qualification evidence and are committed deliberately — they are matched by
+# name, not by this pattern.
+*.log
+!spike/out/**/*.log
+*.crash
+*.dmp
+
+# macOS metadata
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
