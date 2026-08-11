@@ -139,7 +139,7 @@ Validé humainement, convergé sur `main`.
 
 ## M7 — Settings, i18n, About & Versioning
 
-Statut : `IN PROGRESS`
+Statut : `DONE`
 
 Objectif : ajouter la couche « application configurable » — réglages persistants, interface bilingue FR/EN, écran À propos avec version réelle — sans toucher au moteur de transcription ni au pipeline.
 
@@ -154,7 +154,9 @@ Périmètre :
 * vérification automatisée de cohérence de version entre `package.json`, `Cargo.toml`, `tauri.conf.json` ;
 * sélecteur Rapide/Précis retiré (aucun comportement réel derrière, voir ADR-007 décision 7) — reporté en v0.2.
 
-Voir [ADR-007](architecture/ADR-007-local-preferences-and-interface-localization.md) (`PROVISIONAL`) pour le détail des décisions.
+Correctif final : icône Settings remplacée (se lisait comme un soleil, pas des réglages), action rapide de thème ajoutée dans la barre supérieure (Système → Clair → Sombre → Système, même préférence que Réglages → Apparence, aucune deuxième source de vérité), espacement de l'écran À propos amélioré (groupes séparés, licences tierces en rangées structurées, aucun nouveau contenu). Qualifié humainement en deux passes : gate fonctionnel (Settings, thème, langue, persistance, indépendance UI/transcription, accessibilité, À propos, parcours complet) puis gate visuel du correctif (icône, action rapide, espacement About) — tous confirmés.
+
+Voir [ADR-007](architecture/ADR-007-local-preferences-and-interface-localization.md) (`ACCEPTED`) pour le détail des décisions.
 
 ## M8 — Open Source & Security Readiness (après M7, non commencée)
 

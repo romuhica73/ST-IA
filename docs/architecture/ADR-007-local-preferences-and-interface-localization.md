@@ -2,9 +2,9 @@
 
 ## Statut
 
-**PROVISIONAL**
+**ACCEPTED**
 
-L'architecture, l'implémentation et les tests automatisés sont en place. Promotion en `ACCEPTED` après le gate humain (qualification manuelle sur le `.app` empaqueté — persistance, changement de langue à chaud, indépendance UI/transcription).
+Qualifiée humainement sur le `.app` empaqueté : Settings (ouverture/navigation/fermeture), thème Système/Clair/Sombre avec persistance à travers un redémarrage, langue Système/Français/English avec changement immédiat et persistance, indépendance stricte entre langue d'interface et langue de transcription (interface anglaise + transcription française sur média réel), réduction des animations, écran À propos avec version réelle, parcours média → transcription → SRT/TXT → Finder complet. Correctif final (icône Settings, action rapide de thème, espacement About) revalidé séparément — voir décision 8 ci-dessous.
 
 ## Contexte
 
@@ -58,6 +58,14 @@ Aucun code d'erreur Rust n'est renommé ni traduit côté Rust (`TranscriptionEr
 
 Le sélecteur « Rapide/Précis » n'avait aucun comportement réel : `mode` était un état local React jamais transmis à `start_transcription`, jamais lu par le backend. Le garder aurait exposé une fonctionnalité qui ment sur ce qu'elle fait. Retiré entièrement de l'écran média (§38) ; le seul comportement qualifié (`large-v3-turbo-q5_0`) devient implicite. `TranscriptionMode`, `BoltIcon`, `TargetIcon` supprimés (code mort). Documenté comme travail futur v0.2 dans la roadmap, non entamé ici.
 
+## Décision 8 — Action rapide de thème : une préférence, deux entrées
+
+Après le premier gate humain, l'icône d'accès aux réglages (cercle + rayons) a été signalée comme se lisant comme une icône de luminosité/soleil plutôt que comme des réglages — confirmé en rendant les deux designs côte à côte (via `qlmanage` sur des fichiers SVG statiques isolés, sans automatisation d'écran) avant correction. Remplacée par un vrai pictogramme d'engrenage (anneau plein + dents qui le chevauchent + trou central), le seul élément rempli plutôt qu'au trait de la famille d'icônes — les dents fines en simple contour ne se distinguaient pas proprement à 18px, `FileIcon` avait déjà ce même compromis pour la même raison.
+
+Une action rapide de thème est ajoutée à côté : un clic fait défiler `system → light → dark → system` (`nextThemePreference`, testée). Elle lit et écrit **exactement le même** `settings.theme` que Réglages → Apparence, via les mêmes `useSettings`/`useApplySettings` — aucune deuxième source de vérité, donc aucune synchronisation à maintenir : les deux contrôles ne peuvent pas diverger par construction, pas seulement par test. L'icône reflète la préférence choisie (écran pour Système, soleil pour Clair, lune pour Sombre), pas l'apparence macOS momentanément résolue. Chaque état porte un `aria-label`/`title` localisé décrivant l'état courant et l'action suivante.
+
+L'écran À propos a reçu un polish de mise en page pure (groupes séparés par un `border-top` et de l'espacement, licences tierces en rangées structurées) — aucun contenu nouveau, aucune décision architecturale.
+
 ## Conséquences
 
 * Un utilisateur macOS non francophone peut utiliser ST-IA en anglais dès le premier lancement (résolution automatique), sans jamais avoir à ouvrir les réglages.
@@ -67,6 +75,10 @@ Le sélecteur « Rapide/Précis » n'avait aucun comportement réel : `mode` ét
 
 ## Qualification
 
-Automatisée : 19 tests Vitest (résolution de locale y compris repli, parité stricte des clés FR/EN et absence de valeur vide, résolution thème/motion/langue y compris override forcé contre l'état système, `formatBytes` sensible à la langue) ; 10 tests Rust pour `Settings` (defaults, round-trip JSON, fichier vide/invalide/enum inconnu/champs manquants rejetés en bloc, champs inconnus tolérés) et la persistance fichier (round-trip, atomicité, repli sur fichier corrompu) ; 1 test d'intégration Rust pour la cohérence de version entre `package.json`, `Cargo.toml` et `tauri.conf.json`.
+Automatisée : 21 tests Vitest (résolution de locale y compris repli, parité stricte des clés FR/EN et absence de valeur vide, résolution thème/motion/langue y compris override forcé contre l'état système, `formatBytes` sensible à la langue, cycle de l'action rapide de thème) ; 10 tests Rust pour `Settings` (defaults, round-trip JSON, fichier vide/invalide/enum inconnu/champs manquants rejetés en bloc, champs inconnus tolérés) et la persistance fichier (round-trip, atomicité, repli sur fichier corrompu) ; 1 test d'intégration Rust pour la cohérence de version entre `package.json`, `Cargo.toml` et `tauri.conf.json`.
 
-Restant à qualifier manuellement (gate humain, section dédiée du rapport M7) : persistance réelle à travers un redémarrage de l'application, changement de langue à chaud observé visuellement, indépendance UI/transcription sur un média réel, accessibilité clavier des contrôles de réglages, absence de régression du splash/premier écran en mode réduit.
+Qualifiée manuellement sur le `.app` empaqueté, en deux passes :
+
+**Gate fonctionnel** : Settings (ouverture/navigation/fermeture) ; thème Système/Clair/Sombre avec persistance réelle à travers un redémarrage ; langue Système/Français/English avec changement immédiat et persistance ; indépendance stricte UI/transcription (interface anglaise, transcription française sur `IMG_8484.MOV`, fonctionnement normal) ; réduction des animations sans régression ; À propos avec version réelle et copie localisée ; parcours complet média → transcription → SRT/TXT → Finder.
+
+**Gate visuel correctif** : icône Settings compréhensible (engrenage, plus de confusion avec un soleil) ; bouton thème compréhensible ; cycle Système → Clair → Sombre → Système correct ; espacement et hiérarchie de l'écran À propos satisfaisants ; section Third-party/licences lisible.
