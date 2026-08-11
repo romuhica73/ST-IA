@@ -53,32 +53,39 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Graphite/anthracite, not the icon's navy glow — the icon is a mark,
-       the app chrome stays neutral so the accent reads clearly against it. */
-    --bg: #1a1c20;
-    --fg: #f2f3f5;
-    --muted: #9a9ea3;
-    --border: #34373d;
+/* Dark tokens live in exactly one place, keyed off [data-theme="dark"] —
+   not a prefers-color-scheme media query — so "System" and explicit "Dark"
+   never have two separate declaration blocks to keep in sync (see ADR-007).
+   main.tsx resolves the initial value synchronously (matchMedia is
+   available immediately, no async wait) and sets the attribute before
+   React ever renders, so there is no unstyled/wrong-theme flash to guard
+   against with a media-query fallback. useApplySettings keeps it live
+   afterwards (settings loading, and the OS theme changing while "System"
+   is selected). */
+:root[data-theme="dark"] {
+  /* Graphite/anthracite, not the icon's navy glow — the icon is a mark,
+     the app chrome stays neutral so the accent reads clearly against it. */
+  --bg: #1a1c20;
+  --fg: #f2f3f5;
+  --muted: #9a9ea3;
+  --border: #34373d;
 
-    /* The light-mode teal and red only reach 3.7:1 and 3.1:1 against this
-       background — below the 4.5:1 needed for normal-size text. These lift
-       them to 9.2:1 and 6.1:1. --accent itself is unchanged so buttons keep
-       their white-on-teal contrast. */
-    --accent-text: #2dd4bf;
-    --error: #ff6b5e;
-    --accent-tint: rgba(45, 212, 191, 0.14);
-    --error-tint: rgba(255, 107, 94, 0.14);
-    --success-text: #34d9b8;
-    --success-tint: rgba(18, 151, 122, 0.18);
+  /* The light-mode teal and red only reach 3.7:1 and 3.1:1 against this
+     background — below the 4.5:1 needed for normal-size text. These lift
+     them to 9.2:1 and 6.1:1. --accent itself is unchanged so buttons keep
+     their white-on-teal contrast. */
+  --accent-text: #2dd4bf;
+  --error: #ff6b5e;
+  --accent-tint: rgba(45, 212, 191, 0.14);
+  --error-tint: rgba(255, 107, 94, 0.14);
+  --success-text: #34d9b8;
+  --success-tint: rgba(18, 151, 122, 0.18);
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.3);
 
-    --file-icon-bg: #34373d;
-    --file-icon-border: #46494f;
-    --file-icon-fold: #26282c;
-  }
+  --file-icon-bg: #34373d;
+  --file-icon-border: #46494f;
+  --file-icon-fold: #26282c;
 }
 
 * {
@@ -91,20 +98,27 @@ body {
   color: var(--fg);
 }
 
-/* Safety net: collapses every transition/animation to imperceptible, so a
-   hover fade or a scale-on-drag-over effectively never moves. This alone is
-   not the fix for a *looping* animation, though — forcing an infinite
-   shimmer to one near-zero-duration iteration would strand it mid-loop
-   (e.g. translated off-screen) instead of removing the motion. The
+/* Collapses every transition/animation to imperceptible, so a hover fade or
+   a scale-on-drag-over effectively never moves. Keyed off [data-motion] —
+   not prefers-reduced-motion directly — for the same one-source-of-truth
+   reason as the theme tokens above: the motion setting has a "System"
+   option AND an explicit override in both directions (force reduce, force
+   full even if the OS asks for reduce), and a plain media query can only
+   express the OS state, never override it. main.tsx resolves "System"
+   synchronously (matchMedia is available immediately) before React's first
+   paint, so this is never actually unguarded in practice — a real
+   accessibility feature does not get weakened for the sake of avoiding one
+   attribute selector.
+   This alone is not the fix for a *looping* animation, though — forcing an
+   infinite shimmer to one near-zero-duration iteration would strand it
+   mid-loop (e.g. translated off-screen) instead of removing the motion. The
    indeterminate progress bar gets its own override in App.css that swaps
-   the loop for a static state, per the reduced-motion rules below. */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
-  }
+   the loop for a static state. */
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
 }

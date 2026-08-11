@@ -4,6 +4,7 @@ mod domain;
 mod migration;
 mod model;
 mod pipeline;
+mod settings;
 
 use tauri::RunEvent;
 
@@ -34,6 +35,9 @@ pub fn run() {
             commands::model::get_model_status,
             commands::model::get_model_manifest,
             commands::model::install_model,
+            settings::get_settings,
+            settings::save_settings,
+            settings::get_app_version,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");
