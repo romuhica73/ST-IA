@@ -22,11 +22,10 @@ rédiger : voir STIA-SEC-101.
 | MEDIUM | 3 | 3 |
 | LOW | 2 | 2 |
 | HARDENING | 1 | 1 |
-| INFORMATIONAL | 6 | 3 (3 documentés) |
+| INFORMATIONAL | 6 | 3 (3 documentés/acceptés) |
 
-**Un point bloquant subsiste, et il n'est pas technique** : le projet n'a pas de
-licence principale (STIA-SEC-201). C'est une décision utilisateur, pas un défaut de
-sécurité.
+**Aucun point bloquant ne subsiste.** La licence principale, seule réserve ouverte à
+l'issue de l'audit, a été tranchée par l'auteur : **MIT** (STIA-SEC-201, RESOLVED).
 
 Audits de dépendances : **0 vulnérabilité** côté npm, **0 vulnérabilité** côté Rust.
 Scan de secrets sur les 43 commits de l'historique : **0 finding**.
@@ -266,7 +265,7 @@ références des 6 PR déjà fusionnées.
 ### STIA-SEC-103 — Nom de média personnel référencé dans la documentation
 
 * **Severity:** INFORMATIONAL
-* **Status:** VALID — **décision utilisateur**
+* **Status:** **ACCEPTED / NO ACTION REQUIRED** (décision utilisateur)
 * **Component:** `docs/ROADMAP.md`, ADR-003/004/005/007
 
 **Evidence.** `IMG_8484.MOV` apparaît 28 fois dans la documentation comme fixture de
@@ -276,11 +275,13 @@ qualification.
 STIA-SEC-101, point 3). Il vit dans `mockups/`, correctement gitignoré. Seul le **nom**
 apparaît, et il révèle uniquement qu'il s'agit d'un enregistrement iPhone.
 
-**Recommandation : ne rien changer.** Ce nom est l'identifiant de la chaîne de preuves
-qui relie cinq ADR entre elles ; le remplacer par un nom générique casserait la
-traçabilité de la qualification sans gain de confidentialité réel. Si vous préférez
-malgré tout l'anonymiser, c'est une modification de documentation triviale (HEAD
-uniquement, sans réécriture d'historique) — dites-le et je la fais.
+**Décision de l'auteur : conserver les références.** Ce nom est l'identifiant de la
+chaîne de preuves qui relie cinq ADR entre elles ; le remplacer par un nom générique
+casserait la traçabilité de la qualification sans gain de confidentialité réel. Aucune
+donnée média personnelle n'est présente dans le dépôt ni dans son historique — seul le
+nom apparaît, dans de la documentation.
+
+**Aucune réécriture d'historique pour ce point.** Clos.
 
 ---
 
@@ -351,25 +352,37 @@ sujet M9, pas M8.
 
 ---
 
-### STIA-SEC-201 — Aucune licence principale pour le projet
+### STIA-SEC-201 — Licence principale du projet
 
-* **Severity:** **BLOQUANT pour l'ouverture** (non technique)
-* **Status:** **`PROJECT_LICENSE_DECISION_REQUIRED`**
+* **Severity:** ~~BLOQUANT pour l'ouverture~~ (non technique)
+* **Status:** **RESOLVED / MIT**
 
-**Evidence.** Aucun fichier `LICENSE` ni `COPYING` à la racine. `package.json` ne
-déclare aucun champ `license`. Le README ne mentionne que les licences **tierces**.
+**Constat initial (audit M8).** Aucun fichier `LICENSE` ni `COPYING` à la racine,
+aucun champ `license` dans `package.json` ni dans `Cargo.toml`. Du code publié sans
+licence reste sous **copyright exclusif par défaut** : les sources sont visibles, mais
+personne n'a le droit légal de les utiliser, de les modifier ou de les redistribuer.
+Un dépôt public dans cet état n'est pas un projet open source.
 
-**Impact.** Du code publié sans licence reste sous **copyright exclusif par défaut**.
-Personne n'a le droit légal de l'utiliser, de le modifier ni de le redistribuer, quand
-bien même les sources sont visibles. Un dépôt public sans licence n'est pas un projet
-open source.
+**Décision de l'auteur.** ST-IA est distribué sous **licence MIT**.
 
-**Aucune licence n'a été choisie par M8** — c'est une décision qui appartient à
-l'auteur. Voir `OPEN_SOURCE_READINESS.md` §Licence pour les implications factuelles des
-options courantes.
+**Remediation appliquée.**
 
-**Contrainte à connaître** : ST-IA distribue FFmpeg (LGPL-2.1) comme exécutable
-sidecar séparé. Voir STIA-SEC-202.
+* `LICENSE` à la racine — texte MIT standard, sans clause personnalisée,
+  `Copyright (c) 2026 Romain Bourbon` ;
+* `"license": "MIT"` dans `package.json` ;
+* `license = "MIT"` dans `src-tauri/Cargo.toml` ;
+* section « Licence » dans le README, énonçant explicitement que MIT couvre **le code
+  de ST-IA uniquement**.
+
+**Ce que cette décision ne change pas.** Les licences tierces sont inchangées et restent
+distinctes : FFmpeg conserve LGPL-2.1, whisper.cpp conserve MIT (sa propre MIT, pas
+celle de ST-IA), et `THIRD_PARTY_NOTICES.md` reste le document séparé qui les recense.
+Rien n'a été relicencié.
+
+**Compatibilité.** MIT est compatible avec les deux composants distribués : whisper.cpp
+est déjà MIT, et FFmpeg est distribué comme exécutable séparé, non lié — la LGPL
+n'impose donc pas ses termes au code de ST-IA. Voir STIA-SEC-202, qui reste ouvert
+indépendamment.
 
 ---
 
@@ -394,8 +407,11 @@ conformité LGPL, mais « largement considérée » n'est pas un avis juridique,
 mission n'est pas qualifiée pour en rendre un.
 
 **Ce n'est pas un défaut de sécurité.** C'est un point à faire confirmer avant une
-distribution publique large, en même temps que la décision de licence
-(STIA-SEC-201).
+distribution publique large.
+
+**Il reste ouvert indépendamment du choix de licence.** Le passage de ST-IA sous MIT
+(STIA-SEC-201) ne le clôt pas : la question porte sur la manière dont FFmpeg est
+distribué, pas sur la licence du code de ST-IA. `LEGAL_REVIEW_RECOMMENDED` demeure.
 
 ---
 

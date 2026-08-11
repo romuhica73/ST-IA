@@ -4,9 +4,9 @@ Date : 2026-08-11
 Périmètre : `feat/m8-open-source-security-readiness`
 Question : *le dépôt peut-il être rendu public ?*
 
-**Réponse : techniquement oui, légalement pas encore.** Un seul point bloque, et ce
-n'est pas un problème de sécurité — c'est une décision qui vous appartient : le projet
-n'a pas de licence.
+**Réponse : oui.** Le seul point qui bloquait — l'absence de licence principale — a été
+tranché par l'auteur : ST-IA est sous **licence MIT**. Aucun blocker de sécurité ni de
+confidentialité ne subsiste.
 
 ---
 
@@ -17,8 +17,8 @@ n'a pas de licence.
 | 1 | Secrets dans HEAD | ✅ | `gitleaks` + grep manuel sur ~30 motifs → 0 |
 | 2 | Secrets dans l'historique | ✅ | 43 commits scannés → 0. **Aucun fichier n'a jamais existé sans être dans HEAD** → pas de fichier supprimé où un secret pourrait subsister |
 | 3 | Réécriture d'historique | ✅ **non requise** | `HISTORY_REWRITE_REQUIRED` : NON |
-| 4 | Données privées / PII | ⚠️ mineur | Chemins dev nettoyés dans HEAD ; `IMG_8484.MOV` (nom seul, fichier jamais committé) laissé — décision utilisateur, STIA-SEC-103 |
-| 5 | **Licence principale** | ❌ **BLOQUANT** | Aucun fichier `LICENSE`. Voir §Licence |
+| 4 | Données privées / PII | ✅ | Chemins dev nettoyés dans HEAD ; `IMG_8484.MOV` (nom seul, fichier jamais committé) conservé — STIA-SEC-103 **ACCEPTED / NO ACTION REQUIRED** |
+| 5 | **Licence principale** | ✅ **MIT** | `LICENSE` à la racine + `package.json` + `Cargo.toml` + README. Voir §Licence |
 | 6 | Notices tierces | ✅ | `THIRD_PARTY_NOTICES.md`, `licenses/`, `docs/third-party/FFMPEG.md`, embarqués dans le bundle |
 | 7 | Documentation de build | ✅ | `docs/BUILDING.md` — prérequis, versions, tests, rebuild des sidecars, dépannage |
 | 8 | Quickstart utilisateur | ✅ | `docs/QUICKSTART.md` |
@@ -43,53 +43,49 @@ n'a pas de licence.
 
 ---
 
-## Licence — décision requise
+## Licence — MIT
 
-**C'est le seul point qui empêche de déclarer le dépôt open source.**
+**Décision de l'auteur : ST-IA est distribué sous licence MIT.**
+`PROJECT_LICENSE_DECISION_REQUIRED` → **RESOLVED / MIT**.
 
-Un dépôt public sans fichier `LICENSE` reste sous **copyright exclusif**. Le code est
-visible, mais personne n'a le droit de l'utiliser, de le modifier ou de le
-redistribuer. GitHub l'affichera comme « No license ».
+### Ce qui a été appliqué
 
-M8 **n'a pas choisi** de licence, délibérément. Voici les faits, sans recommandation.
+| Emplacement | Contenu |
+|---|---|
+| `LICENSE` | Texte MIT standard, `Copyright (c) 2026 Romain Bourbon`, aucune clause personnalisée |
+| `package.json` | `"license": "MIT"` |
+| `src-tauri/Cargo.toml` | `license = "MIT"` |
+| `README.md` | Section « Licence », avec la distinction explicite code ST-IA / composants tiers |
 
-### Contraintes qui s'appliquent à ST-IA
+GitHub détectera `LICENSE` et affichera « MIT license » sur la page du dépôt.
 
-* **Le code de ST-IA lui-même** (Rust + TypeScript) est original : vous êtes libre de
-  le licencier comme vous voulez.
-* **FFmpeg (LGPL-2.1)** est distribué comme *exécutable séparé*, pas lié. La LGPL
-  n'impose donc pas sa licence au code de ST-IA. Voir STIA-SEC-202 —
-  `LEGAL_REVIEW_RECOMMENDED` avant une distribution publique large.
-* **whisper.cpp (MIT)** est également un exécutable séparé, et MIT est compatible avec
-  tout.
-* **Le modèle Whisper** n'est pas redistribué : il est téléchargé depuis Hugging Face
-  par l'utilisateur.
+### Ce que MIT couvre — et ce qu'elle ne couvre pas
 
-Aucune de ces dépendances ne vous **force** la main.
+MIT couvre **le code de ST-IA uniquement** : le backend Rust, le frontend TypeScript,
+les scripts et la documentation de ce dépôt.
 
-### Options courantes — implications factuelles
+Les composants tiers distribués avec l'application **conservent chacun leur licence
+propre**, inchangée :
 
-| Licence | Ce qu'elle permet à un tiers | Ce qu'elle exige en retour |
+| Composant | Licence | Mode de distribution |
 |---|---|---|
-| **MIT** | Tout, y compris un produit commercial fermé | Conserver la notice de copyright |
-| **Apache-2.0** | Idem MIT | Idem, + notice des modifications ; inclut une **concession explicite de brevets** et une clause de représailles |
-| **GPL-3.0** | Utiliser, modifier, redistribuer | Toute redistribution, modifiée ou non, doit être sous GPL-3.0 avec les sources |
-| **AGPL-3.0** | Idem GPL-3.0 | Idem, **plus** : fournir les sources aussi en cas d'usage réseau |
-| Aucune | Rien légalement | — |
+| FFmpeg 9.0 | **LGPL-2.1** | Exécutable séparé dans le bundle, non lié |
+| whisper.cpp v1.9.2 | MIT (la sienne) | Exécutable séparé dans le bundle |
+| Modèle Whisper | — | **Non redistribué** — téléchargé depuis Hugging Face par l'utilisateur |
 
-Quelques éléments factuels, sans prendre parti :
+`THIRD_PARTY_NOTICES.md` reste le document distinct qui les recense, et les textes de
+licence restent embarqués dans `ST-IA.app/Contents/Resources/licenses/`.
+**Rien n'a été relicencié.**
 
-* MIT et Apache-2.0 maximisent l'adoption et n'empêchent pas une reprise commerciale
-  fermée.
-* GPL-3.0 empêche cette reprise fermée, au prix d'une adoption plus faible et d'une
-  incompatibilité avec certains écosystèmes.
-* AGPL-3.0 n'apporte rien de plus ici : ST-IA est une application de bureau locale,
-  sans usage réseau, donc la clause distinctive de l'AGPL ne se déclencherait jamais.
-* Apache-2.0 est la seule des quatre à traiter explicitement des brevets.
+### Compatibilité
 
-**Aucune ne peut être choisie à votre place.** Dites laquelle et j'ajoute le `LICENSE`,
-le champ `license` de `package.json`, celui de `Cargo.toml`, et l'en-tête du README dans
-un commit dédié.
+MIT est compatible avec les deux composants distribués. whisper.cpp est déjà MIT.
+FFmpeg est en LGPL-2.1 mais distribué comme **exécutable séparé**, invoqué par création
+de processus et jamais lié : la LGPL n'impose donc pas ses termes au code de ST-IA.
+
+Cela ne clôt pas STIA-SEC-202 : la manière dont FFmpeg est distribué reste un point à
+faire confirmer par un tiers qualifié (`LEGAL_REVIEW_RECOMMENDED`). C'est une question
+indépendante du choix de licence de ST-IA, et ce n'est pas un défaut de sécurité.
 
 ---
 
@@ -102,7 +98,9 @@ un commit dédié.
   le texte — **sans canal d'exfiltration** (CSP + FFmpeg sans réseau).
 
 ### Privacy
-* `IMG_8484.MOV` (nom seul) dans la documentation — STIA-SEC-103.
+* `IMG_8484.MOV` (nom seul) dans la documentation — STIA-SEC-103, **accepté, clos**.
+  Le fichier média n'a jamais été committé ; aucune donnée média personnelle n'est
+  présente dans le dépôt ni dans son historique.
 * L'adresse e-mail de l'auteur est dans les métadonnées des commits. C'est le
   fonctionnement normal de Git et elle est **déjà publique** via les 6 PR fusionnées de
   ce dépôt. Si vous ne le souhaitez pas, cela demande une réécriture d'historique —
@@ -115,8 +113,9 @@ un commit dédié.
 * 17 warnings RustSec `unmaintained`, aucun atteignable sur macOS.
 
 ### Légal / licence
-* **Pas de licence principale** — bloquant, STIA-SEC-201.
-* Conformité LGPL de FFmpeg : `LEGAL_REVIEW_RECOMMENDED`, STIA-SEC-202.
+* Licence principale : **MIT, résolue** (STIA-SEC-201). Plus de blocker.
+* Conformité LGPL de FFmpeg : **`LEGAL_REVIEW_RECOMMENDED`**, STIA-SEC-202 — ouvert,
+  indépendant du choix de licence, non bloquant pour la sécurité.
 
 ### Distribution publique
 * Pas de signature ni de notarisation Apple — les utilisateurs verront un
@@ -127,12 +126,17 @@ un commit dédié.
 
 ## Verdict
 
-**Prêt techniquement.** Aucun secret, aucune réécriture d'historique nécessaire, aucune
-vulnérabilité de dépendance, surface IPC bornée et testée, CSP appliquée et vérifiée sur
-build empaquetée, propriété local-first prouvée empiriquement.
+**Prêt techniquement et légalement.** Aucun secret, aucune réécriture d'historique
+nécessaire, aucune vulnérabilité de dépendance, surface IPC bornée et testée, CSP
+appliquée et vérifiée sur build empaquetée, propriété local-first prouvée
+empiriquement, licence principale MIT en place.
 
-**Pas encore déclarable open source** tant que la licence principale n'est pas choisie.
+Réserves restantes, aucune n'étant un blocker de sécurité ou de confidentialité :
 
-La qualification produit interactive sur le `.app` (Réglages, FR/EN, thème,
-transcription réelle, SRT/TXT, Finder, annulation, retry) reste un **gate humain** :
-elle demande un humain devant l'application.
+* `PUBLIC_DISTRIBUTION_SIGNING_PENDING` — signature Developer ID et notarisation
+  Apple, prévues pour M9 ;
+* `LEGAL_REVIEW_RECOMMENDED` — mode de distribution de FFmpeg sous LGPL
+  (STIA-SEC-202) ;
+* reproductibilité des sidecars — deux binaires suivis dans Git, non vérifiables
+  trivialement par un contributeur ; compromis documenté (STIA-SEC-106), à
+  reconsidérer en M9.

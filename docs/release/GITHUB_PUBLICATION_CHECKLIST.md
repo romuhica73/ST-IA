@@ -9,10 +9,12 @@ du dépôt, délibérément — cela demande une autorisation explicite.
 
 ## 1. Avant de basculer en public
 
-- [ ] **Licence choisie et committée** — bloquant, voir `docs/security/OPEN_SOURCE_READINESS.md`
-      (`LICENSE` à la racine + champ `license` dans `package.json` et `Cargo.toml`)
+- [x] **Licence choisie et committée** — **MIT** (`LICENSE` à la racine, champ `license`
+      dans `package.json` et `Cargo.toml`, section dédiée du README). Vérifier après le
+      passage en public que GitHub affiche bien « MIT license » sur la page du dépôt.
 - [ ] `docs/security/M8_SECURITY_REVIEW.md` relu, aucun finding HIGH/CRITICAL ouvert
-- [ ] Décision prise sur STIA-SEC-103 (`IMG_8484.MOV` dans la doc)
+- [x] Décision prise sur STIA-SEC-103 (`IMG_8484.MOV` dans la doc) — **conservé**,
+      fichier jamais committé, aucune action requise
 - [ ] Décision prise sur l'adresse e-mail dans les métadonnées de commits
 - [ ] `LEGAL_REVIEW_RECOMMENDED` (LGPL FFmpeg, STIA-SEC-202) traité ou accepté
 - [ ] Rejouer `gitleaks git --log-opts="--all"` sur le `main` final → 0 finding
