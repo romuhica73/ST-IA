@@ -1,4 +1,4 @@
-import { LockIcon } from "../media-selection/icons";
+import { AudioWaveIcon, LockIcon } from "../media-selection/icons";
 import { realProgress, stageState, type StageKey } from "./stages";
 import type { JobStatus } from "./types";
 
@@ -33,7 +33,7 @@ export function TranscriptionProgress({
     <div className="job">
       <div className="file-card">
         <div className="file-card__icon-audio" aria-hidden="true">
-          ♪
+          <AudioWaveIcon />
         </div>
         <div className="file-card__info">
           <p className="file-card__name">{fileName}</p>
@@ -64,7 +64,7 @@ export function TranscriptionProgress({
       {cancelling ? (
         // The per-stage list is meaningless once we are tearing the job
         // down, and showing every step as "done" would read as a success.
-        <p className="model-gate__subtitle">Arrêt du traitement en cours…</p>
+        <p className="model-gate__subtitle fade-in">Arrêt du traitement en cours…</p>
       ) : (
         <ul className="steps">
           {STEPS.map((step) => {

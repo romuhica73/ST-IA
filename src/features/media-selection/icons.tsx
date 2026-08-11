@@ -130,6 +130,56 @@ export function SizeIcon() {
   );
 }
 
+export function CheckCircleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width="26" height="26" aria-hidden="true">
+      <path
+        d="M6 12.5 10 16l8-9"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function WarningIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width="24" height="24" aria-hidden="true">
+      <path d="M12 8.5v5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="12" cy="16.3" r="1.1" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function AudioWaveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width="22" height="22" aria-hidden="true">
+      <path
+        d="M3 12h2.2l1.6-5.5L9.4 17l2.4-10.5L14 15l1.6-6h1.6M19 12h2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function SparkleIcon() {
+  return (
+    <svg className="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 4.5c.4 2.6 1 4 2 5.3 1.2 1 2.6 1.6 5 2-2.4.4-3.8 1-5 2-1 1.3-1.6 2.7-2 5.3-.4-2.6-1-4-2-5.3-1.2-1-2.6-1.6-5-2 2.4-.4 3.8-1 5-2 1-1.3 1.6-2.7 2-5.3Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function FileIcon({ kind }: { kind: "video" | "audio" }) {
   return (
     <svg width="48" height="56" viewBox="0 0 48 56" fill="none" aria-hidden="true">

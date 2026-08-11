@@ -1,3 +1,4 @@
+import { WarningIcon } from "../media-selection/icons";
 import type { TranscriptionErrorCode } from "./types";
 
 interface TranscriptionFailureProps {
@@ -34,7 +35,7 @@ export function TranscriptionFailure({
     <div className="job">
       <div className="result-header">
         <div className="result-header__icon result-header__icon--error" aria-hidden="true">
-          !
+          <WarningIcon />
         </div>
         <p className="result-header__title">{ERROR_TITLES[code]}</p>
         <p className="result-header__subtitle">{message}</p>

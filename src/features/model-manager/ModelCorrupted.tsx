@@ -1,3 +1,5 @@
+import { WarningIcon } from "../media-selection/icons";
+
 interface ModelCorruptedProps {
   onReinstall: () => void;
 }
@@ -7,7 +9,7 @@ export function ModelCorrupted({ onReinstall }: ModelCorruptedProps) {
     <div className="job">
       <div className="result-header">
         <div className="result-header__icon result-header__icon--error" aria-hidden="true">
-          !
+          <WarningIcon />
         </div>
         <p className="result-header__title">Modèle endommagé</p>
         <p className="result-header__subtitle">

@@ -16,7 +16,7 @@ export function MediaDropZone({
     <div className="home">
       <div className={`drop-zone ${isDragging ? "drop-zone--active" : ""}`}>
         <CloudUploadIcon />
-        <p className="drop-zone__title">Déposez votre vidéo ici</p>
+        <p className="drop-zone__title">Déposez votre média ici</p>
         <button type="button" className="drop-zone__link" onClick={onSelectClick}>
           ou sélectionner un fichier
         </button>

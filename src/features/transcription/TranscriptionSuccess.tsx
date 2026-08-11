@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { formatBytes } from "../media-selection/formatBytes";
+import { CheckCircleIcon, SparkleIcon } from "../media-selection/icons";
 import type { OutputFile } from "./types";
 
 interface TranscriptionSuccessProps {
@@ -46,8 +47,8 @@ export function TranscriptionSuccess({
   return (
     <div className="job">
       <div className="result-header">
-        <div className="result-header__icon" aria-hidden="true">
-          ✓
+        <div className="result-header__icon result-header__icon--success" aria-hidden="true">
+          <CheckCircleIcon />
         </div>
         <p className="result-header__title">Sous-titres générés</p>
         <p className="result-header__subtitle">
@@ -89,7 +90,10 @@ export function TranscriptionSuccess({
         </button>
       </div>
 
-      <p className="home__footer home__footer--sparkle">✨ Prêt pour DaVinci Resolve</p>
+      <p className="home__footer home__footer--sparkle">
+        <SparkleIcon />
+        Prêt pour DaVinci Resolve
+      </p>
     </div>
   );
 }
