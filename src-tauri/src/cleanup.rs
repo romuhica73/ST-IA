@@ -16,8 +16,14 @@ use crate::domain::transcription::is_removable_job_dir_name;
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
 
-/// ST-IA's own subdirectory of the system temp dir. Job workspaces live
-/// directly inside it; nothing else does.
+/// ST-IA's own subdirectory of the system temp dir.
+///
+/// Job workspaces live directly inside it — but they are *not* the only thing
+/// there. WKWebView namespaces its own scratch space by process name and
+/// creates a `WebKit/` directory in this exact path, observed on a packaged
+/// release build. That makes the `<pid>-<nanos>` name check in
+/// `clean_stale_job_dirs` load-bearing rather than merely defensive: without
+/// it, startup cleanup would delete the WebView's working directory.
 pub fn temp_root() -> PathBuf {
     std::env::temp_dir().join("ST-IA")
 }
@@ -45,7 +51,23 @@ fn clean_stale_job_dirs(root: &Path) -> usize {
     let mut removed = 0;
     for entry in entries.flatten() {
         let path = entry.path();
-        if !path.is_dir() {
+        // `symlink_metadata` rather than `is_dir()`: `is_dir()` follows the
+        // link, so a symlink named like a job directory would be reported as
+        // a directory and handed to `remove_dir_all` while pointing
+        // somewhere we never meant to touch. We only ever delete a real
+        // directory we created, so a symlink is always the wrong thing here
+        // regardless of where it points — no need to resolve it to decide.
+        let Ok(meta) = std::fs::symlink_metadata(&path) else {
+            continue;
+        };
+        if meta.file_type().is_symlink() {
+            eprintln!(
+                "[st-ia] startup cleanup: skipping symlink {}",
+                path.display()
+            );
+            continue;
+        }
+        if !meta.is_dir() {
             continue;
         }
         let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
@@ -118,6 +140,49 @@ mod tests {
 
         assert_eq!(clean_stale_job_dirs(root.path()), 0);
         assert!(file.exists());
+    }
+
+    #[test]
+    fn never_follows_a_job_shaped_symlink() {
+        // Adversarial: a symlink whose *name* passes the job-name check but
+        // which points outside the temp root. `is_dir()` would have reported
+        // it as a directory; the target and the link must both survive.
+        let root = tempfile::tempdir().unwrap();
+        let elsewhere = tempfile::tempdir().unwrap();
+        let precious = elsewhere.path().join("precious.txt");
+        std::fs::write(&precious, b"user data").unwrap();
+
+        let link = root.path().join("1234-56789");
+        std::os::unix::fs::symlink(elsewhere.path(), &link).unwrap();
+
+        let removed = clean_stale_job_dirs(root.path());
+
+        assert_eq!(removed, 0, "a symlink is never a job workspace");
+        assert!(precious.is_file(), "symlink target must be untouched");
+        assert!(
+            std::fs::symlink_metadata(&link).is_ok(),
+            "the link itself must be left alone too"
+        );
+    }
+
+    #[test]
+    fn traversal_shaped_names_are_not_job_dirs() {
+        // Belt and braces: these can only appear if something other than this
+        // app created them, and none of them may ever be treated as ours.
+        for hostile in [
+            "..",
+            ".",
+            "../..",
+            "..-..",
+            "1234-56789/../..",
+            "-",
+            "1234-",
+        ] {
+            assert!(
+                !is_removable_job_dir_name(hostile),
+                "{hostile:?} must not be removable"
+            );
+        }
     }
 
     #[test]

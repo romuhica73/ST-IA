@@ -206,7 +206,21 @@ async fn download_to_temp(
         "[st-ia] model download starting: {}",
         model::MODEL_DOWNLOAD_URL
     );
-    let client = reqwest::Client::new();
+    // `https_only` is the meaningful setting here: the pinned URL is HTTPS,
+    // but the default redirect policy would happily follow a 30x to plain
+    // http, and Hugging Face does redirect this URL to its CDN. The SHA-256
+    // check downstream already makes a swapped file unusable, so this is
+    // about not silently downgrading the transport — not about integrity.
+    // The redirect limit is kept (a CDN hop is expected) but bounded, and
+    // the connect timeout stops a black-holed host from hanging the UI's
+    // "Downloading" state forever. No timeout on the body: a 574 MB
+    // download on a slow link is legitimately long.
+    let client = reqwest::Client::builder()
+        .https_only(true)
+        .redirect(reqwest::redirect::Policy::limited(5))
+        .connect_timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| ModelError::network(format!("client HTTP indisponible : {e}")))?;
     let response = client
         .get(model::MODEL_DOWNLOAD_URL)
         .send()
@@ -231,9 +245,24 @@ async fn download_to_temp(
     while let Some(chunk) = stream.next().await {
         let chunk =
             chunk.map_err(|e| ModelError::network(format!("connexion interrompue : {e}")))?;
+        downloaded += chunk.len() as u64;
+        // Stop the moment the response exceeds the one size we will ever
+        // accept. Without this the loop writes whatever the server chooses
+        // to keep sending — a hostile or compromised endpoint could fill the
+        // disk long before the SHA-256 check at the end ever got to reject
+        // the result. Integrity was already covered; this bounds the cost of
+        // finding out.
+        if downloaded > model::MODEL_EXPECTED_SIZE {
+            eprintln!(
+                "[st-ia] model download aborted: server sent more than the expected {} bytes",
+                model::MODEL_EXPECTED_SIZE
+            );
+            return Err(ModelError::network(
+                "le fichier reçu dépasse la taille attendue.".to_string(),
+            ));
+        }
         file.write_all(&chunk)
             .map_err(|e| ModelError::write(e.to_string()))?;
-        downloaded += chunk.len() as u64;
 
         let downloaded_mb = downloaded / (1024 * 1024);
         if downloaded_mb >= last_logged_mb + 20 {
