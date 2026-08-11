@@ -113,11 +113,13 @@ Non planifiée, non commencée. À étudier dans une mission ultérieure :
 
 Pas d'implémentation, pas de nouveau modèle, pas de champ UI dans cette entrée.
 
-## M6 — Visual Polish & Motion (future, non commencée)
+## M6 — Visual Polish & Motion
 
-Objectif indicatif : améliorer l'identité visuelle et le ressenti de ST-IA sans modifier son architecture fonctionnelle.
+Statut : `IN PROGRESS`
 
-À couvrir plus tard :
+Objectif : améliorer l'identité visuelle et le ressenti de ST-IA sans modifier son architecture fonctionnelle.
+
+Périmètre :
 
 * hiérarchie visuelle ;
 * micro-interactions ;
@@ -129,7 +131,9 @@ Objectif indicatif : améliorer l'identité visuelle et le ressenti de ST-IA san
 * motion accessible ;
 * réduction des animations si macOS `prefers-reduced-motion`.
 
-Rien codé pour M6 à ce stade.
+Avancement : identité visuelle dérivée de l'icône ST-IA (teal-cyan `#0c7180`/`#2dd4bf` échantillonné sur le dégradé réel de l'icône, calmé pour un usage UI — pas de neon, pas de gradient dans le chrome), remplaçant le bleu générique précédent. Fond graphite/anthracite en dark mode (`#1a1c20`) plutôt qu'un simple inversé. Tokens formalisés (rayons, ombre unique très subtile, échelle de motion `100–320ms`) réutilisés dans tous les écrans. Icônes glyphe (`✓`, `!`, `♪`, `✨`) remplacées par des SVG cohérents avec la famille existante. Zone de dépôt avec retour drag-over renforcé (échelle + halo, sobre). Boutons dotés d'états hover/active/focus-visible complets. Écran de progression : marqueurs d'étape animés à l'achèvement, barre indéterminée plus calme. Écran de succès : check en scale-in, liste des fichiers en apparition échelonnée. Écrans d'erreur passés d'un remplissage rouge plein à une icône teintée (rouge réservé à l'icône, jamais un bloc plein) — nettement moins anxiogène. `prefers-reduced-motion` respecté : coupe globale des durées/animations, avec un cas particulier traité explicitement (la barre de progression indéterminée passe à un état statique plutôt que d'être figée à mi-course par la règle générale). Toutes les corrections de contraste AA de M5 revérifiées et conservées, plus deux nouveaux tokens texte-sûrs (`--success-text` clair/sombre) pour le badge SRT qui ne les avait pas. Correction de microcopie : « Déposez votre vidéo ici » → « Déposez votre média ici » (incohérent avec le support audio existant).
+
+Réserve : la validation par capture d'écran automatisée (§28) n'a pas pu être produite — trois tentatives via automatisation d'accessibilité macOS ont chacune capturé incidemment une fenêtre ou un panneau étranger à ST-IA exposant des noms de fichiers/dossiers personnels ; chaque capture a été supprimée immédiatement sans être exploitée. Validation visuelle déférée au gate GUI humain (§29).
 
 ## Future — Open Source / Sécurité (après M6, non commencée)
 
