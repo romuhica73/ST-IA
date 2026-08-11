@@ -1,3 +1,4 @@
+use crate::domain::media::validate_media_path;
 use crate::domain::transcription::{JobStatus, OutputSelection, TranscriptionError};
 use crate::pipeline::{self, JobState, StartRequest};
 use tauri::{AppHandle, State};
@@ -24,6 +25,20 @@ pub async fn start_transcription(
     if outputs.is_empty() {
         return Err(TranscriptionError::no_output_selected());
     }
+
+    // `media_path` arrives from the WebView, so it is attacker-controlled the
+    // moment any script runs there — `inspect_media` having validated it
+    // earlier proves nothing, since nothing forces a caller to go through
+    // that command first. Re-validating here is what actually bounds the
+    // pipeline: it is the only place between the IPC boundary and
+    // `build_ffmpeg_args`/`resolve_output_dir`, the latter deriving the
+    // *output* directory from this same path — an unchecked value would let
+    // a compromised frontend both transcribe any readable media on the disk
+    // and create a `<path>-sous-titres/` folder anywhere the user can write.
+    // `validate_media_path` bounds it to an existing, non-empty, readable,
+    // regular file with one of the six supported extensions.
+    validate_media_path(&input.media_path)
+        .map_err(|_| TranscriptionError::audio_preparation_failed())?;
 
     // Atomic test-and-set: claiming the slot and spawning the task are not
     // separated by a window in which a second call could also see "idle".
@@ -57,14 +72,32 @@ pub fn cancel_transcription(app: AppHandle, state: State<'_, JobState>) -> Resul
     Ok(())
 }
 
-/// Reveals a generated output file in Finder. `path` is expected to be one
-/// of the `.srt`/`.txt` files just written (not the bare directory) — the
-/// opener plugin reveals the containing folder with that file selected,
-/// which is the officially recommended way to "open a folder" and avoids
-/// depending on the plugin's separate open-path permission/scope.
+/// Reveals the current job's generated output in Finder.
+///
+/// Takes no path: the target is derived entirely from the backend's own
+/// `Completed` job state, so there is no frontend-supplied filesystem path to
+/// validate in the first place. Previously the frontend passed the path it
+/// wanted revealed, which meant any script running in the WebView could ask
+/// Finder to open an arbitrary location and use the ok/err answer to probe
+/// what exists on disk. Revealing a *file* (rather than opening the bare
+/// directory) is still the mechanism — it opens the containing folder with
+/// that file selected, and keeps us on `reveal-item-in-dir` alone, never the
+/// opener plugin's broader open-path permission.
 #[tauri::command]
-pub fn open_output_folder(app: AppHandle, path: String) -> Result<(), String> {
+pub fn open_output_folder(app: AppHandle, state: State<'_, JobState>) -> Result<(), String> {
+    let JobStatus::Completed {
+        output_dir, files, ..
+    } = state.status()
+    else {
+        return Err("no completed transcription to reveal".to_string());
+    };
+
+    let target = files
+        .first()
+        .map(|file| file.path.clone())
+        .unwrap_or(output_dir);
+
     app.opener()
-        .reveal_item_in_dir(path)
+        .reveal_item_in_dir(target)
         .map_err(|e| e.to_string())
 }

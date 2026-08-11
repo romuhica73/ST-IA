@@ -197,4 +197,91 @@ mod tests {
             .expect_err("should be rejected");
         assert_eq!(err.code, MediaErrorCode::NotFound);
     }
+
+    // The tests below are the ones `start_transcription` leans on: this
+    // function is the only bound on a path that arrives from the WebView, so
+    // it has to hold for values no file picker would ever produce.
+
+    #[test]
+    fn rejects_a_directory_even_with_a_media_extension() {
+        let dir = std::env::temp_dir().join(format!("st_ia_test_dir_{}.mp4", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let err = validate_media_path(&dir.to_string_lossy()).expect_err("should be rejected");
+        assert_eq!(err.code, MediaErrorCode::NotFound);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn rejects_a_url_shaped_input() {
+        // Not a filesystem path at all. The ffmpeg sidecar is built with
+        // only the `file` protocol so it could not fetch this anyway, but
+        // the pipeline must refuse it before that ever matters.
+        for hostile in [
+            "http://example.com/x.mp4",
+            "https://example.com/x.mov",
+            "concat:/etc/passwd",
+            "pipe:0",
+        ] {
+            let err = validate_media_path(hostile).expect_err("{hostile} should be rejected");
+            assert_eq!(err.code, MediaErrorCode::NotFound);
+        }
+    }
+
+    #[test]
+    fn rejects_traversal_that_does_not_resolve_to_a_media_file() {
+        for hostile in [
+            "../../../../etc/passwd",
+            "/etc/passwd",
+            "/etc/../etc/passwd",
+            "",
+        ] {
+            assert!(
+                validate_media_path(hostile).is_err(),
+                "{hostile:?} must be rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_an_extensionless_file() {
+        let file = TempFile::new("no-extension", b"bytes");
+        let err = validate_media_path(&file.path_str()).expect_err("should be rejected");
+        assert_eq!(err.code, MediaErrorCode::Unsupported);
+    }
+
+    #[test]
+    fn accepts_hostile_but_legitimate_file_names() {
+        // A real user's file can contain spaces, unicode, quotes and things
+        // that look like shell metacharacters. Sidecars are spawned with an
+        // argv vector and no shell, so these are ordinary names — validation
+        // must not reject them.
+        for name in [
+            "espace et accent é à ü.mp4",
+            "quote'and\"double.mov",
+            "semi;colon && pipe|.wav",
+            "$(whoami)-`id`.mp3",
+            "emoji-🎬-clip.m4a",
+            "-leading-dash.flac",
+        ] {
+            let file = TempFile::new(name, b"bytes");
+            let info = validate_media_path(&file.path_str())
+                .unwrap_or_else(|e| panic!("{name:?} should be accepted, got {e:?}"));
+            assert!(info.size_bytes > 0);
+        }
+    }
+
+    #[test]
+    fn a_symlink_to_a_non_media_file_is_still_extension_checked() {
+        // A symlink is followed by `metadata`, so it can pass the "is a real
+        // file" test while pointing anywhere. The extension whitelist is
+        // what still applies, and the sidecar would fail to decode it.
+        let target = TempFile::new("secret.txt", b"sensitive");
+        let link = std::env::temp_dir().join(format!("st_ia_link_{}.txt", std::process::id()));
+        let _ = fs::remove_file(&link);
+        std::os::unix::fs::symlink(&target.path, &link).unwrap();
+
+        let err = validate_media_path(&link.to_string_lossy()).expect_err("should be rejected");
+        assert_eq!(err.code, MediaErrorCode::Unsupported);
+        let _ = fs::remove_file(&link);
+    }
 }

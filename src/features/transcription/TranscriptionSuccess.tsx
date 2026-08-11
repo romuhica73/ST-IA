@@ -7,14 +7,12 @@ import { asSupportedLanguage } from "../../i18n/locale";
 import type { OutputFile } from "./types";
 
 interface TranscriptionSuccessProps {
-  outputDir: string;
   files: OutputFile[];
   transcriptText: string | null;
   onNewFile: () => void;
 }
 
 export function TranscriptionSuccess({
-  outputDir,
   files,
   transcriptText,
   onNewFile,
@@ -25,12 +23,14 @@ export function TranscriptionSuccess({
   const [openFolderError, setOpenFolderError] = useState(false);
 
   async function handleOpenFolder() {
-    // Reveal one of the generated files rather than the bare directory, so
-    // Finder opens directly on the output folder with its content visible.
-    const target = files[0]?.path ?? outputDir;
+    // No path is sent: the backend derives what to reveal from its own
+    // completed-job state, so the frontend cannot ask Finder to open an
+    // arbitrary location. Which file it picks is the same choice as before
+    // (a generated file rather than the bare directory, so Finder opens on
+    // the output folder with its content visible).
     setOpenFolderError(false);
     try {
-      await invoke("open_output_folder", { path: target });
+      await invoke("open_output_folder");
     } catch (error) {
       console.error("Failed to reveal output folder in Finder:", error);
       setOpenFolderError(true);

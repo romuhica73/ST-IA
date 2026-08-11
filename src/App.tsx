@@ -133,7 +133,6 @@ function App() {
     if (jobStatus.status === "completed") {
       return (
         <TranscriptionSuccess
-          outputDir={jobStatus.outputDir}
           files={jobStatus.files}
           transcriptText={jobStatus.transcriptText}
           onNewFile={handleNewFile}
