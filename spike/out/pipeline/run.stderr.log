@@ -56,15 +56,15 @@ whisper_init_state: compute buffer (conv)   =   23.38 MB
 whisper_init_state: compute buffer (encode) =   39.45 MB
 whisper_init_state: compute buffer (cross)  =   79.93 MB
 whisper_init_state: compute buffer (decode) =   98.21 MB
-read_audio_data: reading audio data from '/Volumes/Workspace/Projects/ST-IA/spike/samples/jfk_from_mp4_16k_mono.wav' ...
+read_audio_data: reading audio data from '$REPO_ROOT/spike/samples/jfk_from_mp4_16k_mono.wav' ...
 read_audio_data: trying to decode with miniaudio
 
 system_info: n_threads = 4 / 10 | WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | MATMUL_INT8 = 1 | DOTPROD = 1 | SME = 1 | SME2 = 1 | ACCELERATE = 1 | REPACK = 1 | 
 
-main: processing '/Volumes/Workspace/Projects/ST-IA/spike/samples/jfk_from_mp4_16k_mono.wav' (176100 samples, 11.0 sec), 4 threads, 1 processors, 5 beams + best of 5, lang = en, task = transcribe, timestamps = 1 ...
+main: processing '$REPO_ROOT/spike/samples/jfk_from_mp4_16k_mono.wav' (176100 samples, 11.0 sec), 4 threads, 1 processors, 5 beams + best of 5, lang = en, task = transcribe, timestamps = 1 ...
 
-output_txt: saving output to '/Volumes/Workspace/Projects/ST-IA/spike/out/pipeline/jfk_from_mp4.txt'
-output_srt: saving output to '/Volumes/Workspace/Projects/ST-IA/spike/out/pipeline/jfk_from_mp4.srt'
+output_txt: saving output to '$REPO_ROOT/spike/out/pipeline/jfk_from_mp4.txt'
+output_srt: saving output to '$REPO_ROOT/spike/out/pipeline/jfk_from_mp4.srt'
 
 whisper_print_timings:     load time =  7713.94 ms
 whisper_print_timings:     fallbacks =   0 p /   0 h

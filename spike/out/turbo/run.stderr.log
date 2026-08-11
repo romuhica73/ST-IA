@@ -63,8 +63,8 @@ system_info: n_threads = 4 / 10 | WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EM
 
 main: processing 'samples/jfk.wav' (176000 samples, 11.0 sec), 4 threads, 1 processors, 5 beams + best of 5, lang = en, task = transcribe, timestamps = 1 ...
 
-output_txt: saving output to '/Volumes/Workspace/Projects/ST-IA/spike/out/turbo/jfk.txt'
-output_srt: saving output to '/Volumes/Workspace/Projects/ST-IA/spike/out/turbo/jfk.srt'
+output_txt: saving output to '$REPO_ROOT/spike/out/turbo/jfk.txt'
+output_srt: saving output to '$REPO_ROOT/spike/out/turbo/jfk.srt'
 
 whisper_print_timings:     load time =  7042.71 ms
 whisper_print_timings:     fallbacks =   0 p /   0 h
