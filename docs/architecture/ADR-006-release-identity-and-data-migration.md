@@ -2,9 +2,11 @@
 
 ## Statut
 
-**PROVISIONAL**
+**ACCEPTED**
 
-Le changement d'identifiant, la migration réelle des données et la portabilité du sidecar Whisper sont implémentés et mesurés. Promotion en `ACCEPTED` après validation du gate humain restant (import DaVinci Resolve) — voir Qualification.
+Le changement d'identifiant, la migration réelle des données et la portabilité du sidecar Whisper sont implémentés, mesurés et qualifiés sur le build empaqueté (voir Qualification).
+
+Note séparée, hors décision architecturale de cette ADR : le gate produit M5 (import du SRT dans DaVinci Resolve) a également été validé par l'utilisateur sur un média réel de 60 minutes — piste de sous-titres créée, timecodes cohérents, synchronisation correcte du début à la fin. Une limite de vocabulaire a été observée sur certains noms propres/termes techniques (ex. « Claude Code ») ; elle ne remet pas en cause cette ADR et relève d'une future mission de qualité de transcription.
 
 ## Contexte
 
@@ -127,9 +129,13 @@ Dans tous les cas le pire résultat est « l'utilisateur retombe sur l'écran Mo
 
 Modèle écarté des deux emplacements : `no legacy model found, nothing to do`, état `Missing`, **aucune connexion réseau** tant que l'utilisateur n'a pas cliqué « Télécharger ». Le téléchargement complet lui-même reste couvert par la qualification M3 (ADR-004), le code réseau étant inchangé en M5 — seul l'emplacement de destination a changé, et il est prouvé par la migration ci-dessus.
 
-### Gate humain restant
+### Gate humain — DaVinci Resolve
 
-L'import du SRT dans DaVinci Resolve doit être confirmé par l'utilisateur. Tant que ce n'est pas fait, cette ADR reste `PROVISIONAL`.
+Validé par l'utilisateur sur un média réel de 60 minutes : fichier SRT accepté, piste de sous-titres créée, sous-titres présents sur toute la timeline, timecodes cohérents, synchronisation vérifiée en début, milieu et fin. Limite observée hors périmètre (vocabulaire technique/noms propres), non bloquante pour cette ADR.
+
+### Icône de production
+
+L'icône Tauri par défaut a été remplacée par l'asset ST-IA approuvé (`src/assets/ST-IA_icon.png`, source conservée telle quelle) via le générateur officiel `tauri icon`, qui produit les tailles macOS nécessaires (`32x32`, `128x128`, `128x128@2x`, `icon.icns` 1024 px, `icon.ico`) sans dépendance runtime. Vérifié visuellement sur le `.icns` extrait du `.app` empaqueté et sur celui monté depuis le `.dmg` : dans les deux cas l'icône ST-IA s'affiche, plus aucune trace du logo Tauri par défaut.
 
 ## Conséquences
 

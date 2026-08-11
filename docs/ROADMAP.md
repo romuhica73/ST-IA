@@ -99,7 +99,55 @@ Objectifs :
 * tests médias longs ;
 * validation DaVinci Resolve.
 
-Avancement : identité de production `com.romainbourbon.stia` adoptée et migration des données depuis l'ancien identifiant `.dev` prouvée sans retéléchargement (voir [ADR-006](architecture/ADR-006-release-identity-and-data-migration.md)). Réserve de portabilité Apple Silicon close : `whisper-cli` reconstruit avec `GGML_NATIVE=OFF`, sans `-mcpu=native` ni extension SME propre à la machine de build, Metal conservé, sorties octet pour octet identiques. Endurance 5/15/30/60 min mesurée, `.app` et `.dmg` produits, notices de licence embarquées. Restent le gate humain DaVinci Resolve et l'asset d'icône définitif avant passage à `DONE`.
+Avancement : identité de production `com.romainbourbon.stia` adoptée et migration des données depuis l'ancien identifiant `.dev` prouvée sans retéléchargement (voir [ADR-006](architecture/ADR-006-release-identity-and-data-migration.md), `ACCEPTED`). Réserve de portabilité Apple Silicon close : `whisper-cli` reconstruit avec `GGML_NATIVE=OFF`, sans `-mcpu=native` ni extension SME propre à la machine de build, Metal conservé, sorties octet pour octet identiques. Endurance 5/15/30/60 min mesurée, icône de production intégrée (asset ST-IA approuvé, plus de logo Tauri par défaut), `.app` et `.dmg` produits, notices de licence embarquées. Gate DaVinci Resolve validé par l'utilisateur (piste de sous-titres, timecodes, synchronisation OK sur un média réel de 60 min) — limite de vocabulaire observée sur certains noms propres/termes techniques, reportée en future mission qualité (voir ci-dessous). Reste le smoke test GUI final du `.app` empaqueté avant passage à `DONE`.
+
+### Future — qualité de transcription (vocabulaire)
+
+Non planifiée, non commencée. À étudier dans une mission ultérieure :
+
+* vocabulaire contextuel / noms propres ;
+* terminologie technique ;
+* évaluer le biasing par prompt initial de whisper.cpp.
+
+Pas d'implémentation, pas de nouveau modèle, pas de champ UI dans cette entrée.
+
+## M6 — Visual Polish & Motion (future, non commencée)
+
+Objectif indicatif : améliorer l'identité visuelle et le ressenti de ST-IA sans modifier son architecture fonctionnelle.
+
+À couvrir plus tard :
+
+* hiérarchie visuelle ;
+* micro-interactions ;
+* transitions ;
+* feedback de drag & drop ;
+* progression ;
+* états succès/erreur ;
+* cohérence light/dark ;
+* motion accessible ;
+* réduction des animations si macOS `prefers-reduced-motion`.
+
+Rien codé pour M6 à ce stade.
+
+## Future — Open Source / Sécurité (après M6, non commencée)
+
+Périmètre indicatif à couvrir lors d'une mission dédiée :
+
+* secrets Git/historique ;
+* Tauri capabilities ;
+* CSP ;
+* IPC ;
+* dépendances Rust ;
+* dépendances JS ;
+* supply chain ;
+* sidecars ;
+* modèle ;
+* scripts de build ;
+* privacy ;
+* configuration sécurité GitHub ;
+* `SECURITY.md`.
+
+Audit non commencé.
 
 ## Post-MVP
 
