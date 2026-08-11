@@ -24,6 +24,24 @@
   color: var(--accent-text);
 }
 
+/* Generic reveal for text/blocks that replace a previous state (e.g. the
+   steps list swapping for "Arrêt du traitement…"). Each use is a fresh
+   mount, so the animation reliably (re)plays. */
+.fade-in {
+  animation: fadeIn var(--duration-base) var(--ease-standard);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ---------- Écran 1 — état vide ---------- */
 
 .home {
@@ -42,14 +60,19 @@
   flex: 1;
   padding: 2.5rem;
   border: 2px dashed var(--border);
-  border-radius: 20px;
+  border-radius: var(--radius-zone);
   text-align: center;
-  transition: border-color 120ms ease, background-color 120ms ease;
+  transition: border-color var(--duration-base) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard);
 }
 
 .drop-zone--active {
   border-color: var(--accent);
   background-color: var(--accent-tint);
+  transform: scale(1.008);
+  box-shadow: 0 0 0 4px var(--accent-tint);
 }
 
 .drop-zone__title {
@@ -64,6 +87,7 @@
   color: var(--accent-text);
   background: none;
   border: none;
+  border-radius: 4px;
   padding: 0;
   margin: 0;
   cursor: pointer;
@@ -71,6 +95,11 @@
 
 .drop-zone__link:hover {
   text-decoration: underline;
+}
+
+.drop-zone__link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .drop-zone__hint {
@@ -109,7 +138,8 @@
   gap: 16px;
   padding: 18px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
 }
 
 .file-card__info {
@@ -155,8 +185,13 @@
   gap: 0.6rem;
   padding: 0.65rem 0.9rem;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   color: var(--muted);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.select:focus-within {
+  border-color: var(--accent);
 }
 
 .select select {
@@ -177,7 +212,7 @@
 .segmented {
   display: flex;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   overflow: hidden;
 }
 
@@ -195,6 +230,12 @@
   border: none;
   border-right: 1px solid var(--border);
   cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.segmented__option:not(:disabled):not(.segmented__option--active):hover {
+  background: var(--accent-tint);
 }
 
 .segmented__option:last-child {
@@ -238,6 +279,8 @@
   border: 1.5px solid var(--border);
   border-radius: 5px;
   flex-shrink: 0;
+  transition: background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
 }
 
 .checkbox input:checked + .checkbox__box {
@@ -281,11 +324,17 @@
   padding: 0.7rem 1.25rem;
   font-size: 0.95rem;
   font-weight: 500;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--fg);
   cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-instant) var(--ease-standard);
 }
 
 .button:focus-visible {
@@ -293,14 +342,29 @@
   outline-offset: 2px;
 }
 
-.button--secondary:hover {
+.button--secondary:hover:not(:disabled) {
   border-color: var(--accent);
+  background: var(--accent-tint);
+}
+
+.button--secondary:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .button--primary {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
+}
+
+.button--primary:hover:not(:disabled) {
+  box-shadow: var(--shadow-sm);
+  filter: brightness(1.08);
+}
+
+.button--primary:active:not(:disabled) {
+  transform: scale(0.98);
+  filter: brightness(0.96);
 }
 
 .button:disabled {
@@ -330,13 +394,13 @@
 .file-card__icon-audio {
   width: 48px;
   height: 56px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: var(--accent-tint);
   color: var(--accent-text);
-  font-size: 1.3rem;
 }
 
 .progress-field {
@@ -359,21 +423,21 @@
 
 .progress-bar {
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--border);
   overflow: hidden;
 }
 
 .progress-bar__fill {
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--accent);
-  transition: width 200ms ease;
+  transition: width var(--duration-base) var(--ease-standard);
 }
 
 .progress-bar--indeterminate .progress-bar__fill {
   width: 40%;
-  animation: indeterminate 1.2s ease-in-out infinite;
+  animation: indeterminate 1.4s ease-in-out infinite;
 }
 
 @keyframes indeterminate {
@@ -382,6 +446,19 @@
   }
   100% {
     margin-left: 100%;
+  }
+}
+
+/* An infinite loop forced to one near-instant iteration (the global
+   reduced-motion rule) would strand the fill off-screen mid-slide. Swap it
+   for a calm static tint instead — still communicates "in progress"
+   without any motion. */
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar--indeterminate .progress-bar__fill {
+    animation: none;
+    width: 100%;
+    margin-left: 0;
+    background: var(--accent-tint);
   }
 }
 
@@ -411,11 +488,25 @@
   justify-content: center;
   font-size: 0.75rem;
   color: white;
+  transition: background-color var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard);
 }
 
 .steps__marker--done {
-  background: #34a853;
-  border-color: #34a853;
+  background: var(--success);
+  border-color: var(--success);
+  animation: markerDone var(--duration-base) var(--ease-standard);
+}
+
+@keyframes markerDone {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .steps__marker--active {
@@ -425,6 +516,7 @@
 .steps__label {
   flex: 1;
   font-size: 0.95rem;
+  transition: color var(--duration-base) var(--ease-standard);
 }
 
 .steps__item--pending .steps__label {
@@ -453,14 +545,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.6rem;
-  color: white;
-  background: #34a853;
   margin-bottom: 0.5rem;
 }
 
+/* Success is a filled circle (white check on solid teal-green) — it is the
+   one moment the app should feel unambiguously good. Error stays a calm
+   tint instead: red is reserved for the icon itself, not a solid block
+   behind it, so the screen never reads as alarming. */
+.result-header__icon--success {
+  color: white;
+  background: var(--success);
+  animation: resultReveal var(--duration-success) var(--ease-standard);
+}
+
 .result-header__icon--error {
-  background: var(--error);
+  color: var(--error);
+  background: var(--error-tint);
+}
+
+@keyframes resultReveal {
+  from {
+    opacity: 0;
+    transform: scale(0.75);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .result-header__title {
@@ -477,7 +588,7 @@
 
 .output-list {
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   overflow: hidden;
 }
 
@@ -487,10 +598,23 @@
   gap: 0.8rem;
   padding: 0.8rem 1rem;
   border-bottom: 1px solid var(--border);
+  animation: fadeIn var(--duration-base) var(--ease-standard) both;
 }
 
 .output-list__row:last-child {
   border-bottom: none;
+}
+
+.output-list__row:nth-child(1) {
+  animation-delay: 40ms;
+}
+
+.output-list__row:nth-child(2) {
+  animation-delay: 100ms;
+}
+
+.output-list__row:nth-child(3) {
+  animation-delay: 160ms;
 }
 
 .output-badge {
@@ -501,8 +625,8 @@
 }
 
 .output-badge--srt {
-  background: #d7f2e0;
-  color: #1a7f43;
+  background: var(--success-tint);
+  color: var(--success-text);
 }
 
 .output-badge--txt {
@@ -529,7 +653,7 @@
   font-size: 0.85rem;
   color: var(--muted);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   padding: 0.7rem 1rem;
 }
 
@@ -586,7 +710,7 @@
   width: 100%;
   padding: 1rem 1.25rem;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-card);
 }
 
 .model-card__name {

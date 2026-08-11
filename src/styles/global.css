@@ -1,38 +1,83 @@
 :root {
   color-scheme: light dark;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+
+  /* Surfaces & text */
   --bg: #ffffff;
-  --fg: #1d1d1f;
+  --fg: #1a1d22;
   --muted: #6e6e73;
   --border: #d8d8dc;
-  --accent: #2f6fed;
-  /* Accent used as *text*. Split from --accent because that one also serves
-     as a button/checkbox background: lightening it for dark mode would wreck
-     the contrast of the white label sitting on top of it. */
-  --accent-text: #2f6fed;
-  --accent-tint: rgba(47, 111, 237, 0.08);
+
+  /* Accent: a controlled teal-cyan sampled from the app icon's waveform,
+     not the neon value itself — toned down for calm, legible UI chrome.
+     --accent is a *background* (buttons, checkbox fill, progress fill);
+     --accent-text is the text-safe variant, kept separate because
+     lightening --accent for dark mode would wreck the white label sitting
+     on top of primary buttons. */
+  --accent: #0c7180;
+  --accent-text: #0c7180;
+  --accent-tint: rgba(12, 113, 128, 0.08);
+
   --error: #c0392b;
+  --error-tint: rgba(192, 57, 43, 0.1);
+  /* --success is a background (the filled checkmark circle — a large
+     graphic, judged against the 3:1 non-text threshold, not 4.5:1).
+     --success-text is the separate small-text-safe variant for the SRT
+     badge, same split as --accent/--accent-text. */
+  --success: #12977a;
+  --success-text: #0d7a63;
+  --success-tint: rgba(18, 151, 122, 0.1);
+
   --file-icon-bg: #e4e4e7;
   --file-icon-border: #c7c7cc;
   --file-icon-fold: #f2f2f3;
+
+  /* Radii — named by role, not size, so a future adjustment stays in one
+     place. Values mostly match what was already hand-tuned per component;
+     this just gives them one name each instead of five near-duplicates. */
+  --radius-control: 10px;
+  --radius-card: 12px;
+  --radius-zone: 20px;
+  --radius-pill: 999px;
+
+  /* Very subtle depth — used sparingly (primary button, the file card),
+     never stacked ("cards inside cards"). */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 32, 0.04), 0 1px 1px rgba(16, 24, 32, 0.03);
+
+  /* Motion scale. Never applied to anything that would delay an action —
+     only to feedback and state reveals. See the reduced-motion block below. */
+  --duration-instant: 100ms;
+  --duration-fast: 150ms;
+  --duration-base: 220ms;
+  --duration-success: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1e1e1e;
-    --fg: #f5f5f7;
-    --muted: #9a9a9e;
-    --border: #3a3a3c;
-    /* The light-mode blue and red only reach 3.7:1 and 3.1:1 against the dark
+    /* Graphite/anthracite, not the icon's navy glow — the icon is a mark,
+       the app chrome stays neutral so the accent reads clearly against it. */
+    --bg: #1a1c20;
+    --fg: #f2f3f5;
+    --muted: #9a9ea3;
+    --border: #34373d;
+
+    /* The light-mode teal and red only reach 3.7:1 and 3.1:1 against this
        background — below the 4.5:1 needed for normal-size text. These lift
-       them to 6.1:1 and 6.0:1. --accent itself is unchanged so buttons keep
-       their white-on-blue contrast. */
-    --accent-text: #5b9dff;
+       them to 9.2:1 and 6.1:1. --accent itself is unchanged so buttons keep
+       their white-on-teal contrast. */
+    --accent-text: #2dd4bf;
     --error: #ff6b5e;
-    --accent-tint: rgba(47, 111, 237, 0.16);
-    --file-icon-bg: #3a3a3c;
-    --file-icon-border: #4c4c4e;
-    --file-icon-fold: #2c2c2e;
+    --accent-tint: rgba(45, 212, 191, 0.14);
+    --error-tint: rgba(255, 107, 94, 0.14);
+    --success-text: #34d9b8;
+    --success-tint: rgba(18, 151, 122, 0.18);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.3);
+
+    --file-icon-bg: #34373d;
+    --file-icon-border: #46494f;
+    --file-icon-fold: #26282c;
   }
 }
 
@@ -44,4 +89,22 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
+}
+
+/* Safety net: collapses every transition/animation to imperceptible, so a
+   hover fade or a scale-on-drag-over effectively never moves. This alone is
+   not the fix for a *looping* animation, though — forcing an infinite
+   shimmer to one near-zero-duration iteration would strand it mid-loop
+   (e.g. translated off-screen) instead of removing the motion. The
+   indeterminate progress bar gets its own override in App.css that swaps
+   the loop for a static state, per the reduced-motion rules below. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
