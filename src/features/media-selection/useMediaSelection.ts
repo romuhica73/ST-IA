@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { open } from "@tauri-apps/plugin-dialog";
-import { SUPPORTED_EXTENSIONS, MULTIPLE_FILES_ERROR_MESSAGE } from "./constants";
+import { SUPPORTED_EXTENSIONS } from "./constants";
 import type { MediaError, MediaInfo, MediaSelectionState } from "./types";
 
 export function useMediaSelection() {
@@ -20,7 +20,7 @@ export function useMediaSelection() {
       const mediaError = err as MediaError;
       setState({
         status: "error",
-        message: mediaError?.message ?? "Une erreur inattendue est survenue.",
+        code: mediaError?.code ?? "unknown",
       });
     }
   }, []);
@@ -42,7 +42,7 @@ export function useMediaSelection() {
         case "drop": {
           const { paths } = event.payload;
           if (paths.length !== 1) {
-            setState({ status: "error", message: MULTIPLE_FILES_ERROR_MESSAGE });
+            setState({ status: "error", code: "multipleFiles" });
             break;
           }
           void inspectPath(paths[0]);

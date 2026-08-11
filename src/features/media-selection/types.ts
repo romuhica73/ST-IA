@@ -15,17 +15,19 @@ export interface MediaError {
   message: string;
 }
 
+/** "multipleFiles" is a frontend-only condition (no backend round trip);
+ * "unknown" covers a malformed/unexpected error payload (should not happen
+ * in practice — Tauri IPC always round-trips a well-formed MediaError, but
+ * the fallback must still resolve to a real translated message rather than
+ * guessing at one of the real codes). Everything else mirrors MediaErrorCode
+ * from the Rust side. */
+export type MediaSelectionErrorCode = MediaErrorCode | "multipleFiles" | "unknown";
+
 export type MediaSelectionState =
   | { status: "idle" }
   | { status: "dragging" }
   | { status: "selected"; media: MediaInfo }
-  | { status: "error"; message: string };
-
-/**
- * Job configuration state — local UI preference only in this mission.
- * Not sent to Rust, not wired to a real transcription pipeline (M2+).
- */
-export type TranscriptionMode = "fast" | "precise";
+  | { status: "error"; code: MediaSelectionErrorCode };
 
 export interface OutputSelection {
   srt: boolean;

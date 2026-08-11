@@ -1,7 +1,14 @@
-export function formatBytes(bytes: number): string {
-  if (bytes <= 0) return "0 o";
+import type { SupportedLanguage } from "../../i18n/locale";
 
-  const units = ["o", "Ko", "Mo", "Go"];
+const UNITS: Record<SupportedLanguage, readonly string[]> = {
+  fr: ["o", "Ko", "Mo", "Go"],
+  en: ["B", "KB", "MB", "GB"],
+};
+
+export function formatBytes(bytes: number, language: SupportedLanguage): string {
+  const units = UNITS[language];
+  if (bytes <= 0) return `0 ${units[0]}`;
+
   const exponent = Math.min(
     Math.floor(Math.log(bytes) / Math.log(1024)),
     units.length - 1,

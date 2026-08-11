@@ -1,52 +1,52 @@
+import { useTranslation } from "react-i18next";
 import { formatBytes } from "../media-selection/formatBytes";
 import { DownloadCircleIcon, InfoIcon } from "./icons";
-import type { ModelManifest } from "./types";
+import { asSupportedLanguage } from "../../i18n/locale";
+import type { ModelErrorCode, ModelManifest } from "./types";
 
 interface ModelRequiredProps {
   manifest: ModelManifest | null;
-  errorMessage?: string | null;
+  errorCode?: ModelErrorCode | null;
   onDownload: () => void;
   onLater: () => void;
 }
 
-export function ModelRequired({
-  manifest,
-  errorMessage,
-  onDownload,
-  onLater,
-}: ModelRequiredProps) {
+export function ModelRequired({ manifest, errorCode, onDownload, onLater }: ModelRequiredProps) {
+  const { t, i18n } = useTranslation();
+  const language = asSupportedLanguage(i18n.language);
+
   return (
     <div className="job model-gate">
       <DownloadCircleIcon />
-      <p className="drop-zone__title">Le modèle local n'est pas encore installé</p>
-      <p className="model-gate__subtitle">
-        Télécharger le modèle pour utiliser l'application hors ligne.
-      </p>
+      <p className="drop-zone__title">{t("model.requiredTitle")}</p>
+      <p className="model-gate__subtitle">{t("model.requiredSubtitle")}</p>
 
       <div className="model-card">
-        <p className="model-card__name">Whisper — large-v3-turbo</p>
+        <p className="model-card__name">{t("model.name")}</p>
         {manifest && (
-          <p className="model-card__size">~{formatBytes(manifest.expectedSize)}</p>
+          <p className="model-card__size">
+            {t("model.sizeApprox", { size: formatBytes(manifest.expectedSize, language) })}
+          </p>
         )}
       </div>
 
       <p className="model-gate__info">
         <InfoIcon />
-        Le modèle sera stocké sur votre ordinateur.
+        {t("model.storageInfo")}
       </p>
 
-      {errorMessage && (
+      {errorCode && (
         <p className="drop-zone__error" role="alert">
-          {errorMessage}
+          {t(`error.modelCodes.${errorCode}.message`)}
         </p>
       )}
 
       <div className="actions">
         <button type="button" className="button button--secondary" onClick={onLater}>
-          Plus tard
+          {t("model.later")}
         </button>
         <button type="button" className="button button--primary" onClick={onDownload}>
-          Télécharger
+          {t("model.download")}
         </button>
       </div>
     </div>

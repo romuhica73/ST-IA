@@ -1,15 +1,9 @@
 import { useId, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { formatBytes } from "./formatBytes";
-import {
-  BoltIcon,
-  ChevronDownIcon,
-  FileIcon,
-  GlobeIcon,
-  SizeIcon,
-  TargetIcon,
-  TypeIcon,
-} from "./icons";
-import type { MediaInfo, OutputSelection, TranscriptionMode } from "./types";
+import { ChevronDownIcon, FileIcon, GlobeIcon, SizeIcon, TypeIcon } from "./icons";
+import { asSupportedLanguage } from "../../i18n/locale";
+import type { MediaInfo, OutputSelection } from "./types";
 
 interface SelectedMediaProps {
   media: MediaInfo;
@@ -24,8 +18,9 @@ export function SelectedMedia({
   onChangeFile,
   onGenerate,
 }: SelectedMediaProps) {
+  const { t, i18n } = useTranslation();
+  const language = asSupportedLanguage(i18n.language);
   const languageId = useId();
-  const [mode, setMode] = useState<TranscriptionMode>("fast");
   const [outputs, setOutputs] = useState<OutputSelection>({
     srt: true,
     txt: true,
@@ -45,7 +40,7 @@ export function SelectedMedia({
             </span>
             <span className="meta-item">
               <SizeIcon />
-              {formatBytes(media.sizeBytes)}
+              {formatBytes(media.sizeBytes, language)}
             </span>
           </div>
         </div>
@@ -53,53 +48,19 @@ export function SelectedMedia({
 
       <section className="field">
         <label className="field__label" htmlFor={languageId}>
-          Langue
+          {t("transcription.language")}
         </label>
         <div className="select">
           <GlobeIcon />
           <select id={languageId} value="fr" onChange={() => {}}>
-            <option value="fr">Français</option>
+            <option value="fr">{t("transcription.languageFrench")}</option>
           </select>
           <ChevronDownIcon />
         </div>
       </section>
 
       <section className="field">
-        <span className="field__label" id="mode-label">
-          Mode
-        </span>
-        <div
-          className="segmented"
-          role="radiogroup"
-          aria-labelledby="mode-label"
-        >
-          <button
-            type="button"
-            role="radio"
-            aria-checked={mode === "fast"}
-            className={`segmented__option ${mode === "fast" ? "segmented__option--active" : ""}`}
-            onClick={() => setMode("fast")}
-          >
-            <BoltIcon />
-            Rapide
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={mode === "precise"}
-            className="segmented__option"
-            disabled
-            title="Disponible ultérieurement — M2 utilise uniquement large-v3-turbo-q5_0"
-            onClick={(event) => event.preventDefault()}
-          >
-            <TargetIcon />
-            Précis
-          </button>
-        </div>
-      </section>
-
-      <section className="field">
-        <span className="field__label">Sorties</span>
+        <span className="field__label">{t("media.outputs")}</span>
         <div className="checkboxes">
           <label className="checkbox">
             <input
@@ -110,7 +71,7 @@ export function SelectedMedia({
               }
             />
             <span className="checkbox__box" aria-hidden="true" />
-            SRT
+            {t("media.srt")}
           </label>
           <label className="checkbox">
             <input
@@ -121,28 +82,28 @@ export function SelectedMedia({
               }
             />
             <span className="checkbox__box" aria-hidden="true" />
-            TXT
+            {t("media.txt")}
           </label>
         </div>
         {!hasOutputSelected && (
           <p className="drop-zone__error" role="alert">
-            Sélectionnez au moins un format de sortie.
+            {t("media.outputsError")}
           </p>
         )}
       </section>
 
       <div className="actions">
         <button type="button" className="button button--secondary" onClick={onChangeFile}>
-          Changer de fichier
+          {t("media.changeFile")}
         </button>
         <button
           type="button"
           className="button button--primary"
           disabled={!hasOutputSelected || !modelReady}
-          title={!modelReady ? "Le modèle de transcription doit être installé au préalable." : undefined}
+          title={!modelReady ? t("media.generateDisabledTitle") : undefined}
           onClick={() => onGenerate(outputs)}
         >
-          Générer les sous-titres
+          {t("media.generate")}
         </button>
       </div>
     </div>

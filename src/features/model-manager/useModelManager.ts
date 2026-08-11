@@ -16,10 +16,13 @@ export function useModelManager() {
       .then(setStatus)
       .catch((err) => {
         const error = err as ModelError;
+        // `message` is not displayed (the UI translates from `code` — see
+        // ModelRequired.tsx / ADR-007); kept only because ModelStatus's
+        // wire shape requires it.
         setStatus({
           status: "failed",
           code: error?.code ?? "writeError",
-          message: error?.message ?? "Impossible de déterminer l'état du modèle.",
+          message: error?.message ?? "",
         });
       });
 
@@ -39,7 +42,7 @@ export function useModelManager() {
       setStatus({
         status: "failed",
         code: error?.code ?? "networkError",
-        message: error?.message ?? "Une erreur inattendue est survenue.",
+        message: error?.message ?? "",
       });
     }
   }, []);

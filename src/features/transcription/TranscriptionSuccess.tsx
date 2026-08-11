@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
 import { formatBytes } from "../media-selection/formatBytes";
 import { CheckCircleIcon, SparkleIcon } from "../media-selection/icons";
+import { asSupportedLanguage } from "../../i18n/locale";
 import type { OutputFile } from "./types";
 
 interface TranscriptionSuccessProps {
@@ -17,6 +19,8 @@ export function TranscriptionSuccess({
   transcriptText,
   onNewFile,
 }: TranscriptionSuccessProps) {
+  const { t, i18n } = useTranslation();
+  const language = asSupportedLanguage(i18n.language);
   const [copied, setCopied] = useState(false);
   const [openFolderError, setOpenFolderError] = useState(false);
 
@@ -50,9 +54,9 @@ export function TranscriptionSuccess({
         <div className="result-header__icon result-header__icon--success" aria-hidden="true">
           <CheckCircleIcon />
         </div>
-        <p className="result-header__title">Sous-titres générés</p>
+        <p className="result-header__title">{t("success.title")}</p>
         <p className="result-header__subtitle">
-          {files.length} fichier{files.length > 1 ? "s" : ""} créé{files.length > 1 ? "s" : ""} avec succès.
+          {t("success.subtitle", { count: files.length })}
         </p>
       </div>
 
@@ -63,18 +67,18 @@ export function TranscriptionSuccess({
               {file.kind.toUpperCase()}
             </span>
             <span className="output-list__name">{file.fileName}</span>
-            <span className="output-list__size">{formatBytes(file.sizeBytes)}</span>
+            <span className="output-list__size">{formatBytes(file.sizeBytes, language)}</span>
           </div>
         ))}
       </div>
 
       <div className="actions actions--stack">
         <button type="button" className="button button--primary" onClick={handleOpenFolder}>
-          Ouvrir le dossier
+          {t("success.openFolder")}
         </button>
         {openFolderError && (
           <p className="drop-zone__error" role="alert">
-            Impossible d'ouvrir le dossier.
+            {t("success.openFolderError")}
           </p>
         )}
         <button
@@ -83,16 +87,16 @@ export function TranscriptionSuccess({
           onClick={handleCopy}
           disabled={!transcriptText}
         >
-          {copied ? "Copié !" : "Copier la transcription"}
+          {copied ? t("success.copied") : t("success.copyTranscript")}
         </button>
         <button type="button" className="drop-zone__link" onClick={onNewFile}>
-          Nouveau fichier
+          {t("success.newFile")}
         </button>
       </div>
 
       <p className="home__footer home__footer--sparkle">
         <SparkleIcon />
-        Prêt pour DaVinci Resolve
+        {t("success.readyForDavinci")}
       </p>
     </div>
   );

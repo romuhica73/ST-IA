@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { MediaDropZone } from "./features/media-selection/MediaDropZone";
 import { SelectedMedia } from "./features/media-selection/SelectedMedia";
 import { useMediaSelection } from "./features/media-selection/useMediaSelection";
@@ -12,9 +13,18 @@ import { ModelDownloading } from "./features/model-manager/ModelDownloading";
 import { ModelVerifying } from "./features/model-manager/ModelVerifying";
 import { ModelCorrupted } from "./features/model-manager/ModelCorrupted";
 import { useModelManager } from "./features/model-manager/useModelManager";
+import { useSettings } from "./features/settings/useSettings";
+import { useApplySettings } from "./features/settings/useApplySettings";
+import { SettingsPanel } from "./features/settings/SettingsPanel";
+import { GearIcon } from "./features/settings/icons";
 import "./styles/App.css";
 
 function App() {
+  const { t } = useTranslation();
+  const { settings, setTheme, setMotion, setLanguage } = useSettings();
+  useApplySettings(settings);
+  const [showSettings, setShowSettings] = useState(false);
+
   const { status: modelStatus, manifest, install } = useModelManager();
   const [bypassModelGate, setBypassModelGate] = useState(false);
 
@@ -72,89 +82,115 @@ function App() {
     jobMedia?.fileName ?? (mediaState.status === "selected" ? mediaState.media.fileName : "");
 
   // Brief startup check — avoid flashing the wrong screen before the first
-  // real answer arrives.
+  // real answer arrives. Settings aren't reachable yet either; this state
+  // is expected to last a handful of milliseconds.
   if (modelStatus === null) {
     return <main className="app" />;
   }
 
   const modelReady = modelStatus.status === "ready";
 
-  if (!modelReady && !bypassModelGate && !isJobActive) {
-    if (modelStatus.status === "downloading") {
-      return (
-        <main className="app">
+  function renderScreen() {
+    if (modelStatus === null) return null; // narrowed above; keeps TS happy below
+
+    if (!modelReady && !bypassModelGate && !isJobActive) {
+      if (modelStatus.status === "downloading") {
+        return (
           <ModelDownloading
             downloadedBytes={modelStatus.downloadedBytes}
             totalBytes={modelStatus.totalBytes}
             progress={modelStatus.progress}
           />
-        </main>
-      );
-    }
-    if (modelStatus.status === "verifying") {
+        );
+      }
+      if (modelStatus.status === "verifying") {
+        return <ModelVerifying />;
+      }
+      if (modelStatus.status === "corrupted") {
+        return <ModelCorrupted onReinstall={install} />;
+      }
+      // missing or failed
       return (
-        <main className="app">
-          <ModelVerifying />
-        </main>
-      );
-    }
-    if (modelStatus.status === "corrupted") {
-      return (
-        <main className="app">
-          <ModelCorrupted onReinstall={install} />
-        </main>
-      );
-    }
-    // missing or failed
-    return (
-      <main className="app">
         <ModelRequired
           manifest={manifest}
-          errorMessage={modelStatus.status === "failed" ? modelStatus.message : null}
+          errorCode={modelStatus.status === "failed" ? modelStatus.code : null}
           onDownload={install}
           onLater={() => setBypassModelGate(true)}
         />
-      </main>
-    );
-  }
+      );
+    }
 
-  return (
-    <main className="app">
-      {isJobActive ? (
+    if (isJobActive) {
+      return (
         <TranscriptionProgress
           fileName={displayFileName}
           status={jobStatus}
           onCancel={() => void cancelJob()}
         />
-      ) : jobStatus.status === "completed" ? (
+      );
+    }
+    if (jobStatus.status === "completed") {
+      return (
         <TranscriptionSuccess
           outputDir={jobStatus.outputDir}
           files={jobStatus.files}
           transcriptText={jobStatus.transcriptText}
           onNewFile={handleNewFile}
         />
-      ) : jobStatus.status === "failed" ? (
+      );
+    }
+    if (jobStatus.status === "failed") {
+      return (
         <TranscriptionFailure
           code={jobStatus.code}
-          message={jobStatus.message}
           fileName={displayFileName}
           onChooseAnother={handleChooseAnother}
           onRetry={handleRetry}
           onInstallModel={handleInstallModelFromFailure}
         />
-      ) : mediaState.status === "selected" ? (
+      );
+    }
+    if (mediaState.status === "selected") {
+      return (
         <SelectedMedia
           media={mediaState.media}
           modelReady={modelReady}
           onChangeFile={selectViaDialog}
           onGenerate={handleGenerate}
         />
-      ) : (
-        <MediaDropZone
-          isDragging={mediaState.status === "dragging"}
-          errorMessage={mediaState.status === "error" ? mediaState.message : null}
-          onSelectClick={selectViaDialog}
+      );
+    }
+    return (
+      <MediaDropZone
+        isDragging={mediaState.status === "dragging"}
+        errorCode={mediaState.status === "error" ? mediaState.code : null}
+        onSelectClick={selectViaDialog}
+      />
+    );
+  }
+
+  return (
+    <main className="app">
+      <div className="app-header">
+        <button
+          type="button"
+          className="app-header__gear"
+          onClick={() => setShowSettings(true)}
+          aria-label={t("settings.open")}
+        >
+          <GearIcon />
+        </button>
+      </div>
+      {showSettings ? (
+        <SettingsPanel
+          settings={settings}
+          onThemeChange={setTheme}
+          onMotionChange={setMotion}
+          onLanguageChange={setLanguage}
+          onClose={() => setShowSettings(false)}
         />
+      ) : (
+        renderScreen()
       )}
     </main>
   );

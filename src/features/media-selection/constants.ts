@@ -10,6 +10,3 @@ export const SUPPORTED_EXTENSIONS = [
 export const SUPPORTED_EXTENSIONS_LABEL = SUPPORTED_EXTENSIONS.map(
   (ext) => `.${ext}`,
 ).join(", ");
-
-export const MULTIPLE_FILES_ERROR_MESSAGE =
-  "Veuillez sélectionner un seul fichier.";

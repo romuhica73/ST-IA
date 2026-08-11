@@ -73,28 +73,6 @@ export function ChevronDownIcon() {
   );
 }
 
-export function BoltIcon() {
-  return (
-    <svg className="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M13 3 5 13h5l-1 8 8-10h-5l1-8Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export function TargetIcon() {
-  return (
-    <svg className="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="12" cy="12" r="3.5" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
 export function TypeIcon() {
   return (
     <svg className="icon icon--sm" viewBox="0 0 24 24" fill="none" aria-hidden="true">

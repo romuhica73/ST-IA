@@ -1,35 +1,35 @@
+import { useTranslation } from "react-i18next";
 import { SUPPORTED_EXTENSIONS_LABEL } from "./constants";
 import { CloudUploadIcon, LockIcon } from "./icons";
+import type { MediaSelectionErrorCode } from "./types";
 
 interface MediaDropZoneProps {
   isDragging: boolean;
-  errorMessage: string | null;
+  errorCode: MediaSelectionErrorCode | null;
   onSelectClick: () => void;
 }
 
-export function MediaDropZone({
-  isDragging,
-  errorMessage,
-  onSelectClick,
-}: MediaDropZoneProps) {
+export function MediaDropZone({ isDragging, errorCode, onSelectClick }: MediaDropZoneProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="home">
       <div className={`drop-zone ${isDragging ? "drop-zone--active" : ""}`}>
         <CloudUploadIcon />
-        <p className="drop-zone__title">Déposez votre média ici</p>
+        <p className="drop-zone__title">{t("drop.title")}</p>
         <button type="button" className="drop-zone__link" onClick={onSelectClick}>
-          ou sélectionner un fichier
+          {t("drop.selectFile")}
         </button>
         <p className="drop-zone__hint">{SUPPORTED_EXTENSIONS_LABEL}</p>
-        {errorMessage && (
+        {errorCode && (
           <p className="drop-zone__error" role="alert">
-            {errorMessage}
+            {t(`error.mediaCodes.${errorCode}.message`)}
           </p>
         )}
       </div>
       <p className="home__footer">
         <LockIcon />
-        Traitement 100&nbsp;% local
+        {t("common.localProcessing")}
       </p>
     </div>
   );

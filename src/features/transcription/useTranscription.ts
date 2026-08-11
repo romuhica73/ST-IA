@@ -25,10 +25,13 @@ export function useTranscription() {
       await invoke("start_transcription", { input });
     } catch (err) {
       const error = err as TranscriptionError;
+      // `message` is not displayed (the UI translates from `code` — see
+      // TranscriptionFailure.tsx / ADR-007); kept only because JobStatus's
+      // wire shape requires it.
       setStatus({
         status: "failed",
         code: error?.code ?? "transcriptionFailed",
-        message: error?.message ?? "Une erreur inattendue est survenue.",
+        message: error?.message ?? "",
       });
     }
   }, []);

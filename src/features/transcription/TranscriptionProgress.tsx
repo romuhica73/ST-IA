@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { AudioWaveIcon, LockIcon } from "../media-selection/icons";
 import { realProgress, stageState, type StageKey } from "./stages";
 import type { JobStatus } from "./types";
@@ -8,17 +9,17 @@ interface TranscriptionProgressProps {
   onCancel: () => void;
 }
 
-const STEPS: { key: StageKey; label: string }[] = [
-  { key: "audio", label: "Préparation de l'audio" },
-  { key: "model", label: "Chargement du modèle" },
-  { key: "transcribing", label: "Transcription" },
-  { key: "writing", label: "Génération des fichiers" },
+const STEP_KEYS: { key: StageKey; labelKey: string }[] = [
+  { key: "audio", labelKey: "progress.audioPreparation" },
+  { key: "model", labelKey: "progress.modelLoading" },
+  { key: "transcribing", labelKey: "progress.transcription" },
+  { key: "writing", labelKey: "progress.outputGeneration" },
 ];
 
-const STATE_LABEL: Record<ReturnType<typeof stageState>, string> = {
-  done: "Terminée",
-  active: "En cours…",
-  pending: "En attente",
+const STATE_LABEL_KEY: Record<ReturnType<typeof stageState>, string> = {
+  done: "progress.stateDone",
+  active: "progress.stateActive",
+  pending: "progress.statePending",
 };
 
 export function TranscriptionProgress({
@@ -26,6 +27,7 @@ export function TranscriptionProgress({
   status,
   onCancel,
 }: TranscriptionProgressProps) {
+  const { t } = useTranslation();
   const progress = realProgress(status);
   const cancelling = status.status === "cancelling";
 
@@ -42,7 +44,7 @@ export function TranscriptionProgress({
 
       <section className="progress-field">
         <div className="progress-field__header">
-          <span className="field__label">Progression</span>
+          <span className="field__label">{t("progress.label")}</span>
           {progress !== null && (
             <span className="progress-field__percent">{Math.round(progress * 100)} %</span>
           )}
@@ -64,18 +66,18 @@ export function TranscriptionProgress({
       {cancelling ? (
         // The per-stage list is meaningless once we are tearing the job
         // down, and showing every step as "done" would read as a success.
-        <p className="model-gate__subtitle fade-in">Arrêt du traitement en cours…</p>
+        <p className="model-gate__subtitle fade-in">{t("progress.cancellingText")}</p>
       ) : (
         <ul className="steps">
-          {STEPS.map((step) => {
+          {STEP_KEYS.map((step) => {
             const state = stageState(status, step.key);
             return (
               <li key={step.key} className={`steps__item steps__item--${state}`}>
                 <span className={`steps__marker steps__marker--${state}`} aria-hidden="true">
                   {state === "done" ? "✓" : ""}
                 </span>
-                <span className="steps__label">{step.label}</span>
-                <span className="steps__state">{STATE_LABEL[state]}</span>
+                <span className="steps__label">{t(step.labelKey)}</span>
+                <span className="steps__state">{t(STATE_LABEL_KEY[state])}</span>
               </li>
             );
           })}
@@ -89,13 +91,13 @@ export function TranscriptionProgress({
           onClick={onCancel}
           disabled={cancelling}
         >
-          {cancelling ? "Annulation…" : "Annuler"}
+          {cancelling ? t("transcription.cancelling") : t("transcription.cancel")}
         </button>
       </div>
 
       <p className="home__footer">
         <LockIcon />
-        Traitement 100&nbsp;% local
+        {t("common.localProcessing")}
       </p>
     </div>
   );

@@ -1,35 +1,25 @@
+import { useTranslation } from "react-i18next";
 import { WarningIcon } from "../media-selection/icons";
 import type { TranscriptionErrorCode } from "./types";
 
 interface TranscriptionFailureProps {
   code: TranscriptionErrorCode;
-  message: string;
   fileName: string;
   onChooseAnother: () => void;
   onRetry: () => void;
   onInstallModel: () => void;
 }
 
-const ERROR_TITLES: Record<TranscriptionErrorCode, string> = {
-  modelMissing: "Modèle non installé",
-  noAudioTrack: "Impossible de traiter ce fichier",
-  audioPreparationFailed: "Impossible de traiter ce fichier",
-  transcriptionFailed: "La transcription a échoué",
-  writeFailed: "Impossible d'enregistrer les fichiers",
-  noOutputSelected: "Aucune sortie sélectionnée",
-  alreadyRunning: "Transcription déjà en cours",
-  insufficientDiskSpace: "Espace disque insuffisant",
-};
-
 export function TranscriptionFailure({
   code,
-  message,
   fileName,
   onChooseAnother,
   onRetry,
   onInstallModel,
 }: TranscriptionFailureProps) {
+  const { t } = useTranslation();
   const isModelMissing = code === "modelMissing";
+  const title = t(`error.codes.${code}.title`);
 
   return (
     <div className="job">
@@ -37,33 +27,33 @@ export function TranscriptionFailure({
         <div className="result-header__icon result-header__icon--error" aria-hidden="true">
           <WarningIcon />
         </div>
-        <p className="result-header__title">{ERROR_TITLES[code]}</p>
-        <p className="result-header__subtitle">{message}</p>
+        <p className="result-header__title">{title}</p>
+        <p className="result-header__subtitle">{t(`error.codes.${code}.message`)}</p>
       </div>
 
       <div className="actions">
         <button type="button" className="button button--secondary" onClick={onChooseAnother}>
-          Choisir un autre fichier
+          {t("error.chooseAnother")}
         </button>
         {isModelMissing ? (
           <button type="button" className="button button--primary" onClick={onInstallModel}>
-            Installer le modèle
+            {t("error.installModel")}
           </button>
         ) : (
           <button type="button" className="button button--primary" onClick={onRetry}>
-            Réessayer
+            {t("error.retry")}
           </button>
         )}
       </div>
 
       <details className="tech-details">
-        <summary>Détails techniques</summary>
+        <summary>{t("error.technicalDetails")}</summary>
         <dl className="tech-details__grid">
-          <dt>Erreur</dt>
-          <dd>{ERROR_TITLES[code]}</dd>
-          <dt>Code</dt>
+          <dt>{t("error.fieldError")}</dt>
+          <dd>{title}</dd>
+          <dt>{t("error.fieldCode")}</dt>
           <dd>{code}</dd>
-          <dt>Fichier</dt>
+          <dt>{t("error.fieldFile")}</dt>
           <dd>{fileName}</dd>
         </dl>
       </details>
