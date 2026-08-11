@@ -89,7 +89,7 @@ Résultat : cycle de vie des jobs prouvé de bout en bout sur le `.app` empaquet
 
 ## M5 — MVP macOS
 
-Statut : `IN PROGRESS`
+Statut : `DONE`
 
 Objectifs :
 
@@ -99,7 +99,9 @@ Objectifs :
 * tests médias longs ;
 * validation DaVinci Resolve.
 
-Avancement : identité de production `com.romainbourbon.stia` adoptée et migration des données depuis l'ancien identifiant `.dev` prouvée sans retéléchargement (voir [ADR-006](architecture/ADR-006-release-identity-and-data-migration.md), `ACCEPTED`). Réserve de portabilité Apple Silicon close : `whisper-cli` reconstruit avec `GGML_NATIVE=OFF`, sans `-mcpu=native` ni extension SME propre à la machine de build, Metal conservé, sorties octet pour octet identiques. Endurance 5/15/30/60 min mesurée, icône de production intégrée (asset ST-IA approuvé, plus de logo Tauri par défaut), `.app` et `.dmg` produits, notices de licence embarquées. Gate DaVinci Resolve validé par l'utilisateur (piste de sous-titres, timecodes, synchronisation OK sur un média réel de 60 min) — limite de vocabulaire observée sur certains noms propres/termes techniques, reportée en future mission qualité (voir ci-dessous). Reste le smoke test GUI final du `.app` empaqueté avant passage à `DONE`.
+Avancement : identité de production `com.romainbourbon.stia` adoptée et migration des données depuis l'ancien identifiant `.dev` prouvée sans retéléchargement (voir [ADR-006](architecture/ADR-006-release-identity-and-data-migration.md), `ACCEPTED`). Réserve de portabilité Apple Silicon close : `whisper-cli` reconstruit avec `GGML_NATIVE=OFF`, sans `-mcpu=native` ni extension SME propre à la machine de build, Metal conservé, sorties octet pour octet identiques. Endurance 5/15/30/60 min mesurée, icône de production intégrée (asset ST-IA approuvé, plus de logo Tauri par défaut), `.app` et `.dmg` produits, notices de licence embarquées. Gate DaVinci Resolve validé par l'utilisateur (piste de sous-titres, timecodes, synchronisation OK sur un média réel de 60 min) — limite de vocabulaire observée sur certains noms propres/termes techniques, reportée en future mission qualité (voir ci-dessous). Smoke test GUI final validé par l'utilisateur sur le `.app` empaqueté (icône ST-IA incluse) : parcours complet média → SRT/TXT → Ouvrir le dossier/Finder, et annulation → retour propre → retry sans redémarrage → transcription complète, tous deux confirmés OK.
+
+Résultat : release candidate locale macOS 0.1.0 qualifiée de bout en bout — pipeline, gestionnaire de modèle, cycle de vie/annulation, identité de production, portabilité Apple Silicon, endurance jusqu'à 60 minutes, gate DaVinci Resolve et smoke test GUI. Non signée/notariée (hors périmètre local RC, voir [checklist de release](release/RELEASE_CHECKLIST.md)).
 
 ### Future — qualité de transcription (vocabulaire)
 
