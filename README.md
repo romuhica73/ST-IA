@@ -17,6 +17,14 @@ Le modèle de transcription (~547 Mo) est téléchargé une seule fois, sur acti
 * pas de cloud pour la transcription ;
 * pas de dépendance Python utilisateur.
 
+## Interface
+
+* Interface disponible en français et en anglais (Système / Français / English) ;
+* thème Système / Clair / Sombre, suit macOS en direct si « Système » est sélectionné ;
+* réduction des animations Système / Activé / Désactivé (accessibilité) ;
+* préférences enregistrées localement (`Application Support`), jamais envoyées nulle part ;
+* langue de l'interface et langue de transcription sont deux réglages indépendants — la transcription reste qualifiée en français quelle que soit la langue de l'interface.
+
 ## Architecture cible
 
 ```text
@@ -42,7 +50,7 @@ Intel n'est pas pris en charge. Il n'existe pas de build Windows.
 
 ## Statut
 
-Release candidate locale `0.1.0` (Mission 5) : pipeline local complet, gestionnaire de modèle, annulation et récupération, endurance qualifiée jusqu'à 60 minutes.
+Release candidate locale `0.1.0` : pipeline local complet, gestionnaire de modèle, annulation et récupération, endurance qualifiée jusqu'à 60 minutes, identité visuelle et motion (Mission 6), réglages/i18n FR-EN/À propos (Mission 7).
 
 Non signée et non notarisée à ce stade : macOS affichera un avertissement Gatekeeper à la première ouverture. Voir [checklist de release](docs/release/RELEASE_CHECKLIST.md).
 
@@ -60,6 +68,7 @@ Non signée et non notarisée à ce stade : macOS affichera un avertissement Gat
 pnpm install       # dépendances frontend
 pnpm tauri dev      # lance l'application desktop en mode développement
 pnpm build          # build frontend (tsc + vite)
+pnpm test            # tests frontend (Vitest — i18n, locale, réglages)
 cargo check          # depuis src-tauri/
 cargo test           # depuis src-tauri/
 cargo fmt --check    # depuis src-tauri/
@@ -90,6 +99,7 @@ scripts/provision-dev-model.sh /chemin/vers/ggml-large-v3-turbo-q5_0.bin
 * [ADR-004 — Gestion et intégrité du modèle local](docs/architecture/ADR-004-model-management.md)
 * [ADR-005 — Cycle de vie des jobs, annulation et nettoyage](docs/architecture/ADR-005-runtime-lifecycle-and-cancellation.md)
 * [ADR-006 — Identité de production, portabilité et migration](docs/architecture/ADR-006-release-identity-and-data-migration.md)
+* [ADR-007 — Préférences locales et localisation](docs/architecture/ADR-007-local-preferences-and-interface-localization.md)
 * [Checklist de release](docs/release/RELEASE_CHECKLIST.md)
 * [Composants tiers et licences](THIRD_PARTY_NOTICES.md)
 * [FFmpeg — sidecar et licence](docs/third-party/FFMPEG.md)

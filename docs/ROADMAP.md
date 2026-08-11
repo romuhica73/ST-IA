@@ -115,7 +115,7 @@ Pas d'implémentation, pas de nouveau modèle, pas de champ UI dans cette entré
 
 ## M6 — Visual Polish & Motion
 
-Statut : `IN PROGRESS`
+Statut : `DONE`
 
 Objectif : améliorer l'identité visuelle et le ressenti de ST-IA sans modifier son architecture fonctionnelle.
 
@@ -133,9 +133,30 @@ Périmètre :
 
 Avancement : identité visuelle dérivée de l'icône ST-IA (teal-cyan `#0c7180`/`#2dd4bf` échantillonné sur le dégradé réel de l'icône, calmé pour un usage UI — pas de neon, pas de gradient dans le chrome), remplaçant le bleu générique précédent. Fond graphite/anthracite en dark mode (`#1a1c20`) plutôt qu'un simple inversé. Tokens formalisés (rayons, ombre unique très subtile, échelle de motion `100–320ms`) réutilisés dans tous les écrans. Icônes glyphe (`✓`, `!`, `♪`, `✨`) remplacées par des SVG cohérents avec la famille existante. Zone de dépôt avec retour drag-over renforcé (échelle + halo, sobre). Boutons dotés d'états hover/active/focus-visible complets. Écran de progression : marqueurs d'étape animés à l'achèvement, barre indéterminée plus calme. Écran de succès : check en scale-in, liste des fichiers en apparition échelonnée. Écrans d'erreur passés d'un remplissage rouge plein à une icône teintée (rouge réservé à l'icône, jamais un bloc plein) — nettement moins anxiogène. `prefers-reduced-motion` respecté : coupe globale des durées/animations, avec un cas particulier traité explicitement (la barre de progression indéterminée passe à un état statique plutôt que d'être figée à mi-course par la règle générale). Toutes les corrections de contraste AA de M5 revérifiées et conservées, plus deux nouveaux tokens texte-sûrs (`--success-text` clair/sombre) pour le badge SRT qui ne les avait pas. Correction de microcopie : « Déposez votre vidéo ici » → « Déposez votre média ici » (incohérent avec le support audio existant).
 
-Réserve : la validation par capture d'écran automatisée (§28) n'a pas pu être produite — trois tentatives via automatisation d'accessibilité macOS ont chacune capturé incidemment une fenêtre ou un panneau étranger à ST-IA exposant des noms de fichiers/dossiers personnels ; chaque capture a été supprimée immédiatement sans être exploitée. Validation visuelle déférée au gate GUI humain (§29).
+Réserve : la validation par capture d'écran automatisée (§28) n'a pas pu être produite — trois tentatives via automatisation d'accessibilité macOS ont chacune capturé incidemment une fenêtre ou un panneau étranger à ST-IA exposant des noms de fichiers/dossiers personnels ; chaque capture a été supprimée immédiatement sans être exploitée. Validation visuelle confirmée par l'utilisateur via le gate GUI humain.
 
-## Future — Open Source / Sécurité (après M6, non commencée)
+Validé humainement, convergé sur `main`.
+
+## M7 — Settings, i18n, About & Versioning
+
+Statut : `IN PROGRESS`
+
+Objectif : ajouter la couche « application configurable » — réglages persistants, interface bilingue FR/EN, écran À propos avec version réelle — sans toucher au moteur de transcription ni au pipeline.
+
+Périmètre :
+
+* réglages (thème, motion, langue) persistés localement (`Application Support/settings.json`), jamais dans `localStorage` ;
+* thème Système / Clair / Sombre, suit macOS en direct ;
+* réduction des animations Système / Activé / Désactivé, cohérente avec le système de motion M6 ;
+* internationalisation complète (i18next/react-i18next), catalogues FR/EN avec parité de clés testée automatiquement ;
+* langue de l'interface strictement indépendante de la langue de transcription (le champ média renommé « Langue de transcription » / « Transcription language ») ;
+* écran À propos avec version réelle (`app.package_info().version`, jamais codée en dur) ;
+* vérification automatisée de cohérence de version entre `package.json`, `Cargo.toml`, `tauri.conf.json` ;
+* sélecteur Rapide/Précis retiré (aucun comportement réel derrière, voir ADR-007 décision 7) — reporté en v0.2.
+
+Voir [ADR-007](architecture/ADR-007-local-preferences-and-interface-localization.md) (`PROVISIONAL`) pour le détail des décisions.
+
+## M8 — Open Source & Security Readiness (après M7, non commencée)
 
 Périmètre indicatif à couvrir lors d'une mission dédiée :
 
@@ -154,6 +175,10 @@ Périmètre indicatif à couvrir lors d'une mission dédiée :
 * `SECURITY.md`.
 
 Audit non commencé.
+
+## M9 — Public Release 0.1.0 (après M8, non commencée)
+
+Signature Developer ID, notarisation, publication GitHub. Non commencée — dépend de la disponibilité d'une identité de signature et d'une décision explicite de rendre le repository public.
 
 ## Post-MVP
 
