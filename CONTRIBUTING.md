@@ -124,3 +124,14 @@ de `otool -L`, et la raison du changement.
 * Améliorations des traductions FR/EN.
 * Tests, en particulier adversariaux (chemins, noms de fichiers, états corrompus).
 * Documentation.
+
+## Licence des contributions
+
+ST-IA est sous licence [MIT](LICENSE). En proposant une pull request, vous acceptez que
+votre contribution soit distribuée sous cette même licence. Il n'y a pas de CLA à
+signer.
+
+N'ajoutez jamais dans ce dépôt du code dont la licence est incompatible avec MIT.
+Les composants tiers *distribués* avec l'application (sidecars) sont un cas distinct,
+traité dans [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) — ils ne sont pas liés au
+code de ST-IA et conservent leur propre licence.

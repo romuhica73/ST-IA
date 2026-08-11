@@ -107,6 +107,22 @@ scripts/provision-dev-model.sh /chemin/vers/ggml-large-v3-turbo-q5_0.bin
 * [Modèle de menace](docs/security/THREAT_MODEL.md)
 * [Revue de sécurité M8](docs/security/M8_SECURITY_REVIEW.md)
 * [Checklist de release](docs/release/RELEASE_CHECKLIST.md)
+* [Licence du projet (MIT)](LICENSE)
 * [Composants tiers et licences](THIRD_PARTY_NOTICES.md)
 * [FFmpeg — sidecar et licence](docs/third-party/FFMPEG.md)
 * [Changelog](CHANGELOG.md)
+
+## Licence
+
+ST-IA est distribué sous licence [MIT](LICENSE).
+
+Cette licence couvre **le code de ST-IA uniquement**. Les composants tiers distribués
+avec l'application conservent chacun leur propre licence — voir
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) :
+
+* **FFmpeg** — LGPL-2.1, distribué comme exécutable séparé
+  (voir [`docs/third-party/FFMPEG.md`](docs/third-party/FFMPEG.md)) ;
+* **whisper.cpp** — MIT.
+
+Le modèle Whisper n'est pas redistribué : il est téléchargé depuis Hugging Face à la
+demande explicite de l'utilisateur.

@@ -4,6 +4,8 @@ ST-IA embarque deux binaires tiers dans son bundle macOS et télécharge un mod�
 
 Ce document rapporte des faits observables (version, provenance, options de build, licence annoncée par le composant). Il ne constitue pas un avis juridique.
 
+**Ce document est distinct de la licence de ST-IA.** Le code de ST-IA est sous licence MIT (voir [`LICENSE`](LICENSE)) ; les composants listés ci-dessous conservent chacun leur propre licence, indépendante de celle-ci. Aucun n'est relicencié par ST-IA.
+
 ---
 
 ## 1. FFmpeg
