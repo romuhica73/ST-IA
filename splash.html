@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- No localizable text: the splash shows the ST-IA mark only, so it
          cannot flash the wrong language before settings have loaded. -->
-    <title>ST-IA</title>
+    <!-- Distinct from the window title Rust sets, so the render check can
+         tell "the document loaded" apart from "the window merely exists". -->
+    <title>ST-IA:splash</title>
   </head>
 
   <body>

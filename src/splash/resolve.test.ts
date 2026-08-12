@@ -2,21 +2,29 @@ import { describe, expect, it } from "vitest";
 import { readPreference, resolveSplashMotion, resolveSplashTheme } from "./resolve";
 
 describe("splash preference reading", () => {
-  it("reads a preference forwarded by Rust in the query string", () => {
+  it("reads a preference from the fragment Rust builds the window with", () => {
+    // Regression guard: this was a query string, which made the window load a
+    // blank page — Tauri's asset resolver matches the request path verbatim
+    // and `splash.html?theme=…` matches no embedded asset. A fragment never
+    // reaches the resolver.
+    expect(readPreference("#theme=dark&motion=on", "theme")).toBe("dark");
+    expect(readPreference("#theme=dark&motion=on", "motion")).toBe("on");
+  });
+
+  it("still reads a query string, so neither separator can silently break", () => {
     expect(readPreference("?theme=dark&motion=on", "theme")).toBe("dark");
-    expect(readPreference("?theme=dark&motion=on", "motion")).toBe("on");
   });
 
   it("falls back to system when the parameter is absent", () => {
     expect(readPreference("", "theme")).toBe("system");
-    expect(readPreference("?motion=on", "theme")).toBe("system");
+    expect(readPreference("#motion=on", "theme")).toBe("system");
   });
 
-  it("never throws on a malformed query string", () => {
+  it("never throws on a malformed fragment", () => {
     // A splash screen has no error state to fall back to, so every input
     // has to resolve to something displayable.
-    for (const search of ["?", "?=", "?theme", "??theme=dark", "&&&", "?theme=%"]) {
-      expect(() => readPreference(search, "theme")).not.toThrow();
+    for (const raw of ["#", "#=", "#theme", "##theme=dark", "&&&", "#theme=%", "?"]) {
+      expect(() => readPreference(raw, "theme")).not.toThrow();
     }
   });
 });

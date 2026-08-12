@@ -78,22 +78,48 @@ impl SplashState {
     }
 }
 
+/// The splash window's URL, carrying the two display preferences.
+///
+/// They go in the URL *fragment*, deliberately. Tauri's embedded asset
+/// resolver matches the request path verbatim, so `splash.html?theme=light`
+/// resolves to no asset at all and the window loads a blank page — observed
+/// on a packaged build, not theorised. A fragment is never part of the
+/// request, so the document always resolves and the values still reach the
+/// page.
+fn splash_url(settings: &Settings) -> String {
+    format!(
+        "splash.html#theme={}&motion={}",
+        settings.theme.as_str(),
+        settings.motion.as_str()
+    )
+}
+
 /// Builds the splash window. Called first thing in `setup`, before any other
 /// startup work, so it is on screen for whatever that work costs.
 ///
-/// The stored theme/motion *preferences* travel as query parameters rather
-/// than being read by the splash itself: that is what lets the window keep
-/// zero capabilities while still honouring a forced dark theme or a forced
+/// The stored theme/motion *preferences* travel in the URL rather than being
+/// read by the splash itself: that is what lets the window keep zero
+/// capabilities while still honouring a forced dark theme or a forced
 /// reduced-motion setting on the very first frame. They are preferences, not
 /// user data — no path, no filename, no transcript ever reaches this window.
 pub fn create(app: &AppHandle, settings: &Settings) -> tauri::Result<()> {
-    let url = format!(
-        "splash.html?theme={}&motion={}",
-        settings.theme.as_str(),
-        settings.motion.as_str()
-    );
+    let url = splash_url(settings);
 
     WebviewWindowBuilder::new(app, SPLASH_LABEL, WebviewUrl::App(url.into()))
+        // A window that opens is not a window that displays. The splash holds
+        // no capability, so it cannot report for itself; this is the only
+        // screenshot-free signal that its document actually resolved and
+        // finished loading, rather than 404-ing to a blank page — the exact
+        // failure a mistyped asset URL produces, silently, while `url()` still
+        // reports something perfectly normal.
+        .on_page_load(|webview, payload| {
+            eprintln!(
+                "[st-ia] splash: page {:?} <{}> (window {})",
+                payload.event(),
+                payload.url(),
+                webview.label()
+            );
+        })
         .title("ST-IA")
         .inner_size(400.0, 260.0)
         .resizable(false)
@@ -104,6 +130,11 @@ pub fn create(app: &AppHandle, settings: &Settings) -> tauri::Result<()> {
         .focused(true)
         .build()?;
 
+    eprintln!(
+        "[st-ia] splash: window created (theme={}, motion={})",
+        settings.theme.as_str(),
+        settings.motion.as_str()
+    );
     Ok(())
 }
 
@@ -113,6 +144,7 @@ pub fn create(app: &AppHandle, settings: &Settings) -> tauri::Result<()> {
 /// closed, so there is never a frame with no ST-IA window on screen (which
 /// reads as a flicker, and on macOS briefly bounces focus to another app).
 fn reveal_main(app: &AppHandle) {
+    eprintln!("[st-ia] splash: handover, showing main window");
     if let Some(main) = app.get_webview_window(MAIN_LABEL) {
         let _ = main.show();
         let _ = main.set_focus();
@@ -245,6 +277,32 @@ mod tests {
         // be felt as a wait.
         assert!(MIN_VISIBLE >= Duration::from_millis(600));
         assert!(MIN_VISIBLE <= Duration::from_millis(900));
+    }
+
+    #[test]
+    fn splash_url_puts_preferences_in_the_fragment_never_the_query() {
+        // Regression guard for a real defect: with a query string, Tauri's
+        // asset resolver found no `splash.html?theme=…` asset and the window
+        // showed a blank page while still reporting a perfectly normal URL.
+        use crate::domain::settings::{MotionPreference, ThemePreference};
+        let url = splash_url(&Settings {
+            theme: ThemePreference::Dark,
+            motion: MotionPreference::On,
+            language: crate::domain::settings::LanguagePreference::Fr,
+        });
+
+        assert_eq!(url, "splash.html#theme=dark&motion=on");
+        assert!(!url.contains('?'), "a query string does not resolve: {url}");
+        let (path, _) = url
+            .split_once('#')
+            .expect("preferences travel in the fragment");
+        assert_eq!(path, "splash.html", "the asset path must stay bare");
+    }
+
+    #[test]
+    fn splash_url_carries_the_default_preferences_too() {
+        let url = splash_url(&Settings::default());
+        assert_eq!(url, "splash.html#theme=system&motion=system");
     }
 
     #[test]

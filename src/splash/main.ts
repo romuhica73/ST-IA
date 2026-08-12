@@ -14,14 +14,16 @@ import "./splash.css";
  * runs synchronously against an already-parsed body), so there is no flash
  * of the wrong theme or of motion that should have been suppressed. */
 
-const search = typeof window !== "undefined" ? window.location.search : "";
+// Rust puts the preferences in the fragment; see readPreference for why that
+// is load-bearing rather than a style choice.
+const params = window.location.hash || window.location.search;
 
 document.documentElement.dataset.theme = resolveSplashTheme(
-  readPreference(search, "theme"),
+  readPreference(params, "theme"),
   window.matchMedia("(prefers-color-scheme: dark)").matches,
 );
 
 document.documentElement.dataset.motion = resolveSplashMotion(
-  readPreference(search, "motion"),
+  readPreference(params, "motion"),
   window.matchMedia("(prefers-reduced-motion: reduce)").matches,
 );
