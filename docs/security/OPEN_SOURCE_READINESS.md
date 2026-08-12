@@ -40,6 +40,8 @@ confidentialité ne subsiste.
 | 24 | Templates GitHub | ✅ | PR + issue + lien vulnérabilité |
 | 25 | Paramètres GitHub | ⏸️ recommandés | Non appliqués par M8 (hors mandat) — `docs/release/GITHUB_PUBLICATION_CHECKLIST.md` |
 | 26 | Signature / notarisation | ⏸️ M9 | Hors périmètre |
+| 27 | Qualification humaine du `.app` | ✅ | Gate A/B/C/D passé sur la build empaquetée — voir `M8_SECURITY_REVIEW.md` §Qualification humaine |
+| 28 | Privacy mesurée | ✅ | 0 connexion au repos, en réglages et en transcription ; téléchargement du modèle vers le seul endpoint attendu, 2 Ko sortants |
 
 ---
 
@@ -126,10 +128,18 @@ indépendante du choix de licence de ST-IA, et ce n'est pas un défaut de sécur
 
 ## Verdict
 
-**Prêt techniquement et légalement.** Aucun secret, aucune réécriture d'historique
-nécessaire, aucune vulnérabilité de dépendance, surface IPC bornée et testée, CSP
-appliquée et vérifiée sur build empaquetée, propriété local-first prouvée
-empiriquement, licence principale MIT en place.
+**Prêt techniquement, légalement et fonctionnellement.** Aucun secret, aucune
+réécriture d'historique nécessaire, aucune vulnérabilité de dépendance, surface IPC
+bornée et testée, CSP appliquée et vérifiée sur build empaquetée, licence principale
+MIT en place.
+
+La qualification humaine est passée sur le `.app` empaqueté (réglages, parcours
+nominal, annulation/retry, téléchargement sécurisé du modèle), et la propriété
+local-first n'est plus seulement déduite du code : elle est **mesurée**. Zéro connexion
+réseau au repos, en réglages et pendant une transcription ; pour le téléchargement du
+modèle, l'endpoint épinglé uniquement, en HTTPS, avec 2 144 octets sortants au total
+contre 493 Mo entrants. Les sorties SRT/TXT sont identiques aux tailles qualifiées en
+M2/M4 : aucun correctif M8 n'a modifié le produit.
 
 Réserves restantes, aucune n'étant un blocker de sécurité ou de confidentialité :
 

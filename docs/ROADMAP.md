@@ -158,7 +158,7 @@ Correctif final : icône Settings remplacée (se lisait comme un soleil, pas des
 
 Voir [ADR-007](architecture/ADR-007-local-preferences-and-interface-localization.md) (`ACCEPTED`) pour le détail des décisions.
 
-## M8 — Open Source & Security Readiness (IN PROGRESS)
+## M8 — Open Source & Security Readiness (DONE)
 
 Audit complet mené avant toute modification de code (findings first). Résultats dans
 [`docs/security/M8_SECURITY_REVIEW.md`](security/M8_SECURITY_REVIEW.md) et
@@ -180,14 +180,24 @@ modèle, refus des liens symboliques au nettoyage, client HTTPS strict. 11 tests
 supplémentaires (78 tests Rust au total), dont des tests adversariaux (traversée,
 liens symboliques, noms de fichiers hostiles, chaînes d'URL).
 
-**Réserve bloquante, non technique** : le projet n'a pas de licence principale
-(`PROJECT_LICENSE_DECISION_REQUIRED`). Un dépôt public sans licence reste sous
-copyright exclusif. Cette décision appartient à l'auteur et n'a pas été prise par M8.
+**Licence principale : MIT**, décidée par l'auteur et appliquée (`LICENSE`,
+`package.json`, `Cargo.toml`, README). Les licences tierces sont inchangées : FFmpeg
+reste LGPL-2.1, whisper.cpp reste sous sa propre MIT, et `THIRD_PARTY_NOTICES.md` reste
+un document distinct. Rien n'a été relicencié.
 
-Reste à faire : qualification produit interactive sur le `.app` (gate humain), décision
-de licence, puis paramètres GitHub (recommandés dans
-[`docs/release/GITHUB_PUBLICATION_CHECKLIST.md`](release/GITHUB_PUBLICATION_CHECKLIST.md),
-non appliqués par M8).
+Gate humain passé sur le `.app` empaqueté : réglages et bascule FR/EN, parcours média
+complet jusqu'aux SRT/TXT et au Finder, annulation pendant Whisper puis retry sans
+redémarrage, et téléchargement sécurisé du modèle mesuré de bout en bout (endpoint
+épinglé, HTTPS, SHA-256 conforme, promotion après validation seulement, aucun
+`.download` résiduel, 2 Ko sortants contre 493 Mo entrants). Aucun comportement anormal
+lié à la CSP. Les SRT/TXT produits après correctifs sont identiques aux tailles
+qualifiées en M2/M4.
+
+Réserves restantes, aucune n'étant un blocker de sécurité ou de confidentialité :
+signature/notarisation Apple (M9), revue juridique recommandée sur le mode de
+distribution de FFmpeg sous LGPL, et reproductibilité des sidecars binaires suivis dans
+Git (compromis documenté). Les paramètres GitHub restent recommandés et non appliqués —
+voir [`docs/release/GITHUB_PUBLICATION_CHECKLIST.md`](release/GITHUB_PUBLICATION_CHECKLIST.md).
 
 ## M9 — Public Release 0.1.0 (après M8, non commencée)
 

@@ -107,9 +107,12 @@ côté Rust et n'est donc pas soumis à la CSP.
 **Verification.** Vérifiée sur la **build release empaquetée** (`pnpm tauri build`) :
 la politique est bien embarquée dans le binaire, l'application démarre, le frontend
 s'initialise et l'IPC fonctionne (le log `model detect` prouve que
-`get_model_status` a bien été invoqué depuis React), **0 violation CSP**. La
-qualification interactive complète (Réglages, i18n, transcription, opener) reste un
-gate humain.
+`get_model_status` a bien été invoqué depuis React), **0 violation CSP**.
+
+Qualification interactive humaine passée sur le `.app` empaqueté : Réglages, bascule
+FR/EN, thème, À propos, parcours média complet, annulation et retry, gestionnaire de
+modèle. **Aucun écran blanc, aucun composant manquant, aucun bouton inactif** — les
+symptômes qu'une CSP trop stricte aurait produits. Voir §Qualification humaine.
 
 ---
 
@@ -132,9 +135,10 @@ maintenant l'état `Completed` du backend et révèle le premier fichier génér
 `output_dir`). Il n'y a plus de chemin fourni par le frontend à valider. Le frontend
 appelle `invoke("open_output_folder")` sans argument.
 
-**Verification.** `cargo test` (78 tests) et build release verte. Le comportement
-utilisateur est identique : la même cible était déjà celle que le frontend
-choisissait.
+**Verification.** `cargo test` (78 tests) et build release verte. Confirmé par le gate
+humain sur le `.app` : « Ouvrir le dossier » ouvre bien le Finder sur le dossier de
+sortie. Le comportement utilisateur est identique — la même cible était déjà celle que
+le frontend choisissait.
 
 ---
 
@@ -158,7 +162,9 @@ constater l'était.
 partiel est supprimé par le nettoyage au démarrage suivant.
 
 **Verification.** Tests existants du gestionnaire de modèle inchangés et verts. La
-condition est un simple comparateur sur un compteur déjà présent.
+condition est un simple comparateur sur un compteur déjà présent. Un téléchargement
+réel de bout en bout a été rejoué pendant le gate humain, sans faux positif du plafond
+(`content-length` = taille attendue exactement). Voir §Qualification humaine, test D.
 
 ---
 
@@ -415,6 +421,59 @@ distribué, pas sur la licence du code de ST-IA. `LEGAL_REVIEW_RECOMMENDED` deme
 
 ---
 
+## Qualification humaine (gate M8)
+
+Rejouée sur le `.app` empaqueté issu du commit final, par l'auteur.
+
+| Test | Résultat | Ce qu'il ferme |
+|---|---|---|
+| **A — Réglages** | ✅ PASS | Ouverture, FR/EN, thème, À propos : la CSP ne casse aucun écran |
+| **B — Parcours nominal** | ✅ PASS | Média → transcription → SRT + TXT → « Ouvrir le dossier ». Valide STIA-SEC-001 (validation du chemin) et STIA-SEC-003 (opener sans paramètre) en usage réel |
+| **C — Annulation / retry** | ✅ PASS | Annulation pendant Whisper, retour propre, retry sans redémarrage, succès final |
+| **D — Téléchargement du modèle** | ✅ PASS | Voir le détail ci-dessous |
+
+**Aucun comportement anormal lié à la CSP** : pas d'écran blanc, pas de composant
+manquant, pas de bouton inactif.
+
+### Test D — téléchargement sécurisé, mesuré
+
+Le modèle qualifié a été mis de côté par **renommage** (jamais supprimé), la
+surveillance réseau démarrée **avant** le clic, puis le téléchargement déclenché
+manuellement.
+
+| Contrôle | Mesure |
+|---|---|
+| Endpoint | Exactement l'URL épinglée au commit immuable Hugging Face |
+| Transport | 2 endpoints (origine HF puis CDN), **tous deux en 443**. Aucune connexion non-HTTPS |
+| Taille | `content-length` 574 041 195 = attendue ; fichier final identique |
+| SHA-256 | `394221709c…ffa7e2`, conforme, revérifié indépendamment par `shasum` |
+| Identité | `cmp` avec le modèle précédemment qualifié : **bit-à-bit identique** |
+| Promotion atomique | Ordre des logs sans ambiguïté : `model verify` **puis** `model promoted`. Aucune promotion avant validation |
+| `.download` résiduel | Aucun |
+| Données utilisateur émises | **2 144 octets sortants au total**, constants du premier au dernier échantillon, contre 493 Mo entrants — un handshake TLS et un GET, rien d'autre |
+| Après téléchargement | Retour à **0 socket** |
+
+Puis transcription réelle avec ce modèle fraîchement téléchargé : **SRT 4 959 o et
+TXT 3 428 o**, soit exactement les tailles documentées dans ADR-003 et ADR-005 pour ce
+même média. Les sorties sont donc inchangées par tous les correctifs M8. Le workspace
+temporaire a été nettoyé et la stratégie anti-collision a produit un dossier `-5`.
+
+### Gate privacy — mesuré, pas seulement déduit
+
+| Phase | Connexions applicatives |
+|---|---|
+| Repos (modèle prêt) | **0** |
+| Réglages / i18n | **0** |
+| Transcription (modèle prêt) | **0** — capture différentielle entre un marqueur posé avant et l'état après |
+| Téléchargement du modèle | Endpoint modèle uniquement, HTTPS |
+
+Aucun média, chemin ni transcription n'est transmis : prouvé par la mesure (2 Ko
+sortants) et par le code (`client.get(URL_CONSTANTE).send()` — aucun `.body()`,
+`.query()`, `.header()`, `.form()` ni `.json()`, et ni le chemin média ni la
+transcription ne sont dans la portée de cette fonction).
+
+---
+
 ## Surface d'audit — commandes Tauri
 
 Les 11 commandes exposées, telles qu'elles sont **après** M8.
@@ -475,3 +534,6 @@ mais ces arguments sont construits **côté Rust** par `build_ffmpeg_args` /
 | `otool -L` sidecars | ✅ frameworks Apple uniquement |
 | `ffmpeg -protocols` | ✅ `file` seul, en entrée comme en sortie |
 | Fichiers suivis masqués par le nouveau `.gitignore` | ✅ **0** |
+| Gate humain A/B/C/D sur le `.app` empaqueté | ✅ PASS |
+| Réseau mesuré : repos / réglages / transcription | ✅ **0 connexion** |
+| Sorties SRT/TXT après correctifs M8 | ✅ identiques aux tailles ADR-003/ADR-005 |
