@@ -7,6 +7,8 @@ Application macOS locale transformant un média audio/vidéo en :
 * SRT ;
 * TXT.
 
+La transcription est **en français** — la seule langue qualifiée à ce stade. ST-IA ne produit pas de traduction (voir [ADR-008](docs/architecture/ADR-008-bilingual-output-pipeline.md)).
+
 Le modèle de transcription (~547 Mo) est téléchargé une seule fois, sur action explicite de l'utilisateur, puis stocké localement (`Application Support`). Après cette installation, la transcription fonctionne entièrement hors ligne — vos médias ne quittent jamais votre Mac.
 
 ## Principes
@@ -50,9 +52,9 @@ Intel n'est pas pris en charge. Il n'existe pas de build Windows.
 
 ## Statut
 
-Release candidate locale `0.1.0` : pipeline local complet, gestionnaire de modèle, annulation et récupération, endurance qualifiée jusqu'à 60 minutes, identité visuelle et motion (Mission 6), réglages/i18n FR-EN/À propos (Mission 7).
+Release candidate locale `0.1.0` : pipeline local complet, gestionnaire de modèle, annulation et récupération, endurance qualifiée jusqu'à 60 minutes, identité visuelle et motion (Mission 6), réglages/i18n FR-EN/À propos (Mission 7), revue de sécurité et licence MIT (Mission 8), écran de démarrage et packaging de release (Mission 9).
 
-Non signée et non notarisée à ce stade : macOS affichera un avertissement Gatekeeper à la première ouverture. Voir [checklist de release](docs/release/RELEASE_CHECKLIST.md).
+L'installation se fera à terme via une image disque `ST-IA-<version>-macos-arm64.dmg` publiée sur GitHub. **Aucune release n'est encore disponible** : les builds actuelles ne sont ni signées ni notariées, et macOS affichera un avertissement Gatekeeper à la première ouverture. En attendant, [construisez depuis les sources](docs/BUILDING.md). Voir la [checklist de release](docs/release/RELEASE_CHECKLIST.md).
 
 ## Stack
 
@@ -68,10 +70,18 @@ Non signée et non notarisée à ce stade : macOS affichera un avertissement Gat
 pnpm install       # dépendances frontend
 pnpm tauri dev      # lance l'application desktop en mode développement
 pnpm build          # build frontend (tsc + vite)
-pnpm test            # tests frontend (Vitest — i18n, locale, réglages)
+pnpm test            # tests frontend (Vitest — i18n, locale, réglages, splash)
 cargo check          # depuis src-tauri/
 cargo test           # depuis src-tauri/
 cargo fmt --check    # depuis src-tauri/
+```
+
+Pour assembler les artefacts de release macOS (DMG, archive, `SHA256SUMS.txt`) après un
+`pnpm tauri build` :
+
+```bash
+scripts/package-release.sh          # collecte et audite une build existante
+scripts/package-release.sh --build  # construit d'abord
 ```
 
 ### Sidecars et modèle (développement)
@@ -100,12 +110,15 @@ scripts/provision-dev-model.sh /chemin/vers/ggml-large-v3-turbo-q5_0.bin
 * [ADR-005 — Cycle de vie des jobs, annulation et nettoyage](docs/architecture/ADR-005-runtime-lifecycle-and-cancellation.md)
 * [ADR-006 — Identité de production, portabilité et migration](docs/architecture/ADR-006-release-identity-and-data-migration.md)
 * [ADR-007 — Préférences locales et localisation](docs/architecture/ADR-007-local-preferences-and-interface-localization.md)
+* [ADR-008 — Pipeline de sortie bilingue (rejeté)](docs/architecture/ADR-008-bilingual-output-pipeline.md)
+* [ADR-009 — Splashscreen et packaging de release](docs/architecture/ADR-009-splashscreen-and-release-packaging.md)
 * [Démarrage rapide](docs/QUICKSTART.md)
 * [Construire depuis les sources](docs/BUILDING.md)
 * [Contribuer](CONTRIBUTING.md)
 * [Politique de sécurité](SECURITY.md)
 * [Modèle de menace](docs/security/THREAT_MODEL.md)
 * [Revue de sécurité M8](docs/security/M8_SECURITY_REVIEW.md)
+* [Delta de sécurité M9](docs/security/M9_SECURITY_DELTA.md)
 * [Checklist de release](docs/release/RELEASE_CHECKLIST.md)
 * [Licence du projet (MIT)](LICENSE)
 * [Composants tiers et licences](THIRD_PARTY_NOTICES.md)

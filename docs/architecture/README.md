@@ -9,3 +9,5 @@
 | [ADR-005](ADR-005-runtime-lifecycle-and-cancellation.md) | Cycle de vie des jobs, annulation et nettoyage | ACCEPTED |
 | [ADR-006](ADR-006-release-identity-and-data-migration.md) | Identité de production, portabilité du moteur et migration des données | ACCEPTED |
 | [ADR-007](ADR-007-local-preferences-and-interface-localization.md) | Préférences locales et localisation de l'interface | ACCEPTED |
+| [ADR-008](ADR-008-bilingual-output-pipeline.md) | Pipeline de sortie bilingue (français + anglais) | REJECTED — bloqué par le modèle épinglé |
+| [ADR-009](ADR-009-splashscreen-and-release-packaging.md) | Splashscreen applicatif et packaging de release macOS | PROVISIONAL |

@@ -199,9 +199,91 @@ distribution de FFmpeg sous LGPL, et reproductibilité des sidecars binaires sui
 Git (compromis documenté). Les paramètres GitHub restent recommandés et non appliqués —
 voir [`docs/release/GITHUB_PUBLICATION_CHECKLIST.md`](release/GITHUB_PUBLICATION_CHECKLIST.md).
 
-## M9 — Public Release 0.1.0 (après M8, non commencée)
+## M9 — Splashscreen & Release Packaging
 
-Signature Developer ID, notarisation, publication GitHub. Non commencée — dépend de la disponibilité d'une identité de signature et d'une décision explicite de rendre le repository public.
+Statut : `DONE (périmètre réduit)`
+
+Objectif initial : sorties bilingues français + anglais, splashscreen animé, et
+packaging utilisateur pour une future release GitHub.
+
+### Sortie bilingue — abandonnée en M9
+
+L'audit préalable exigé avant toute implémentation a établi que le modèle
+épinglé **ne sait pas traduire**. Sur le fixture français qualifié, avec le
+binaire embarqué et la ligne de commande de production :
+
+| Modèle | Arguments | Sortie | Segments |
+| --- | --- | --- | --- |
+| `large-v3-turbo-q5_0` (épinglé) | `-l fr` | français (attendu) | 88 |
+| `large-v3-turbo-q5_0` (épinglé) | `-l fr -tr` | **français** (échec) | 14, blocs de 30 s |
+| `ggml-small` (témoin) | `-l fr -tr` | **anglais correct** | 36 |
+
+whisper.cpp accepte pourtant la tâche (`task = translate` dans son propre
+journal) et charge le modèle sans erreur : le drapeau `-tr` fonctionne, c'est
+`large-v3-turbo` — décodeur distillé entraîné sur de la transcription
+uniquement — qui ne réalise pas la tâche. Toutes les voies de contournement
+(mettre à jour whisper.cpp, changer de modèle, second modèle, second moteur,
+API distante) étaient hors périmètre M9. Conformément au protocole, la partie
+a été arrêtée plutôt que bricolée, et le descope confirmé par l'auteur.
+
+Aucun code de pipeline bilingue n'a été écrit : le pipeline de transcription
+est **strictement identique** à celui de M8. Voir
+[ADR-008](architecture/ADR-008-bilingual-output-pipeline.md) (`REJECTED`),
+preuves dans [`spike/out/m9-translation-audit/`](../spike/out/m9-translation-audit/).
+Reporté en v0.2 avec ses options chiffrées.
+
+### Livré
+
+* **Splashscreen animé** : deux vraies fenêtres (fenêtre `main` masquée,
+  fenêtre `splashscreen` construite en premier dans `setup`), bascule pilotée
+  par Rust — afficher `main` puis fermer le splash, jamais l'inverse.
+  Composition CSS locale (waveform qui se structure → lignes de sous-titres →
+  mot-symbole), 0,5 ko de JavaScript et 3 ko de CSS.
+* **Splash sans aucune capability** : son label n'apparaît dans aucun fichier
+  de `capabilities/`. Aucune commande, aucun événement, aucun sidecar, aucun
+  filesystem, aucun réseau. Handshake limité à une seule commande
+  (`notify_ui_ready`, un booléen, sans retour) sur la fenêtre principale.
+* **CSP inchangée**, et désormais épinglée par 7 tests — un durcissement par
+  rapport à M8, où elle était appliquée mais non testée.
+* **Reduced motion respecté** : plancher d'affichage de 820 ms en motion
+  normale, 160 ms en motion réduite. Aucune attente bloquante (timers
+  asynchrones, jamais de `thread::sleep`), chien de garde borné à 10 s, et
+  bascule idempotente entre trois chemins concurrents.
+* **Packaging de release** : `scripts/package-release.sh` produit
+  `release-artifacts/` (DMG, archive `.app`, `SHA256SUMS.txt` vérifié), audite
+  le bundle avant de collecter et refuse de packager en cas d'échec.
+
+### Qualification
+
+10/10 lancements empaquetés successifs conformes : splash créé, document
+résolu et chargé, bascule exactement une fois, chien de garde jamais
+déclenché, aucun processus résiduel. DMG monté et audité (identifiant,
+version, icône, `Applications`, licences, notices ; aucun modèle, média,
+secret ou log). 33 tests frontend et 103 tests Rust (79 en M8).
+
+Un défaut réel a été trouvé et corrigé par l'instrumentation ajoutée : la
+première implémentation passait les préférences en query string, ce que le
+résolveur d'assets embarqués de Tauri ne gère pas — la fenêtre s'ouvrait
+blanche tout en rapportant une URL parfaitement normale. Les préférences
+voyagent désormais dans le fragment de l'URL, qui n'atteint jamais le
+résolveur.
+
+Voir [ADR-009](architecture/ADR-009-splashscreen-and-release-packaging.md) et
+le [delta de sécurité M9](security/M9_SECURITY_DELTA.md).
+
+### Hors périmètre, reporté en M10
+
+Signature Developer ID, notarisation, publication GitHub, création du tag et
+de la release. Les artefacts produits restent **non signés et non notariés**
+(`PUBLIC_DISTRIBUTION_SIGNING_PENDING`) et ne doivent pas être publiés en
+l'état.
+
+## M10 — Signature, notarisation et publication (non commencée)
+
+Signature Developer ID, notarisation Apple, revue delta complète
+(`FULL_DELTA_REVIEW_PENDING_M10`), publication GitHub. Dépend de la
+disponibilité d'une identité de signature et d'une décision explicite de
+rendre le repository public.
 
 ## Post-MVP
 
