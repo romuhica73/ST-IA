@@ -1,0 +1,91 @@
+6
+00:00:22,240 --> 00:00:27,040
+ For example, a large language model, which is often called LLM, can understand a written
+
+7
+00:00:27,040 --> 00:00:30,940
+ message, analyze a document, or help us produce content.
+
+8
+00:00:30,940 --> 00:00:36,920
+ But we must keep in mind one essential thing: the model does not understand the world as a human being.
+
+9
+00:00:36,920 --> 00:00:40,420
+ It works from a context, a prompt, the information that is provided to it.
+
+12
+00:00:48,400 --> 00:00:52,800
+ modify the code and execute certain commands. Cursor, on the other hand, is a development
+
+13
+00:00:52,800 --> 00:00:56,080
+ environment that allows you to use artificial intelligence directly in the editor.
+
+14
+00:00:56,080 --> 00:00:56,080
+ Cursor, on the other hand, is a development environment that allows you to use artificial intelligence directly in the editor.
+
+15
+00:00:56,080 --> 00:00:56,100
+ Cursor, on the other hand, is a development environment that allows you to use artificial intelligence directly in the editor.
+
+16
+00:00:56,100 --> 00:00:56,100
+ Cursor, on the other hand, is a development environment that allows you to use artificial intelligence directly in the editor.
+
+17
+00:00:56,100 --> 00:01:01,740
+ But this raises an important question: how long do we have to leave an artificial intelligence to act alone?
+
+23
+00:01:20,340 --> 00:01:25,800
+ the application extracts the audio track, then Wishplur automatically generates a file
+
+24
+00:01:25,800 --> 00:01:25,800
+ of support that I want to use for my project. If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+25
+00:01:25,800 --> 00:01:25,860
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+26
+00:01:25,860 --> 00:01:25,920
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+27
+00:01:25,920 --> 00:01:25,920
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+28
+00:01:25,920 --> 00:01:25,920
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+29
+00:01:25,920 --> 00:01:25,940
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+30
+00:01:25,940 --> 00:01:26,000
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+31
+00:01:30,120 --> 00:01:30,280
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+32
+00:01:30,280 --> 00:01:30,380
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+33
+00:01:30,380 --> 00:01:30,480
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+34
+00:01:30,480 --> 00:01:30,580
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+35
+00:01:30,580 --> 00:01:30,680
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.

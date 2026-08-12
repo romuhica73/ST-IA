@@ -38,8 +38,20 @@ média, dérivation de la cible Finder depuis l'état backend, épinglage de
 l'URL de modèle), donc l'impact réel était limité ; mais la **propriété
 d'isolation annoncée n'existait pas**.
 
+**Ce qui est effectivement appliqué désormais** — et non simplement
+« capabilities minimales » :
+
+> L'autorisation des commandes applicatives est **imposée côté Rust**, par un
+> ACL de commandes explicite déclaré à la compilation. Chaque commande est
+> attribuée nommément à des fenêtres nommées. **La fenêtre splash ne peut
+> invoquer ni la transcription, ni l'installation de modèle, ni l'ouverture du
+> Finder, ni l'écriture des réglages, ni aucune autre commande privilégiée** :
+> l'appel est refusé par le runtime Tauri avant d'atteindre le code de la
+> commande, indépendamment de ce que le JavaScript de cette fenêtre tente de
+> faire.
+
 Correctif : `src-tauri/build.rs` déclare désormais un manifeste ACL listant
-les 13 commandes de l'application. Les fichiers de capabilities deviennent
+les 14 commandes de l'application. Les fichiers de capabilities deviennent
 autoritatifs pour elles aussi, et les deux fenêtres sont scindées :
 
 * `capabilities/main.json` — fenêtre `main` : `core:default`, dialogue,
@@ -96,8 +108,21 @@ les autres.
   d'écourter une animation de 6 s sur sa propre fenêtre.
 * **Fuite d'information** : aucune — aucune valeur de retour.
 
-Surface de commandes totale : **13** (11 en M8 + ces deux), désormais toutes
+Surface de commandes totale : **14** (11 en M8 + les deux signaux de bascule + `get_model_cards`), désormais toutes
 soumises à l'ACL applicatif et attribuées par fenêtre.
+
+### 2 ter. Commande `get_model_cards`
+
+Retourne la description publique des deux modèles (identifiant, taille,
+SHA-256, provenance, moteur) pour le panneau de transparence.
+
+* **Entrée** : aucune.
+* **Sortie** : des constantes compilées, identiques à celles que le
+  gestionnaire de modèle applique — un test vérifie que la carte reproduit
+  exactement le manifeste, pour qu'on ne puisse pas afficher une empreinte
+  que l'application ne vérifie pas.
+* **Fuite d'information** : aucune. Rien d'un système de fichiers, rien de
+  l'utilisateur ; ces valeurs sont déjà publiques dans le dépôt.
 
 ### 2 bis. Seconde passe Whisper et second modèle
 

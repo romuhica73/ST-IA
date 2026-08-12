@@ -1,0 +1,10 @@
+whisper-cli -m <MODELS>/ggml-large-v3.bin \
+            -f <WORKSPACE>/audio.wav \
+            -l fr -tr \
+            -of <WORKSPACE>/transcript-en -osrt -otxt
+
+whisper.cpp v1.9.2 (Metal). All decoding parameters left at their defaults:
+beam size 5, best-of 5, temperature 0.0 with fallback increment 0.2,
+entropy threshold 2.40, logprob threshold -1.00, no-speech threshold 0.60,
+flash attention on. Temperature fallback — Whisper's own mechanism for
+breaking repetition loops — is therefore ENABLED, not disabled.

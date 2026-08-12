@@ -118,4 +118,8 @@ environ 256 Mo de marge.
 **macOS refuse d'ouvrir l'application** — les builds actuelles ne sont pas encore
 signées. Clic droit sur `ST-IA.app` → **Ouvrir** → confirmer.
 
+Pour savoir précisément quels modèles ST-IA exécute, d'où ils viennent et où le
+traitement a lieu, voir [`AI_MODELS.md`](AI_MODELS.md) — ou, dans l'application,
+**Réglages → Modèles IA**.
+
 Pour construire depuis les sources, voir [`BUILDING.md`](BUILDING.md).

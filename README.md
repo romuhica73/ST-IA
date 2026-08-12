@@ -122,6 +122,7 @@ scripts/provision-dev-model.sh /chemin/vers/ggml-large-v3-turbo-q5_0.bin
 * [ADR-008 — Pipeline de sortie bilingue : constat sur le modèle turbo](docs/architecture/ADR-008-bilingual-output-pipeline.md)
 * [ADR-009 — Splashscreen et packaging de release](docs/architecture/ADR-009-splashscreen-and-release-packaging.md)
 * [ADR-010 — Traduction anglaise locale](docs/architecture/ADR-010-local-english-translation.md)
+* [Modèles IA et transparence](docs/AI_MODELS.md)
 * [Démarrage rapide](docs/QUICKSTART.md)
 * [Construire depuis les sources](docs/BUILDING.md)
 * [Contribuer](CONTRIBUTING.md)

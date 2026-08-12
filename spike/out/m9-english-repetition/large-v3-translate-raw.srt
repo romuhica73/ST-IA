@@ -1,0 +1,164 @@
+1
+00:00:00,000 --> 00:00:04,260
+ Hello everyone, today I would like to talk to you about a very concrete subject,
+
+2
+00:00:04,260 --> 00:00:08,000
+ how artificial intelligence begins to integrate into our daily lives,
+
+3
+00:00:08,000 --> 00:00:12,720
+ both in our professional and personal lives. When we talk about artificial intelligence,
+
+4
+00:00:12,720 --> 00:00:16,200
+ we immediately think of CGPT, Cloud, Gemini or Mistral.
+
+5
+00:00:16,200 --> 00:00:22,240
+ However, behind these tools, there are technologies and very different uses.
+
+6
+00:00:22,240 --> 00:00:27,040
+ For example, a large language model, which is often called LLM, can understand a written
+
+7
+00:00:27,040 --> 00:00:30,940
+ message, analyze a document, or help us produce content.
+
+8
+00:00:30,940 --> 00:00:36,920
+ But we must keep in mind one essential thing: the model does not understand the world as a human being.
+
+9
+00:00:36,920 --> 00:00:40,420
+ It works from a context, a prompt, the information that is provided to it.
+
+10
+00:00:40,420 --> 00:00:44,140
+ In my development projects, I use in particular CGPT, Cloud Code and Cursor.
+
+11
+00:00:44,140 --> 00:00:48,400
+ Cloud Code can work directly on a project, read the files,
+
+12
+00:00:48,400 --> 00:00:52,800
+ modify the code and execute certain commands. Cursor, on the other hand, is a development
+
+13
+00:00:52,800 --> 00:00:56,080
+ environment that allows you to use artificial intelligence directly in the editor.
+
+14
+00:00:56,080 --> 00:00:56,080
+ Cursor, on the other hand, is a development environment that allows you to use artificial intelligence directly in the editor.
+
+15
+00:00:56,080 --> 00:00:56,100
+ Cursor, on the other hand, is a development environment that allows you to use artificial intelligence directly in the editor.
+
+16
+00:00:56,100 --> 00:00:56,100
+ Cursor, on the other hand, is a development environment that allows you to use artificial intelligence directly in the editor.
+
+17
+00:00:56,100 --> 00:01:01,740
+ But this raises an important question: how long do we have to leave an artificial intelligence to act alone?
+
+18
+00:01:01,740 --> 00:01:05,520
+ Personally, I prefer to keep human control over important decisions.
+
+19
+00:01:05,520 --> 00:01:09,300
+ Artificial intelligence can propose, analyze and execute certain actions,
+
+20
+00:01:09,300 --> 00:01:12,600
+ but the final decision must remain understandable and verifiable.
+
+21
+00:01:12,600 --> 00:01:17,340
+ Let's take an example: let's imagine that I am developing an application on macOS called STIA.
+
+22
+00:01:17,340 --> 00:01:20,340
+ Its objective is very simple: I deposit a video,
+
+23
+00:01:20,340 --> 00:01:25,800
+ the application extracts the audio track, then Wishplur automatically generates a file
+
+24
+00:01:25,800 --> 00:01:25,800
+ of support that I want to use for my project. If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+25
+00:01:25,800 --> 00:01:25,860
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+26
+00:01:25,860 --> 00:01:25,920
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+27
+00:01:25,920 --> 00:01:25,920
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+28
+00:01:25,920 --> 00:01:25,920
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+29
+00:01:25,920 --> 00:01:25,940
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+30
+00:01:25,940 --> 00:01:26,000
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+31
+00:01:30,120 --> 00:01:30,280
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+32
+00:01:30,280 --> 00:01:30,380
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+33
+00:01:30,380 --> 00:01:30,480
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+34
+00:01:30,480 --> 00:01:30,580
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+35
+00:01:30,580 --> 00:01:30,680
+ If I want to use it for other projects, I can use the application extracts the audio track, then Wishplur generates automatically a file of support that I want to use for my project.
+
+36
+00:02:00,120 --> 00:02:29,120
+ This type of architecture also raises questions about performance. What happens with a 10-minute video, 30-minute or even an hour video? How much memory do you need to use? How long do you need to load the model? Is the result reliable when you pronounce technical terms, proper names or English names instead of a French sentence? Let's try some examples: OpenAI, ChatGPT, Anthropic, Cloud Code, Cursor, GitHub, Whisper, FFmpeg, DaVinci Resolve, Apple Silicon, API, LLM, Prompt, TypeScript and Rust.
+
+37
+00:02:29,120 --> 00:02:30,120
+ And now some examples.
+
+38
+00:02:30,120 --> 00:02:45,120
+ The video was recorded on August 7, 2026. It lasts about 3 minutes. The machine has 16 GB of living memory. A model can weigh 747 MB, while another is over 1.4 GB.
+
+39
+00:02:45,120 --> 00:02:58,120
+ Finally, a last question: Can a local AI really become a simple, fast and reliable tool without sending our data to the cloud? This is precisely what we will try to discover with STIA.
+
+40
+00:02:58,120 --> 00:02:59,120
+ Thank you for watching this video and see you soon!
+
+41
+00:03:00,120 --> 00:03:02,120
+ See you soon!
+
