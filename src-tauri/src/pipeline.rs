@@ -1,7 +1,9 @@
+use crate::domain::model::ModelKind;
 use crate::domain::transcription::{
-    build_ffmpeg_args, build_whisper_args, classify_ffmpeg_failure, parse_segment_end_seconds,
-    required_free_bytes, resolve_output_dir, wav_duration_secs, JobStatus, OutputFile, OutputKind,
-    OutputSelection, TranscribingPhase, TranscriptionError,
+    build_ffmpeg_args, build_whisper_args, classify_ffmpeg_failure, output_file_name,
+    parse_segment_end_seconds, required_free_bytes, resolve_output_dir, wav_duration_secs,
+    JobStatus, OutputFile, OutputKind, OutputLanguage, OutputRequest, TranscribingPhase,
+    TranscribingVariant, TranscriptionError,
 };
 use crate::model;
 use std::path::{Path, PathBuf};
@@ -118,7 +120,7 @@ impl JobState {
 
 pub struct StartRequest {
     pub media_path: PathBuf,
-    pub outputs: OutputSelection,
+    pub outputs: OutputRequest,
 }
 
 /// Removes the job's temporary directory when dropped, so cleanup happens
@@ -187,7 +189,16 @@ pub async fn run(app: AppHandle, request: StartRequest) {
 
     // Defense in depth: re-validate on the Rust side even though the
     // frontend already disables the launch button for an empty selection.
-    if request.outputs.is_empty() {
+    // Both axes are required — at least one version, and at least one format.
+    if request.outputs.languages.is_empty() {
+        emit_status(
+            &app,
+            &state,
+            failed(TranscriptionError::no_language_selected()),
+        );
+        return;
+    }
+    if request.outputs.formats.is_empty() {
         emit_status(
             &app,
             &state,
@@ -196,17 +207,30 @@ pub async fn run(app: AppHandle, request: StartRequest) {
         return;
     }
 
-    if !model::model_is_installed(&app).unwrap_or(false) {
-        emit_status(&app, &state, failed(TranscriptionError::model_missing()));
-        return;
-    }
-    let model_path = match model::model_path(&app) {
-        Ok(path) => path,
-        Err(_) => {
-            emit_status(&app, &state, failed(TranscriptionError::model_missing()));
+    // Every model this job will need must be present *before* any work
+    // starts. Discovering a missing translation model after the French pass
+    // has already run would mean throwing that work away — and the atomic
+    // contract means we would publish nothing for it.
+    let languages = request.outputs.languages.selected();
+    let mut model_paths: Vec<(OutputLanguage, PathBuf)> = Vec::new();
+    for language in &languages {
+        let kind = language.model_kind();
+        let missing = || match kind {
+            ModelKind::Transcription => TranscriptionError::model_missing(),
+            ModelKind::Translation => TranscriptionError::translation_model_missing(),
+        };
+        if !model::model_is_installed(&app, kind).unwrap_or(false) {
+            emit_status(&app, &state, failed(missing()));
             return;
         }
-    };
+        match model::model_path(&app, kind) {
+            Ok(path) => model_paths.push((*language, path)),
+            Err(_) => {
+                emit_status(&app, &state, failed(missing()));
+                return;
+            }
+        }
+    }
 
     let job_id = format!(
         "{}-{}",
@@ -251,6 +275,8 @@ pub async fn run(app: AppHandle, request: StartRequest) {
 
     emit_status(&app, &state, JobStatus::PreparingAudio);
 
+    // FFmpeg runs exactly once per job, whatever the language selection: both
+    // passes read this same WAV, and it is never copied.
     let wav_path = temp_root.join("audio.wav");
     match run_ffmpeg(&app, &state, &request.media_path, &wav_path).await {
         Ok(Outcome::Cancelled) => {
@@ -272,52 +298,69 @@ pub async fn run(app: AppHandle, request: StartRequest) {
         .ok()
         .and_then(|bytes| wav_duration_secs(&bytes));
 
-    emit_status(
-        &app,
-        &state,
-        JobStatus::Transcribing {
-            phase: TranscribingPhase::LoadingModel,
-            progress: None,
-        },
-    );
+    // The passes run strictly one after another, in this loop and nowhere
+    // else. There is no spawn, no join, no second task: at any instant the
+    // job owns at most one whisper-cli child, which is what keeps the M4
+    // one-job/one-child guarantee true for a bilingual job as well.
+    //
+    // Each pass writes under its own prefix inside the workspace. Nothing
+    // leaves the workspace here — publication happens once, after the last
+    // pass, so cancelling or failing at any point publishes nothing at all.
+    for (language, model_path) in &model_paths {
+        let variant = TranscribingVariant::from(*language);
+        emit_status(
+            &app,
+            &state,
+            JobStatus::Transcribing {
+                variant,
+                phase: TranscribingPhase::LoadingModel,
+                progress: None,
+            },
+        );
 
-    let transcript_prefix = temp_root.join("transcript");
-    match run_whisper(
-        &app,
-        &state,
-        &model_path,
-        &wav_path,
-        &transcript_prefix,
-        request.outputs,
-        total_duration_secs,
-    )
-    .await
-    {
-        Ok(Outcome::Cancelled) => {
-            emit_cancelled(&app, &state);
+        let prefix = pass_prefix(&temp_root, *language);
+        match run_whisper(
+            &app,
+            &state,
+            Pass {
+                model: model_path,
+                wav: &wav_path,
+                output_prefix: &prefix,
+                language: *language,
+                formats: request.outputs.formats,
+                total_duration_secs,
+            },
+        )
+        .await
+        {
+            Ok(Outcome::Cancelled) => {
+                emit_cancelled(&app, &state);
+                return;
+            }
+            Ok(Outcome::Finished) => {}
+            Err(err) => {
+                emit_status(&app, &state, failed(err));
+                return;
+            }
+        }
+
+        // Between passes: the previous child handle has already been taken
+        // and dropped by `run_whisper`, so nothing is running right now.
+        if cancelled_now(&app, &state) {
             return;
         }
-        Ok(Outcome::Finished) => {}
-        Err(err) => {
-            emit_status(&app, &state, failed(err));
-            return;
-        }
-    }
-
-    // Last checkpoint before anything becomes visible to the user: whisper
-    // wrote its files inside the temp workspace only, so cancelling here
-    // still publishes nothing.
-    if cancelled_now(&app, &state) {
-        return;
     }
 
     emit_status(&app, &state, JobStatus::WritingOutputs);
 
-    match write_outputs(&request.media_path, &transcript_prefix, request.outputs) {
+    match write_outputs(&request.media_path, &temp_root, request.outputs) {
         Ok((output_dir, files)) => {
+            // Prefer the original French text for "copy transcript" when both
+            // versions exist — it is the source of truth, not the derived one.
             let transcript_text = files
                 .iter()
-                .find(|f| f.kind == OutputKind::Txt)
+                .find(|f| f.kind == OutputKind::Txt && f.language == OutputLanguage::French)
+                .or_else(|| files.iter().find(|f| f.kind == OutputKind::Txt))
                 .and_then(|f| std::fs::read_to_string(&f.path).ok());
             emit_status(
                 &app,
@@ -332,6 +375,15 @@ pub async fn run(app: AppHandle, request: StartRequest) {
         Err(_) => {
             emit_status(&app, &state, failed(TranscriptionError::write_failed()));
         }
+    }
+}
+
+/// Where a pass writes inside the workspace. Distinct per language, so the
+/// English pass cannot overwrite the French pass's files.
+fn pass_prefix(temp_root: &Path, language: OutputLanguage) -> PathBuf {
+    match language {
+        OutputLanguage::French => temp_root.join("transcript-fr"),
+        OutputLanguage::English => temp_root.join("transcript-en"),
     }
 }
 
@@ -475,26 +527,50 @@ fn register_child(state: &JobState, child: CommandChild) {
     }
 }
 
+/// Everything one Whisper pass needs. Grouped rather than passed as eight
+/// positional arguments, so the two call sites cannot silently swap the
+/// model and the WAV, or the two languages.
+struct Pass<'a> {
+    model: &'a Path,
+    wav: &'a Path,
+    output_prefix: &'a Path,
+    language: OutputLanguage,
+    formats: crate::domain::transcription::OutputFormats,
+    total_duration_secs: Option<f32>,
+}
+
 async fn run_whisper(
     app: &AppHandle,
     state: &JobState,
-    model: &Path,
-    wav: &Path,
-    output_prefix: &Path,
-    outputs: OutputSelection,
-    total_duration_secs: Option<f32>,
+    pass: Pass<'_>,
 ) -> Result<Outcome, TranscriptionError> {
-    let args = build_whisper_args(model, wav, output_prefix, outputs);
-    eprintln!("[st-ia] whisper-cli args: {args:?}");
+    let Pass {
+        model,
+        wav,
+        output_prefix,
+        language,
+        formats,
+        total_duration_secs,
+    } = pass;
+    let variant = TranscribingVariant::from(language);
+    // The two passes fail differently as far as the user is concerned, even
+    // though the mechanism is identical.
+    let failure = || match language {
+        OutputLanguage::French => TranscriptionError::transcription_failed(),
+        OutputLanguage::English => TranscriptionError::translation_failed(),
+    };
+
+    let args = build_whisper_args(model, wav, output_prefix, language, formats);
+    eprintln!("[st-ia] whisper-cli args ({variant:?}): {args:?}");
     let sidecar = app.shell().sidecar("whisper-cli").map_err(|e| {
         eprintln!("[st-ia] whisper-cli sidecar() resolution failed: {e}");
-        TranscriptionError::transcription_failed()
+        failure()
     })?;
     let (mut rx, child) = sidecar.args(args).spawn().map_err(|e| {
         eprintln!("[st-ia] whisper-cli spawn() failed: {e}");
-        TranscriptionError::transcription_failed()
+        failure()
     })?;
-    eprintln!("[st-ia] whisper-cli pid {}", child.pid());
+    eprintln!("[st-ia] whisper-cli pid {} ({variant:?})", child.pid());
     register_child(state, child);
 
     let mut succeeded = false;
@@ -505,6 +581,9 @@ async fn run_whisper(
             CommandEvent::Stdout(bytes) => {
                 let line = String::from_utf8_lossy(&bytes);
                 if let Some(end_secs) = parse_segment_end_seconds(&line) {
+                    // Progress is per pass, and real: it is this pass's own
+                    // position in the audio, never a synthetic blend of two
+                    // passes into one global bar.
                     let progress = total_duration_secs
                         .filter(|total| *total > 0.0)
                         .map(|total| (end_secs / total).clamp(0.0, 1.0));
@@ -512,6 +591,7 @@ async fn run_whisper(
                         app,
                         state,
                         JobStatus::Transcribing {
+                            variant,
                             phase: TranscribingPhase::Processing,
                             progress,
                         },
@@ -531,35 +611,42 @@ async fn run_whisper(
             _ => {}
         }
     }
+    // The process is gone by the time the stream closes; drop our handle so
+    // the next pass starts from a clean slot and cancel/shutdown can never
+    // target a stale pid.
     let _ = state.take_child();
 
     if state.cancel_requested() {
-        eprintln!("[st-ia] whisper-cli stopped by cancellation");
+        eprintln!("[st-ia] whisper-cli stopped by cancellation ({variant:?})");
         return Ok(Outcome::Cancelled);
     }
 
     if succeeded {
         Ok(Outcome::Finished)
     } else {
-        eprintln!("[st-ia] whisper-cli failed:\n{stderr_log}");
-        Err(TranscriptionError::transcription_failed())
+        eprintln!("[st-ia] whisper-cli failed ({variant:?}):\n{stderr_log}");
+        Err(failure())
     }
 }
 
-/// Publishes the transcript files from the temp workspace to the sibling
-/// output folder. The folder is created here and nowhere else, so until this
-/// function succeeds nothing user-visible exists; if any copy fails the
-/// freshly created folder is removed again rather than left as a partial
-/// result that looks like a success.
+/// Publishes every requested file from the temp workspace to the sibling
+/// output folder, all at once.
+///
+/// The folder is created here and nowhere else, so until this function
+/// succeeds nothing user-visible exists — which is what makes a cancelled or
+/// failed job publish nothing at all, including a bilingual job cancelled
+/// during its second pass with a complete French transcript already sitting
+/// in the workspace. If any copy fails, the freshly created folder is removed
+/// again rather than left as a partial result that looks like a success.
 fn write_outputs(
     source_media: &Path,
-    transcript_prefix: &Path,
-    outputs: OutputSelection,
+    temp_root: &Path,
+    outputs: OutputRequest,
 ) -> std::io::Result<(PathBuf, Vec<OutputFile>)> {
     let output_dir = resolve_output_dir(source_media, |p| p.exists());
     std::fs::create_dir_all(&output_dir)?;
 
-    match copy_all_outputs(source_media, transcript_prefix, outputs, &output_dir) {
+    match copy_all_outputs(source_media, temp_root, outputs, &output_dir) {
         Ok(files) => Ok((output_dir, files)),
         Err(err) => {
             // `resolve_output_dir` only ever returns a path that did not
@@ -572,33 +659,24 @@ fn write_outputs(
 
 fn copy_all_outputs(
     source_media: &Path,
-    transcript_prefix: &Path,
-    outputs: OutputSelection,
+    temp_root: &Path,
+    outputs: OutputRequest,
     output_dir: &Path,
 ) -> std::io::Result<Vec<OutputFile>> {
     let stem = source_media
         .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("sous-titres");
+    let bilingual = outputs.languages.is_bilingual();
     let mut files = Vec::new();
 
-    if outputs.srt {
-        files.push(copy_output(
-            transcript_prefix,
-            "srt",
-            output_dir,
-            stem,
-            OutputKind::Srt,
-        )?);
-    }
-    if outputs.txt {
-        files.push(copy_output(
-            transcript_prefix,
-            "txt",
-            output_dir,
-            stem,
-            OutputKind::Txt,
-        )?);
+    for language in outputs.languages.selected() {
+        let prefix = pass_prefix(temp_root, language);
+        for kind in outputs.formats.selected() {
+            files.push(copy_output(
+                &prefix, output_dir, stem, language, bilingual, kind,
+            )?);
+        }
     }
 
     Ok(files)
@@ -606,18 +684,20 @@ fn copy_all_outputs(
 
 fn copy_output(
     transcript_prefix: &Path,
-    extension: &str,
     output_dir: &Path,
     stem: &str,
+    language: OutputLanguage,
+    bilingual: bool,
     kind: OutputKind,
 ) -> std::io::Result<OutputFile> {
-    let src = transcript_prefix.with_extension(extension);
-    let file_name = format!("{stem}.{extension}");
+    let src = transcript_prefix.with_extension(kind.extension());
+    let file_name = output_file_name(stem, language, bilingual, kind);
     let dest = output_dir.join(&file_name);
     std::fs::copy(&src, &dest)?;
     let size_bytes = std::fs::metadata(&dest)?.len();
     Ok(OutputFile {
         kind,
+        language,
         file_name,
         path: dest.to_string_lossy().to_string(),
         size_bytes,
@@ -627,7 +707,7 @@ fn copy_output(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::transcription::OutputSelection;
+    use crate::domain::transcription::{OutputFormats, OutputLanguages};
 
     #[test]
     fn second_claim_is_refused_while_a_job_is_active() {
@@ -715,6 +795,20 @@ mod tests {
         assert!(!job_dir.exists(), "temp workspace must be gone after drop");
     }
 
+    fn request(french: bool, english: bool, srt: bool, txt: bool) -> OutputRequest {
+        OutputRequest {
+            languages: OutputLanguages { french, english },
+            formats: OutputFormats { srt, txt },
+        }
+    }
+
+    /// Writes what a finished whisper pass would have left in the workspace.
+    fn write_pass(temp_root: &Path, language: OutputLanguage, body: &str) {
+        let prefix = pass_prefix(temp_root, language);
+        std::fs::write(prefix.with_extension("srt"), body).unwrap();
+        std::fs::write(prefix.with_extension("txt"), body).unwrap();
+    }
+
     #[test]
     fn failed_output_copy_leaves_no_partial_output_folder() {
         // A cancelled/failed publication must never leave a folder that
@@ -722,17 +816,9 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let media = root.path().join("Film.mov");
         std::fs::write(&media, b"x").unwrap();
-        // No transcript files exist at this prefix, so copying will fail.
-        let prefix = root.path().join("transcript");
+        // No pass files exist in the workspace, so copying will fail.
 
-        let result = write_outputs(
-            &media,
-            &prefix,
-            OutputSelection {
-                srt: true,
-                txt: false,
-            },
-        );
+        let result = write_outputs(&media, root.path(), request(true, false, true, false));
 
         assert!(result.is_err());
         assert!(
@@ -742,27 +828,127 @@ mod tests {
     }
 
     #[test]
-    fn successful_copy_publishes_requested_outputs_only() {
+    fn french_only_publishes_the_historical_names() {
+        let root = tempfile::tempdir().unwrap();
+        let media = root.path().join("IMG_8484.mov");
+        std::fs::write(&media, b"x").unwrap();
+        write_pass(root.path(), OutputLanguage::French, "bonjour");
+
+        let (dir, files) =
+            write_outputs(&media, root.path(), request(true, false, true, true)).unwrap();
+
+        assert_eq!(files.len(), 2);
+        assert!(dir.join("IMG_8484.srt").is_file());
+        assert!(dir.join("IMG_8484.txt").is_file());
+        // No language qualifier at all when there is only one version.
+        assert!(!dir.join("IMG_8484.fr.srt").exists());
+        assert!(!dir.join("IMG_8484.en.srt").exists());
+    }
+
+    #[test]
+    fn english_only_publishes_qualified_names() {
+        let root = tempfile::tempdir().unwrap();
+        let media = root.path().join("IMG_8484.mov");
+        std::fs::write(&media, b"x").unwrap();
+        write_pass(root.path(), OutputLanguage::English, "hello");
+
+        let (dir, files) =
+            write_outputs(&media, root.path(), request(false, true, true, true)).unwrap();
+
+        assert_eq!(files.len(), 2);
+        assert!(dir.join("IMG_8484.en.srt").is_file());
+        assert!(dir.join("IMG_8484.en.txt").is_file());
+        assert!(!dir.join("IMG_8484.srt").exists());
+    }
+
+    #[test]
+    fn bilingual_publishes_four_files_from_two_passes() {
+        let root = tempfile::tempdir().unwrap();
+        let media = root.path().join("IMG_8484.mov");
+        std::fs::write(&media, b"x").unwrap();
+        write_pass(root.path(), OutputLanguage::French, "bonjour");
+        write_pass(root.path(), OutputLanguage::English, "hello");
+
+        let (dir, files) =
+            write_outputs(&media, root.path(), request(true, true, true, true)).unwrap();
+
+        assert_eq!(files.len(), 4);
+        for name in [
+            "IMG_8484.fr.srt",
+            "IMG_8484.fr.txt",
+            "IMG_8484.en.srt",
+            "IMG_8484.en.txt",
+        ] {
+            assert!(dir.join(name).is_file(), "{name} missing");
+        }
+        assert!(!dir.join("IMG_8484.srt").exists());
+    }
+
+    #[test]
+    fn the_two_versions_keep_their_own_content() {
+        // Regression guard for the two passes sharing a workspace prefix,
+        // which would silently publish the English text twice.
+        let root = tempfile::tempdir().unwrap();
+        let media = root.path().join("IMG_8484.mov");
+        std::fs::write(&media, b"x").unwrap();
+        write_pass(root.path(), OutputLanguage::French, "bonjour");
+        write_pass(root.path(), OutputLanguage::English, "hello");
+
+        let (dir, _) =
+            write_outputs(&media, root.path(), request(true, true, false, true)).unwrap();
+
+        assert_eq!(
+            std::fs::read_to_string(dir.join("IMG_8484.fr.txt")).unwrap(),
+            "bonjour"
+        );
+        assert_eq!(
+            std::fs::read_to_string(dir.join("IMG_8484.en.txt")).unwrap(),
+            "hello"
+        );
+    }
+
+    #[test]
+    fn a_bilingual_job_publishes_nothing_when_the_second_pass_left_no_files() {
+        // This is cancel-during-English and fail-during-English, at the
+        // publication layer: the French pass completed and its files are in
+        // the workspace, but the job as a whole did not succeed, so *no*
+        // final output may appear — not even the French half.
+        let root = tempfile::tempdir().unwrap();
+        let media = root.path().join("IMG_8484.mov");
+        std::fs::write(&media, b"x").unwrap();
+        write_pass(root.path(), OutputLanguage::French, "bonjour");
+
+        let result = write_outputs(&media, root.path(), request(true, true, true, true));
+
+        assert!(result.is_err(), "a partial job must not publish");
+        assert!(
+            !root.path().join("IMG_8484-sous-titres").exists(),
+            "no output folder may survive a partial job"
+        );
+    }
+
+    #[test]
+    fn only_the_requested_formats_are_published() {
         let root = tempfile::tempdir().unwrap();
         let media = root.path().join("Film.mov");
         std::fs::write(&media, b"x").unwrap();
-        let prefix = root.path().join("transcript");
-        std::fs::write(prefix.with_extension("srt"), b"1\n").unwrap();
-        std::fs::write(prefix.with_extension("txt"), b"bonjour").unwrap();
+        write_pass(root.path(), OutputLanguage::French, "bonjour");
 
-        let (dir, files) = write_outputs(
-            &media,
-            &prefix,
-            OutputSelection {
-                srt: true,
-                txt: false,
-            },
-        )
-        .unwrap();
+        let (dir, files) =
+            write_outputs(&media, root.path(), request(true, false, true, false)).unwrap();
 
         assert_eq!(files.len(), 1);
         assert!(dir.join("Film.srt").is_file());
         assert!(!dir.join("Film.txt").exists());
+    }
+
+    #[test]
+    fn each_pass_writes_to_its_own_workspace_prefix() {
+        let root = Path::new("/tmp/job");
+        assert_ne!(
+            pass_prefix(root, OutputLanguage::French),
+            pass_prefix(root, OutputLanguage::English)
+        );
     }
 
     #[test]

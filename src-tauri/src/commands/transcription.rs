@@ -1,5 +1,7 @@
 use crate::domain::media::validate_media_path;
-use crate::domain::transcription::{JobStatus, OutputSelection, TranscriptionError};
+use crate::domain::transcription::{
+    JobStatus, OutputFormats, OutputLanguages, OutputRequest, TranscriptionError,
+};
 use crate::pipeline::{self, JobState, StartRequest};
 use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
@@ -8,6 +10,8 @@ use tauri_plugin_opener::OpenerExt;
 #[serde(rename_all = "camelCase")]
 pub struct StartTranscriptionInput {
     pub media_path: String,
+    pub output_french: bool,
+    pub output_english: bool,
     pub output_srt: bool,
     pub output_txt: bool,
 }
@@ -18,11 +22,23 @@ pub async fn start_transcription(
     state: State<'_, JobState>,
     input: StartTranscriptionInput,
 ) -> Result<(), TranscriptionError> {
-    let outputs = OutputSelection {
-        srt: input.output_srt,
-        txt: input.output_txt,
+    let outputs = OutputRequest {
+        languages: OutputLanguages {
+            french: input.output_french,
+            english: input.output_english,
+        },
+        formats: OutputFormats {
+            srt: input.output_srt,
+            txt: input.output_txt,
+        },
     };
-    if outputs.is_empty() {
+    // Both axes are required, and both are re-checked here rather than
+    // trusted from the frontend — `run` checks them again too, because this
+    // command is not the only way the pipeline can be reached.
+    if outputs.languages.is_empty() {
+        return Err(TranscriptionError::no_language_selected());
+    }
+    if outputs.formats.is_empty() {
         return Err(TranscriptionError::no_output_selected());
     }
 

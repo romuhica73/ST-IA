@@ -1,7 +1,11 @@
+use crate::domain::model::ModelKind;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
-pub const LANGUAGE: &str = "fr";
+/// The language spoken in the media. One value for now: the qualified scope
+/// is French audio (ADR-001). This is *not* the output language, and not the
+/// interface language — see ADR-010 for why the three are kept apart.
+pub const SOURCE_LANGUAGE: &str = "fr";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -10,15 +14,132 @@ pub enum OutputKind {
     Txt,
 }
 
+impl OutputKind {
+    pub fn extension(self) -> &'static str {
+        match self {
+            Self::Srt => "srt",
+            Self::Txt => "txt",
+        }
+    }
+}
+
+/// A version of the transcript the user asked for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum OutputLanguage {
+    /// The original French transcription.
+    French,
+    /// The English translation, produced locally by a second Whisper pass.
+    English,
+}
+
+impl OutputLanguage {
+    /// Which model this version needs. The two differ: the fast turbo model
+    /// cannot translate at all (ADR-008).
+    pub fn model_kind(self) -> ModelKind {
+        match self {
+            Self::French => ModelKind::Transcription,
+            Self::English => ModelKind::Translation,
+        }
+    }
+
+    /// Whisper's `--translate` flag applies to the English version only.
+    pub fn translates(self) -> bool {
+        matches!(self, Self::English)
+    }
+}
+
+/// Which formats to write. Independent of the language selection: the number
+/// of files produced is languages × formats.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct OutputSelection {
+pub struct OutputFormats {
     pub srt: bool,
     pub txt: bool,
 }
 
-impl OutputSelection {
+impl OutputFormats {
     pub fn is_empty(&self) -> bool {
         !self.srt && !self.txt
+    }
+
+    pub fn selected(&self) -> Vec<OutputKind> {
+        let mut kinds = Vec::new();
+        if self.srt {
+            kinds.push(OutputKind::Srt);
+        }
+        if self.txt {
+            kinds.push(OutputKind::Txt);
+        }
+        kinds
+    }
+}
+
+/// Which versions to produce.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OutputLanguages {
+    pub french: bool,
+    pub english: bool,
+}
+
+impl OutputLanguages {
+    pub fn is_empty(&self) -> bool {
+        !self.french && !self.english
+    }
+
+    /// Both requested — the case that changes the French file names, because
+    /// leaving one version unqualified would be ambiguous.
+    pub fn is_bilingual(&self) -> bool {
+        self.french && self.english
+    }
+
+    /// In pipeline order: French first. Not cosmetic — the cheap pass runs
+    /// first so a cancellation during the expensive translation has already
+    /// been given the maximum chance to happen earlier.
+    pub fn selected(&self) -> Vec<OutputLanguage> {
+        let mut langs = Vec::new();
+        if self.french {
+            langs.push(OutputLanguage::French);
+        }
+        if self.english {
+            langs.push(OutputLanguage::English);
+        }
+        langs
+    }
+}
+
+/// The complete output request for one job.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OutputRequest {
+    pub languages: OutputLanguages,
+    pub formats: OutputFormats,
+}
+
+impl OutputRequest {
+    /// Total number of files this request will publish — languages ×
+    /// formats. The frontend shows this on its launch button; the rule lives
+    /// here as the reference the TypeScript mirror is tested against.
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub fn file_count(&self) -> usize {
+        self.languages.selected().len() * self.formats.selected().len()
+    }
+}
+
+/// Which pass is running. `Original` behaves exactly as the single pass did
+/// before bilingual output existed, so a French-only job is indistinguishable
+/// from the pre-M9 behaviour.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum TranscribingVariant {
+    Original,
+    EnglishTranslation,
+}
+
+impl From<OutputLanguage> for TranscribingVariant {
+    fn from(language: OutputLanguage) -> Self {
+        match language {
+            OutputLanguage::French => Self::Original,
+            OutputLanguage::English => Self::EnglishTranslation,
+        }
     }
 }
 
@@ -33,9 +154,37 @@ pub enum TranscribingPhase {
 #[serde(rename_all = "camelCase")]
 pub struct OutputFile {
     pub kind: OutputKind,
+    pub language: OutputLanguage,
     pub file_name: String,
     pub path: String,
     pub size_bytes: u64,
+}
+
+/// The output naming contract (ADR-010).
+///
+/// Historical compatibility is the constraint: a French-only job must keep
+/// producing exactly the names it produced before English output existed, so
+/// existing user workflows and any scripts around them keep working.
+///
+/// * French only    → `IMG_8484.srt`
+/// * English only   → `IMG_8484.en.srt`
+/// * French+English → `IMG_8484.fr.srt` and `IMG_8484.en.srt`
+///
+/// The French version only becomes `.fr.` when there is an English one to
+/// tell it apart from; qualifying it in isolation would be noise, and would
+/// break the historical names for no benefit.
+pub fn output_file_name(
+    stem: &str,
+    language: OutputLanguage,
+    bilingual: bool,
+    kind: OutputKind,
+) -> String {
+    let extension = kind.extension();
+    match (language, bilingual) {
+        (OutputLanguage::French, false) => format!("{stem}.{extension}"),
+        (OutputLanguage::French, true) => format!("{stem}.fr.{extension}"),
+        (OutputLanguage::English, _) => format!("{stem}.en.{extension}"),
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -43,10 +192,16 @@ pub struct OutputFile {
 pub enum TranscriptionErrorCode {
     AlreadyRunning,
     ModelMissing,
+    /// English output was requested but its (separate, larger) model is not
+    /// installed. Distinct from `ModelMissing` so the UI can offer the right
+    /// download rather than the wrong one.
+    TranslationModelMissing,
     NoOutputSelected,
+    NoLanguageSelected,
     AudioPreparationFailed,
     NoAudioTrack,
     TranscriptionFailed,
+    TranslationFailed,
     WriteFailed,
     InsufficientDiskSpace,
 }
@@ -84,6 +239,27 @@ impl TranscriptionError {
         Self::new(
             TranscriptionErrorCode::NoOutputSelected,
             "Sélectionnez au moins un format de sortie (SRT ou TXT).",
+        )
+    }
+
+    pub fn no_language_selected() -> Self {
+        Self::new(
+            TranscriptionErrorCode::NoLanguageSelected,
+            "Sélectionnez au moins une version à générer.",
+        )
+    }
+
+    pub fn translation_model_missing() -> Self {
+        Self::new(
+            TranscriptionErrorCode::TranslationModelMissing,
+            "Le modèle de traduction anglaise n'est pas encore installé.",
+        )
+    }
+
+    pub fn translation_failed() -> Self {
+        Self::new(
+            TranscriptionErrorCode::TranslationFailed,
+            "La traduction anglaise a échoué.",
         )
     }
 
@@ -129,7 +305,11 @@ pub enum JobStatus {
     #[default]
     Idle,
     PreparingAudio,
+    #[serde(rename_all = "camelCase")]
     Transcribing {
+        /// Which pass this is. A French-only job only ever reports
+        /// `original`, so its progress UI is unchanged from before M9.
+        variant: TranscribingVariant,
         phase: TranscribingPhase,
         progress: Option<f32>,
     },
@@ -249,15 +429,26 @@ pub fn build_ffmpeg_args(input: &Path, output_wav: &Path) -> Vec<String> {
     ]
 }
 
-/// Arguments for the whisper-cli sidecar. Language is always forced to
-/// French; output formats follow the user's SRT/TXT selection.
+/// Arguments for the whisper-cli sidecar.
+///
+/// The source language is always French — that is the qualified scope, and
+/// it is the *input* language in both passes. What differs between the two
+/// passes is the task: the English version adds `-tr`, which whisper.cpp
+/// documents as "translate from source language to english".
+///
+/// The model differs too, and must: `large-v3-turbo` ignores `-tr` and
+/// returns French (ADR-008), so the English pass is given the full
+/// `large-v3`. Passing the model in rather than resolving it here keeps this
+/// function pure and testable.
+///
 /// `output_prefix` is a path without extension (whisper-cli appends
 /// `.srt`/`.txt` itself).
 pub fn build_whisper_args(
     model: &Path,
     wav: &Path,
     output_prefix: &Path,
-    outputs: OutputSelection,
+    language: OutputLanguage,
+    formats: OutputFormats,
 ) -> Vec<String> {
     let mut args = vec![
         "-m".to_string(),
@@ -265,14 +456,17 @@ pub fn build_whisper_args(
         "-f".to_string(),
         wav.to_string_lossy().to_string(),
         "-l".to_string(),
-        LANGUAGE.to_string(),
+        SOURCE_LANGUAGE.to_string(),
         "-of".to_string(),
         output_prefix.to_string_lossy().to_string(),
     ];
-    if outputs.srt {
+    if language.translates() {
+        args.push("-tr".to_string());
+    }
+    if formats.srt {
         args.push("-osrt".to_string());
     }
-    if outputs.txt {
+    if formats.txt {
         args.push("-otxt".to_string());
     }
     args
@@ -361,6 +555,7 @@ pub fn wav_duration_secs(bytes: &[u8]) -> Option<f32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::model::ModelKind;
 
     #[test]
     fn resolve_output_dir_uses_base_name_when_free() {
@@ -402,12 +597,13 @@ mod tests {
     }
 
     #[test]
-    fn whisper_args_force_french_and_respect_output_selection() {
+    fn french_pass_uses_the_transcription_model_and_no_translate_flag() {
         let args = build_whisper_args(
             Path::new("/models/ggml-large-v3-turbo-q5_0.bin"),
             Path::new("/tmp/audio.wav"),
-            Path::new("/tmp/transcript"),
-            OutputSelection {
+            Path::new("/tmp/fr"),
+            OutputLanguage::French,
+            OutputFormats {
                 srt: true,
                 txt: false,
             },
@@ -422,39 +618,298 @@ mod tests {
                 "-l",
                 "fr",
                 "-of",
-                "/tmp/transcript",
+                "/tmp/fr",
                 "-osrt",
+            ]
+        );
+        assert!(!args.contains(&"-tr".to_string()));
+    }
+
+    #[test]
+    fn english_pass_adds_translate_and_keeps_french_as_the_source_language() {
+        // `-l` is the *spoken* language in both passes; `-tr` is what makes
+        // the output English. Setting `-l en` instead would tell Whisper the
+        // audio is English, which it is not.
+        let args = build_whisper_args(
+            Path::new("/models/ggml-large-v3.bin"),
+            Path::new("/tmp/audio.wav"),
+            Path::new("/tmp/en"),
+            OutputLanguage::English,
+            OutputFormats {
+                srt: true,
+                txt: true,
+            },
+        );
+        assert_eq!(
+            args,
+            vec![
+                "-m",
+                "/models/ggml-large-v3.bin",
+                "-f",
+                "/tmp/audio.wav",
+                "-l",
+                "fr",
+                "-of",
+                "/tmp/en",
+                "-tr",
+                "-osrt",
+                "-otxt",
             ]
         );
     }
 
     #[test]
-    fn whisper_args_include_both_outputs_when_both_selected() {
-        let args = build_whisper_args(
-            Path::new("/models/m.bin"),
-            Path::new("/tmp/audio.wav"),
-            Path::new("/tmp/transcript"),
-            OutputSelection {
+    fn the_two_passes_read_the_same_wav() {
+        // FFmpeg runs once per job; a second extraction would be pure waste
+        // and could drift from the first.
+        let wav = Path::new("/tmp/job/audio.wav");
+        let fr = build_whisper_args(
+            Path::new("/m/turbo.bin"),
+            wav,
+            Path::new("/tmp/fr"),
+            OutputLanguage::French,
+            OutputFormats {
                 srt: true,
-                txt: true,
+                txt: false,
             },
         );
-        assert!(args.contains(&"-osrt".to_string()));
-        assert!(args.contains(&"-otxt".to_string()));
+        let en = build_whisper_args(
+            Path::new("/m/large.bin"),
+            wav,
+            Path::new("/tmp/en"),
+            OutputLanguage::English,
+            OutputFormats {
+                srt: true,
+                txt: false,
+            },
+        );
+        let input_of =
+            |args: &[String]| args[args.iter().position(|a| a == "-f").unwrap() + 1].clone();
+        assert_eq!(input_of(&fr), input_of(&en));
     }
 
     #[test]
-    fn output_selection_empty_when_neither_checked() {
-        assert!(OutputSelection {
+    fn each_language_maps_to_its_own_model() {
+        // The whole reason two models exist.
+        assert_eq!(
+            OutputLanguage::French.model_kind(),
+            ModelKind::Transcription
+        );
+        assert_eq!(OutputLanguage::English.model_kind(), ModelKind::Translation);
+        assert!(!OutputLanguage::French.translates());
+        assert!(OutputLanguage::English.translates());
+    }
+
+    #[test]
+    fn the_two_passes_write_to_different_prefixes() {
+        // Same prefix would make the second pass overwrite the first's files
+        // inside the workspace, silently losing the French version.
+        let fr = build_whisper_args(
+            Path::new("/m/turbo.bin"),
+            Path::new("/tmp/audio.wav"),
+            Path::new("/tmp/job/fr"),
+            OutputLanguage::French,
+            OutputFormats {
+                srt: true,
+                txt: false,
+            },
+        );
+        let en = build_whisper_args(
+            Path::new("/m/large.bin"),
+            Path::new("/tmp/audio.wav"),
+            Path::new("/tmp/job/en"),
+            OutputLanguage::English,
+            OutputFormats {
+                srt: true,
+                txt: false,
+            },
+        );
+        let prefix_of =
+            |args: &[String]| args[args.iter().position(|a| a == "-of").unwrap() + 1].clone();
+        assert_ne!(prefix_of(&fr), prefix_of(&en));
+    }
+
+    #[test]
+    fn formats_are_empty_only_when_neither_is_checked() {
+        assert!(OutputFormats {
             srt: false,
             txt: false
         }
         .is_empty());
-        assert!(!OutputSelection {
+        assert!(!OutputFormats {
             srt: true,
             txt: false
         }
         .is_empty());
+        assert!(!OutputFormats {
+            srt: false,
+            txt: true
+        }
+        .is_empty());
+    }
+
+    #[test]
+    fn languages_are_empty_only_when_neither_is_checked() {
+        assert!(OutputLanguages {
+            french: false,
+            english: false
+        }
+        .is_empty());
+        assert!(!OutputLanguages {
+            french: true,
+            english: false
+        }
+        .is_empty());
+        assert!(!OutputLanguages {
+            french: false,
+            english: true
+        }
+        .is_empty());
+    }
+
+    #[test]
+    fn french_runs_before_english() {
+        // Cheap pass first: a job cancelled during the long translation has
+        // already had its best chance to be cancelled earlier.
+        let both = OutputLanguages {
+            french: true,
+            english: true,
+        };
+        assert_eq!(
+            both.selected(),
+            vec![OutputLanguage::French, OutputLanguage::English]
+        );
+        assert!(both.is_bilingual());
+    }
+
+    #[test]
+    fn a_single_language_is_not_bilingual() {
+        assert!(!OutputLanguages {
+            french: true,
+            english: false
+        }
+        .is_bilingual());
+        assert!(!OutputLanguages {
+            french: false,
+            english: true
+        }
+        .is_bilingual());
+    }
+
+    #[test]
+    fn file_count_is_languages_times_formats() {
+        let request = |french, english, srt, txt| OutputRequest {
+            languages: OutputLanguages { french, english },
+            formats: OutputFormats { srt, txt },
+        };
+        assert_eq!(request(true, false, true, true).file_count(), 2);
+        assert_eq!(request(false, true, true, true).file_count(), 2);
+        assert_eq!(request(true, true, true, true).file_count(), 4);
+        assert_eq!(request(true, true, true, false).file_count(), 2);
+        assert_eq!(request(true, false, true, false).file_count(), 1);
+    }
+
+    #[test]
+    fn french_only_keeps_the_historical_file_names() {
+        // The compatibility guarantee: a French-only job must produce exactly
+        // what it produced before English output existed.
+        assert_eq!(
+            output_file_name("IMG_8484", OutputLanguage::French, false, OutputKind::Srt),
+            "IMG_8484.srt"
+        );
+        assert_eq!(
+            output_file_name("IMG_8484", OutputLanguage::French, false, OutputKind::Txt),
+            "IMG_8484.txt"
+        );
+    }
+
+    #[test]
+    fn english_only_is_always_qualified() {
+        assert_eq!(
+            output_file_name("IMG_8484", OutputLanguage::English, false, OutputKind::Srt),
+            "IMG_8484.en.srt"
+        );
+        assert_eq!(
+            output_file_name("IMG_8484", OutputLanguage::English, false, OutputKind::Txt),
+            "IMG_8484.en.txt"
+        );
+    }
+
+    #[test]
+    fn bilingual_qualifies_both_versions() {
+        assert_eq!(
+            output_file_name("IMG_8484", OutputLanguage::French, true, OutputKind::Srt),
+            "IMG_8484.fr.srt"
+        );
+        assert_eq!(
+            output_file_name("IMG_8484", OutputLanguage::English, true, OutputKind::Srt),
+            "IMG_8484.en.srt"
+        );
+    }
+
+    #[test]
+    fn no_two_requested_files_ever_share_a_name() {
+        // Any collision would mean one file silently overwriting another in
+        // the published output folder.
+        for (french, english) in [(true, false), (false, true), (true, true)] {
+            let languages = OutputLanguages { french, english };
+            let formats = OutputFormats {
+                srt: true,
+                txt: true,
+            };
+            let mut names: Vec<String> = Vec::new();
+            for language in languages.selected() {
+                for kind in formats.selected() {
+                    names.push(output_file_name(
+                        "IMG_8484",
+                        language,
+                        languages.is_bilingual(),
+                        kind,
+                    ));
+                }
+            }
+            let unique: std::collections::HashSet<&String> = names.iter().collect();
+            assert_eq!(unique.len(), names.len(), "name collision in {names:?}");
+        }
+    }
+
+    #[test]
+    fn transcribing_variant_follows_the_language() {
+        assert_eq!(
+            TranscribingVariant::from(OutputLanguage::French),
+            TranscribingVariant::Original
+        );
+        assert_eq!(
+            TranscribingVariant::from(OutputLanguage::English),
+            TranscribingVariant::EnglishTranslation
+        );
+    }
+
+    #[test]
+    fn transcribing_status_serializes_variant_and_phase() {
+        let status = JobStatus::Transcribing {
+            variant: TranscribingVariant::EnglishTranslation,
+            phase: TranscribingPhase::Processing,
+            progress: Some(0.42),
+        };
+        let json = serde_json::to_value(&status).unwrap();
+        assert_eq!(json["status"], "transcribing");
+        assert_eq!(json["variant"], "englishTranslation");
+        assert_eq!(json["phase"], "processing");
+    }
+
+    #[test]
+    fn missing_translation_model_is_its_own_error() {
+        // Distinct from ModelMissing so the UI offers the 3.1 GB translation
+        // download rather than re-offering the transcription model.
+        assert_eq!(
+            TranscriptionError::translation_model_missing().code,
+            TranscriptionErrorCode::TranslationModelMissing
+        );
+        assert_ne!(
+            TranscriptionError::translation_model_missing().code,
+            TranscriptionError::model_missing().code
+        );
     }
 
     #[test]
