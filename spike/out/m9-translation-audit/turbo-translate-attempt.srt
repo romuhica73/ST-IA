@@ -1,0 +1,28 @@
+1
+00:00:00,000 --> 00:00:30,000
+ Bonjour à toutes et à tous. Aujourd'hui, je voudrais vous parler d'un sujet très concret : comment l'intelligence artificielle commence à s'intégrer dans notre quotidien, aussi bien dans notre vie professionnelle que personnelle. Quand on parle d'intelligence artificielle, on pense immédiatement à CHGPT, à Cloud, à Gemini ou encore Mistral. Pourtant derrière ces outils, il existe des technologies et des usages très différents. Par exemple, un grand modèle de langage, que l'on appelle souvent LLM, peut comprendre une consigne écrite, analyser un document,
+
+2
+00:00:30,000 --> 00:01:00,000
+ d'aider à produire du contenu. Mais il faut garder en tête une chose essentielle : le modèle ne comprend pas le monde comme un être humain. Il travaille à partir d'un contexte, d'un prompt, des informations qu'on lui fournit. Dans mes projets de développement, j'utilise notamment Chachipiti, CloudCode et Cursor. CloudCode peut travailler directement dans un projet, lire les fichiers, modifier du code et exécuter certaines commandes. Cursor, de son côté, est un environnement de développement qui permet d'utiliser l'intelligence artificielle directement dans l'éditeur. Mais cela pose une question importante : jusqu'où doit-on le laisser
+
+3
+00:01:00,000 --> 00:01:30,000
+ L'intelligence artificielle peut proposer, analyser et exécuter certaines actions, mais la décision finale doit rester compréhensible et vérifiable. Prenons un exemple. Imaginons que je développe une application macOS appelée STIA. Son objectif est très simple. Je dépose une vidéo, l'application extrait la piste audio, Publisher génère automatiquement un fichier de sous-titres au format SRT, ainsi qu'une transmission au format texte.
+
+4
+00:01:30,000 --> 00:02:00,000
+, tout doit être traité localement sur mon MacBook Pro, Equipé Ninkus, Apple, Silicon M4. La vidéo ne doit jamais être envoyée vers OpenAI, Anthropic ou une autre appellée distante. Pour réaliser cette application, nous pouvons utiliser Tori, React, TypeScript ou REST. FFmpeg se charge de préparer l'audio, puis Whisper.cpp réalise la transcription directement sur la machine. Ensuite, le fichier SRT peut être importé dans Davinci Resolve pour ajouter les sous-titres à la vidéo.
+
+5
+00:02:00,000 --> 00:02:30,000
+, et ce type d'architecture pose aussi des questions de performance. Que se passe-t-il avec une vidéo de 10 minutes, de 30 minutes ou même d'une heure ? Combien de mémoires vives faut-il utiliser ? Combien de temps faut-il pour charger le modèle ? Est-ce que le résultat reste fiable lorsqu'on prononce des termes techniques, des noms propres ou des noms anglais au lieu d'une phrase française ? Essayons justement quelques exemples. OpenAI, ChatGPT, Anthropic, Cloud Code, Cursor, GitHub, Whisper, FFmpeg, DaVinci Resolve, Apple Silicon, API, LLM, Prompt, TypeScript et Rust.
+
+6
+00:02:30,000 --> 00:03:00,000
+, la vidéo a été enregistrée le 7 août 2026, elle dure environ 3 minutes. La machine possède 16 gigaoctets de mémoire vive, un modèle peut peser 747 mégaoctets tandis qu'un autre dépasse 1,4 gigaoctets. Enfin une dernière question, est-ce qu'une intelligence artificielle locale peut réellement devenir un petit simple, rapide et fiable sans envoyer nos données dans le cloud ? C'est précisément ce que nous allons essayer de découvrir avec STIA.
+
+7
+00:03:00,000 --> 00:03:30,000
+ A très bientôt !
+

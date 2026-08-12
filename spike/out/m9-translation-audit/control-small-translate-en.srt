@@ -1,0 +1,144 @@
+1
+00:00:00,000 --> 00:00:11,000
+ Hello everyone, today I would like to talk to you about a very concrete topic, how artificial intelligence begins to be integrated in our daily life as well as in our professional life as personal.
+
+2
+00:00:11,000 --> 00:00:16,000
+ When we talk about artificial intelligence, we immediately think about Chajipiti, Claude, Algemini and even Mistral.
+
+3
+00:00:16,000 --> 00:00:22,000
+ However, these last tools, however, behind these tools, there are very different technologies and uses.
+
+4
+00:00:22,000 --> 00:00:31,000
+ For example, a large language model, which is often called LLM, can be understood with a written letter, analyzed a document or helped us to produce content.
+
+5
+00:00:31,000 --> 00:00:37,000
+ But you have to keep in mind one thing, the model does not understand the world as a human being.
+
+6
+00:00:37,000 --> 00:00:41,000
+ It works from the context of a prompt, of the information that we provide it with.
+
+7
+00:00:41,000 --> 00:00:45,000
+ In my development projects, I use, notably, Chajipiti, Claude Code and Cursor.
+
+8
+00:00:45,000 --> 00:00:51,000
+ Claude Code can work directly in a project, read the files, modify the code, execute some commands.
+
+9
+00:00:51,000 --> 00:00:56,000
+ Cursor, on its side, is an environment of development that allows us to use artificial intelligence directly in the editor.
+
+10
+00:00:56,000 --> 00:01:02,000
+ But this is an important question. Until when should we leave artificial intelligence to act on its own?
+
+11
+00:01:02,000 --> 00:01:06,000
+ Personally, I prefer to keep a human control over the important decision.
+
+12
+00:01:06,000 --> 00:01:13,000
+ The artificial intelligence can be proposed, analyzed and executed in certain actions, but the final decision must remain understandable and verifiable.
+
+13
+00:01:13,000 --> 00:01:24,000
+ Let's take an example. Let's imagine that I develop a macOS application called STIA. This goal is very simple. I upload a video, the application extracts the audio track, publish it,
+
+14
+00:01:24,000 --> 00:01:30,000
+ it automatically generates a file with the name SRT, as well as a transcription in the format text.
+
+15
+00:01:30,000 --> 00:01:36,000
+ Everything must be treated locally on my Macbook Pro, Equipening Pulse, Apple, Silicon, M4.
+
+16
+00:01:36,000 --> 00:01:41,000
+ The video must never be sent with Veropen I, Anthropik or another distant call.
+
+17
+00:01:41,000 --> 00:01:45,000
+ To implement this application, we can use Tori, React, TypeScript or the rest.
+
+18
+00:01:45,000 --> 00:01:53,000
+ FFMpeg is responsible for preparing the audio, then Whisper.cpp makes the transcription directly on the machine.
+
+19
+00:01:53,000 --> 00:01:59,000
+ Then, the SRT file can be imported into Davichi Resolve to add subtitles to the video.
+
+20
+00:01:59,000 --> 00:02:02,000
+ This type of architecture also poses a question of performance.
+
+21
+00:02:02,000 --> 00:02:06,000
+ Does this happen with a video of 10 minutes, 30 minutes or even an hour?
+
+22
+00:02:06,000 --> 00:02:10,000
+ How many memory does it take to use it? How much time does it take to load the model?
+
+23
+00:02:10,000 --> 00:02:14,000
+ Can the result remain reliable when we pronounce the technical terms,
+
+24
+00:02:14,000 --> 00:02:17,000
+ non-proper or non-English instead of a French sentence?
+
+25
+00:02:17,000 --> 00:02:19,000
+ Let's take a few examples.
+
+26
+00:02:19,000 --> 00:02:25,000
+ OpenI, ChargeGPT, Anthropik, Cloudcode, Cursor, Kit, Whisper, FFMpeg, Davichi Resolve,
+
+27
+00:02:25,000 --> 00:02:29,000
+ Apple, Silicon, API, LLM, Prompt, TypeScript and Rust.
+
+28
+00:02:29,000 --> 00:02:34,000
+ And now a few numbers. The video has been recorded on August 7, 2026.
+
+29
+00:02:34,000 --> 00:02:36,000
+ It lasts about 3 minutes.
+
+30
+00:02:36,000 --> 00:02:40,000
+ The machine has 16 giga-octets of live memory.
+
+31
+00:02:40,000 --> 00:02:46,000
+ A model can weigh 747 mega-octets while another is over 5.4 giga-octets.
+
+32
+00:02:46,000 --> 00:02:48,000
+ Finally, one last question.
+
+33
+00:02:48,000 --> 00:02:51,000
+ Can a local local artificial intelligence really become a little simple,
+
+34
+00:02:51,000 --> 00:02:55,000
+ fast and reliable, without sending our data to the cloud?
+
+35
+00:02:55,000 --> 00:02:59,000
+ It is precisely what we are going to try to discover with STI.
+
+36
+00:02:59,000 --> 00:03:01,000
+ Thank you for watching this video and see you very soon!
+
