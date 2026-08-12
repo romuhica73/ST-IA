@@ -102,17 +102,17 @@ fn is_valid_model(path: &Path) -> bool {
     let Ok(metadata) = std::fs::metadata(path) else {
         return false;
     };
-    if metadata.len() != model::MODEL_EXPECTED_SIZE {
+    if metadata.len() != model::TRANSCRIPTION_MODEL.expected_size {
         eprintln!(
             "[st-ia] migration: legacy model size {} != expected {}",
             metadata.len(),
-            model::MODEL_EXPECTED_SIZE
+            model::TRANSCRIPTION_MODEL.expected_size
         );
         return false;
     }
     match compute_sha256(path) {
         Ok(hash) => {
-            let valid = model::is_valid(metadata.len(), &hash);
+            let valid = model::is_valid(model::ModelKind::Transcription, metadata.len(), &hash);
             eprintln!("[st-ia] migration: legacy model hash={hash} valid={valid}");
             valid
         }
@@ -132,7 +132,7 @@ fn migrate(prod_dir: &Path, legacy_dir: &Path, legacy_model: &Path, prod_model: 
     // left to the model manager's own startup detection, which is the single
     // authority on whether a model may be declared `ready`.
     match std::fs::metadata(prod_model).map(|m| m.len()) {
-        Ok(size) if size == model::MODEL_EXPECTED_SIZE => {
+        Ok(size) if size == model::TRANSCRIPTION_MODEL.expected_size => {
             eprintln!("[st-ia] migration: destination verified ({size} bytes)");
             prune_empty_legacy_dirs(legacy_dir);
         }
@@ -171,7 +171,7 @@ fn move_model(prod_models_dir: &Path, legacy_model: &Path, prod_model: &Path) ->
 /// directories are on different volumes: write to the manager's temp name,
 /// verify the copy, then promote atomically, and only then drop the source.
 fn copy_fallback(prod_models_dir: &Path, legacy_model: &Path, prod_model: &Path) -> bool {
-    let temp = prod_models_dir.join(model::temp_file_name());
+    let temp = prod_models_dir.join(model::temp_file_name(model::ModelKind::Transcription));
     let _ = std::fs::remove_file(&temp);
 
     if let Err(e) = std::fs::copy(legacy_model, &temp) {

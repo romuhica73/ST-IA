@@ -1,4 +1,6 @@
-use crate::domain::model::{self, ModelError, ModelErrorCode, ModelStatus};
+use crate::domain::model::{
+    self, ModelError, ModelErrorCode, ModelKind, ModelStatus, ModelStatusEvent,
+};
 use futures_util::StreamExt;
 use sha2::{Digest, Sha256};
 use std::io::{Read, Write};
@@ -8,13 +10,35 @@ use tauri::{AppHandle, Emitter, Manager};
 
 pub const EVENT_NAME: &str = "model://event";
 
-/// Session-cached model status. Re-hashing a ~550MB file on every check
-/// would be wasteful; the file only changes as a result of `install_model`
-/// (which updates this cache itself), so a lazily-computed, session-lived
-/// cache is safe and avoids duplicating the detection logic at every call
-/// site (pipeline included).
+/// Session-cached status, per model. Re-hashing a 574 MB (or 3.1 GB) file on
+/// every check would be wasteful; a file only changes as a result of
+/// `install_model` (which updates this cache itself), so a lazily-computed,
+/// session-lived cache is safe and avoids duplicating the detection logic at
+/// every call site (pipeline included).
 #[derive(Default)]
-pub struct ModelManagerState(pub Mutex<Option<ModelStatus>>);
+struct Cache {
+    transcription: Option<ModelStatus>,
+    translation: Option<ModelStatus>,
+}
+
+impl Cache {
+    fn get(&self, kind: ModelKind) -> Option<&ModelStatus> {
+        match kind {
+            ModelKind::Transcription => self.transcription.as_ref(),
+            ModelKind::Translation => self.translation.as_ref(),
+        }
+    }
+
+    fn set(&mut self, kind: ModelKind, status: ModelStatus) {
+        match kind {
+            ModelKind::Transcription => self.transcription = Some(status),
+            ModelKind::Translation => self.translation = Some(status),
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct ModelManagerState(Mutex<Cache>);
 
 fn models_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let app_data_dir = app
@@ -24,17 +48,17 @@ fn models_dir(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(app_data_dir.join("models"))
 }
 
-/// Canonical on-disk location for the Whisper model:
-/// `{Application Support}/<bundle-id>/models/ggml-large-v3-turbo-q5_0.bin`.
+/// Canonical on-disk location for a model:
+/// `{Application Support}/<bundle-id>/models/<file>`.
 ///
 /// Resolved via Tauri's path API — never hardcoded to a developer or CI
 /// machine's home/workspace path.
-pub fn model_path(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(models_dir(app)?.join(model::MODEL_FILE_NAME))
+pub fn model_path(app: &AppHandle, kind: ModelKind) -> Result<PathBuf, String> {
+    Ok(models_dir(app)?.join(model::spec(kind).file_name))
 }
 
-fn temp_model_path(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(models_dir(app)?.join(model::temp_file_name()))
+fn temp_model_path(app: &AppHandle, kind: ModelKind) -> Result<PathBuf, String> {
+    Ok(models_dir(app)?.join(model::temp_file_name(kind)))
 }
 
 pub(crate) fn compute_sha256(path: &Path) -> std::io::Result<String> {
@@ -51,29 +75,32 @@ pub(crate) fn compute_sha256(path: &Path) -> std::io::Result<String> {
     Ok(format!("{:x}", hasher.finalize()))
 }
 
-/// Reads the model file from disk and verifies it against the pinned
-/// manifest. Never trusts the file's mere presence: size and SHA-256 must
-/// both match exactly for `Ready`.
-fn detect_status_uncached(app: &AppHandle) -> Result<ModelStatus, String> {
-    let path = model_path(app)?;
+/// Reads a model file from disk and verifies it against the pinned manifest.
+/// Never trusts the file's mere presence: size and SHA-256 must both match
+/// exactly for `Ready`.
+fn detect_status_uncached(app: &AppHandle, kind: ModelKind) -> Result<ModelStatus, String> {
+    let spec = model::spec(kind);
+    let path = model_path(app, kind)?;
     let metadata = match std::fs::metadata(&path) {
         Ok(m) if m.is_file() => m,
         _ => return Ok(ModelStatus::Missing),
     };
 
-    if metadata.len() != model::MODEL_EXPECTED_SIZE {
+    if metadata.len() != spec.expected_size {
         eprintln!(
-            "[st-ia] model detect: size mismatch ({} vs expected {}) -> Corrupted",
+            "[st-ia] model detect ({}): size mismatch ({} vs expected {}) -> Corrupted",
+            kind.as_str(),
             metadata.len(),
-            model::MODEL_EXPECTED_SIZE
+            spec.expected_size
         );
         return Ok(ModelStatus::Corrupted);
     }
 
     let hash = compute_sha256(&path).map_err(|e| format!("failed to hash model file: {e}"))?;
-    let valid = model::is_valid(metadata.len(), &hash);
+    let valid = model::is_valid(kind, metadata.len(), &hash);
     eprintln!(
-        "[st-ia] model detect: size={} hash={hash} valid={valid}",
+        "[st-ia] model detect ({}): size={} hash={hash} valid={valid}",
+        kind.as_str(),
         metadata.len()
     );
     Ok(if valid {
@@ -83,48 +110,57 @@ fn detect_status_uncached(app: &AppHandle) -> Result<ModelStatus, String> {
     })
 }
 
-pub fn get_or_detect_status(app: &AppHandle) -> Result<ModelStatus, String> {
+pub fn get_or_detect_status(app: &AppHandle, kind: ModelKind) -> Result<ModelStatus, String> {
     let state = app.state::<ModelManagerState>();
     {
         let guard = state.0.lock().map_err(|_| "model state lock poisoned")?;
-        if let Some(status) = guard.as_ref() {
+        if let Some(status) = guard.get(kind) {
             return Ok(status.clone());
         }
     }
-    let status = detect_status_uncached(app)?;
-    *state.0.lock().map_err(|_| "model state lock poisoned")? = Some(status.clone());
+    let status = detect_status_uncached(app, kind)?;
+    state
+        .0
+        .lock()
+        .map_err(|_| "model state lock poisoned")?
+        .set(kind, status.clone());
     Ok(status)
 }
 
-/// Used by the transcription pipeline (M2): trusts the session cache rather
-/// than re-hashing before every job, but the cache is only ever populated
-/// by an actually-verified detection or a just-completed install.
-pub fn model_is_installed(app: &AppHandle) -> Result<bool, String> {
-    Ok(matches!(get_or_detect_status(app)?, ModelStatus::Ready))
+/// Used by the transcription pipeline: trusts the session cache rather than
+/// re-hashing before every job, but the cache is only ever populated by an
+/// actually-verified detection or a just-completed install.
+pub fn model_is_installed(app: &AppHandle, kind: ModelKind) -> Result<bool, String> {
+    Ok(matches!(
+        get_or_detect_status(app, kind)?,
+        ModelStatus::Ready
+    ))
 }
 
-fn emit_status(app: &AppHandle, state: &ModelManagerState, status: ModelStatus) {
-    if let Ok(mut guard) = state.0.lock() {
-        *guard = Some(status.clone());
+fn emit_status(app: &AppHandle, kind: ModelKind, status: ModelStatus) {
+    if let Ok(mut guard) = app.state::<ModelManagerState>().0.lock() {
+        guard.set(kind, status.clone());
     }
-    let _ = app.emit(EVENT_NAME, &status);
+    let _ = app.emit(EVENT_NAME, &ModelStatusEvent { kind, status });
 }
 
-/// Downloads the model to a temporary file, verifies its SHA-256 while
-/// streaming (one pass, no re-read), and only then atomically renames it to
-/// the canonical name. The final file never represents a partial or
-/// unverified download — a crash or interruption at any point leaves at
-/// most a `.download` temp file, never a corrupt "final" model.
-pub async fn install_model(app: AppHandle) -> Result<(), ModelError> {
-    let state = app.state::<ModelManagerState>();
-
+/// Downloads a model to a temporary file, verifies its SHA-256, and only then
+/// atomically renames it to the canonical name. The final file never
+/// represents a partial or unverified download — a crash or interruption at
+/// any point leaves at most a `.download` temp file, never a corrupt "final"
+/// model.
+pub async fn install_model(app: AppHandle, kind: ModelKind) -> Result<(), ModelError> {
     {
+        let state = app.state::<ModelManagerState>();
         let guard = state.0.lock().map_err(|_| ModelError {
             code: ModelErrorCode::WriteError,
             message: "État du gestionnaire de modèle inaccessible.".to_string(),
         })?;
+        // Per model: downloading the translation model while the
+        // transcription one is already installed is a normal flow, but two
+        // downloads of the *same* model are not.
         if matches!(
-            *guard,
+            guard.get(kind),
             Some(ModelStatus::Downloading { .. }) | Some(ModelStatus::Verifying)
         ) {
             return Err(ModelError {
@@ -136,7 +172,7 @@ pub async fn install_model(app: AppHandle) -> Result<(), ModelError> {
 
     emit_status(
         &app,
-        &state,
+        kind,
         ModelStatus::Downloading {
             downloaded_bytes: 0,
             total_bytes: None,
@@ -147,46 +183,48 @@ pub async fn install_model(app: AppHandle) -> Result<(), ModelError> {
     let dir = models_dir(&app).map_err(ModelError::write)?;
     std::fs::create_dir_all(&dir).map_err(|e| ModelError::write(e.to_string()))?;
 
-    let tmp_path = temp_model_path(&app).map_err(ModelError::write)?;
+    let tmp_path = temp_model_path(&app, kind).map_err(ModelError::write)?;
     // Never trust a leftover temp file from a previous interrupted attempt.
     let _ = std::fs::remove_file(&tmp_path);
 
-    let result = download_to_temp(&app, &state, &tmp_path).await;
+    let result = download_to_temp(&app, kind, &tmp_path).await;
 
     match result {
         Ok(()) => {
-            emit_status(&app, &state, ModelStatus::Verifying);
+            emit_status(&app, kind, ModelStatus::Verifying);
 
+            let spec = model::spec(kind);
             let size = std::fs::metadata(&tmp_path).map(|m| m.len()).unwrap_or(0);
             let hash = compute_sha256(&tmp_path)
                 .map_err(|e| ModelError::write(format!("failed to hash download: {e}")))?;
             eprintln!(
-                "[st-ia] model verify: size={size} expected={} hash={hash}",
-                model::MODEL_EXPECTED_SIZE
+                "[st-ia] model verify ({}): size={size} expected={} hash={hash}",
+                kind.as_str(),
+                spec.expected_size
             );
 
-            if !model::is_valid(size, &hash) {
+            if !model::is_valid(kind, size, &hash) {
                 eprintln!("[st-ia] model verify FAILED (size or hash mismatch)");
                 let _ = std::fs::remove_file(&tmp_path);
-                emit_status(&app, &state, ModelStatus::Corrupted);
+                emit_status(&app, kind, ModelStatus::Corrupted);
                 return Err(ModelError {
                     code: ModelErrorCode::IntegrityMismatch,
                     message: "Le fichier téléchargé est invalide.".to_string(),
                 });
             }
 
-            let final_path = model_path(&app).map_err(ModelError::write)?;
+            let final_path = model_path(&app, kind).map_err(ModelError::write)?;
             std::fs::rename(&tmp_path, &final_path)
                 .map_err(|e| ModelError::write(format!("failed to finalize model file: {e}")))?;
             eprintln!("[st-ia] model promoted to {}", final_path.display());
 
-            emit_status(&app, &state, ModelStatus::Ready);
+            emit_status(&app, kind, ModelStatus::Ready);
             Ok(())
         }
         Err(err) => {
             emit_status(
                 &app,
-                &state,
+                kind,
                 ModelStatus::Failed {
                     code: err.code,
                     message: err.message.clone(),
@@ -199,12 +237,14 @@ pub async fn install_model(app: AppHandle) -> Result<(), ModelError> {
 
 async fn download_to_temp(
     app: &AppHandle,
-    state: &ModelManagerState,
+    kind: ModelKind,
     tmp_path: &Path,
 ) -> Result<(), ModelError> {
+    let spec = model::spec(kind);
     eprintln!(
-        "[st-ia] model download starting: {}",
-        model::MODEL_DOWNLOAD_URL
+        "[st-ia] model download starting ({}): {}",
+        kind.as_str(),
+        spec.download_url
     );
     // `https_only` is the meaningful setting here: the pinned URL is HTTPS,
     // but the default redirect policy would happily follow a 30x to plain
@@ -213,7 +253,7 @@ async fn download_to_temp(
     // about not silently downgrading the transport — not about integrity.
     // The redirect limit is kept (a CDN hop is expected) but bounded, and
     // the connect timeout stops a black-holed host from hanging the UI's
-    // "Downloading" state forever. No timeout on the body: a 574 MB
+    // "Downloading" state forever. No timeout on the body: a multi-gigabyte
     // download on a slow link is legitimately long.
     let client = reqwest::Client::builder()
         .https_only(true)
@@ -222,7 +262,7 @@ async fn download_to_temp(
         .build()
         .map_err(|e| ModelError::network(format!("client HTTP indisponible : {e}")))?;
     let response = client
-        .get(model::MODEL_DOWNLOAD_URL)
+        .get(spec.download_url)
         .send()
         .await
         .map_err(|e| ModelError::network(format!("échec de la requête réseau : {e}")))?;
@@ -252,10 +292,10 @@ async fn download_to_temp(
         // disk long before the SHA-256 check at the end ever got to reject
         // the result. Integrity was already covered; this bounds the cost of
         // finding out.
-        if downloaded > model::MODEL_EXPECTED_SIZE {
+        if downloaded > spec.expected_size {
             eprintln!(
                 "[st-ia] model download aborted: server sent more than the expected {} bytes",
-                model::MODEL_EXPECTED_SIZE
+                spec.expected_size
             );
             return Err(ModelError::network(
                 "le fichier reçu dépasse la taille attendue.".to_string(),
@@ -265,7 +305,7 @@ async fn download_to_temp(
             .map_err(|e| ModelError::write(e.to_string()))?;
 
         let downloaded_mb = downloaded / (1024 * 1024);
-        if downloaded_mb >= last_logged_mb + 20 {
+        if downloaded_mb >= last_logged_mb + 50 {
             eprintln!("[st-ia] model download progress: {downloaded_mb} MiB");
             last_logged_mb = downloaded_mb;
         }
@@ -273,7 +313,7 @@ async fn download_to_temp(
         let progress = model::compute_progress(downloaded, total_bytes);
         emit_status(
             app,
-            state,
+            kind,
             ModelStatus::Downloading {
                 downloaded_bytes: downloaded,
                 total_bytes,

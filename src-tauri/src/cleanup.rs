@@ -85,29 +85,39 @@ fn clean_stale_job_dirs(root: &Path) -> usize {
 }
 
 /// Strategy A (see ADR-005): an interrupted download is discarded at the
-/// next launch rather than resumed — M3 deliberately has no HTTP range
-/// resume. Only the exact `<model>.download` temp name is removed; the
+/// next launch rather than resumed — there is deliberately no HTTP range
+/// resume. Only the exact `<model>.download` temp names are removed; a
 /// verified model file itself is never a candidate.
+///
+/// Both models are checked: either download can be interrupted, and the
+/// translation model's temp file is the larger of the two to leave behind.
 fn clean_stale_downloads(app: &AppHandle) -> usize {
     let Ok(app_data_dir) = app.path().app_data_dir() else {
         eprintln!("[st-ia] startup cleanup: no app data dir, skipping download check");
         return 0;
     };
-    let temp_download = app_data_dir.join("models").join(model::temp_file_name());
-    eprintln!(
-        "[st-ia] startup cleanup: checking {}",
-        temp_download.display()
-    );
-    if !temp_download.is_file() {
-        return 0;
-    }
-    match std::fs::remove_file(&temp_download) {
-        Ok(()) => 1,
-        Err(e) => {
-            eprintln!("[st-ia] startup cleanup: could not remove interrupted download: {e}");
-            0
+    let models_dir = app_data_dir.join("models");
+    let mut removed = 0;
+    for kind in [
+        model::ModelKind::Transcription,
+        model::ModelKind::Translation,
+    ] {
+        let temp_download = models_dir.join(model::temp_file_name(kind));
+        eprintln!(
+            "[st-ia] startup cleanup: checking {}",
+            temp_download.display()
+        );
+        if !temp_download.is_file() {
+            continue;
+        }
+        match std::fs::remove_file(&temp_download) {
+            Ok(()) => removed += 1,
+            Err(e) => {
+                eprintln!("[st-ia] startup cleanup: could not remove interrupted download: {e}")
+            }
         }
     }
+    removed
 }
 
 #[cfg(test)]
