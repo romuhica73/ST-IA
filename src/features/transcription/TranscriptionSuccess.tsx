@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { formatBytes } from "../media-selection/formatBytes";
 import { CheckCircleIcon, SparkleIcon } from "../media-selection/icons";
 import { asSupportedLanguage } from "../../i18n/locale";
-import type { OutputFile } from "./types";
+import type { OutputFile, OutputLanguage } from "./types";
 
 interface TranscriptionSuccessProps {
   files: OutputFile[];
@@ -21,6 +21,25 @@ export function TranscriptionSuccess({
   const language = asSupportedLanguage(i18n.language);
   const [copied, setCopied] = useState(false);
   const [openFolderError, setOpenFolderError] = useState(false);
+
+  // Preserves the backend's order (French first), without assuming both
+  // versions are present.
+  const languages = files.reduce<OutputLanguage[]>((acc, file) => {
+    if (!acc.includes(file.language)) acc.push(file.language);
+    return acc;
+  }, []);
+
+  function renderRow(file: OutputFile) {
+    return (
+      <div className="output-list__row" key={file.path}>
+        <span className={`output-badge output-badge--${file.kind}`}>
+          {file.kind.toUpperCase()}
+        </span>
+        <span className="output-list__name">{file.fileName}</span>
+        <span className="output-list__size">{formatBytes(file.sizeBytes, language)}</span>
+      </div>
+    );
+  }
 
   async function handleOpenFolder() {
     // No path is sent: the backend derives what to reveal from its own
@@ -60,17 +79,22 @@ export function TranscriptionSuccess({
         </p>
       </div>
 
-      <div className="output-list">
-        {files.map((file) => (
-          <div className="output-list__row" key={file.path}>
-            <span className={`output-badge output-badge--${file.kind}`}>
-              {file.kind.toUpperCase()}
-            </span>
-            <span className="output-list__name">{file.fileName}</span>
-            <span className="output-list__size">{formatBytes(file.sizeBytes, language)}</span>
+      {/* Grouped by version only when there is more than one — a
+          single-language result would gain a header that explains nothing. */}
+      {languages.length > 1 ? (
+        languages.map((outputLanguage) => (
+          <div className="output-group" key={outputLanguage}>
+            <p className="output-group__title">{t(`outputs.${outputLanguage}`)}</p>
+            <div className="output-list">
+              {files
+                .filter((file) => file.language === outputLanguage)
+                .map((file) => renderRow(file))}
+            </div>
           </div>
-        ))}
-      </div>
+        ))
+      ) : (
+        <div className="output-list">{files.map((file) => renderRow(file))}</div>
+      )}
 
       <div className="actions actions--stack">
         <button type="button" className="button button--primary" onClick={handleOpenFolder}>

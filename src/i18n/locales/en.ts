@@ -14,11 +14,25 @@ const en = {
   media: {
     changeFile: "Change file",
     generate: "Generate subtitles",
+    generateCount_one: "Generate {{count}} file",
+    generateCount_other: "Generate {{count}} files",
     generateDisabledTitle: "The transcription model must be installed first.",
     outputs: "Outputs",
     outputsError: "Select at least one output format.",
     srt: "SRT",
     txt: "TXT",
+  },
+  outputs: {
+    versions: "Output languages",
+    french: "French",
+    english: "English",
+    original: "Original",
+    translation: "Translation",
+    languagesError: "Select at least one version.",
+    translationModelRequired: "Translation model required ({{size}}, fully local, one-time download).",
+    translationModelRequiredNoSize: "Translation model required (fully local, one-time download).",
+    downloadTranslationModel: "Download model",
+    translationModelDownloading: "Downloading…",
   },
   transcription: {
     language: "Transcription language",
@@ -29,8 +43,8 @@ const en = {
   progress: {
     label: "Progress",
     audioPreparation: "Preparing audio",
-    modelLoading: "Loading model",
-    transcription: "Transcribing",
+    transcription: "French transcription",
+    translation: "English translation",
     outputGeneration: "Generating files",
     stateDone: "Done",
     stateActive: "In progress…",
@@ -51,12 +65,25 @@ const en = {
   error: {
     chooseAnother: "Choose another file",
     installModel: "Install model",
+    installTranslationModel: "Install translation model",
     retry: "Retry",
     technicalDetails: "Technical details",
     fieldError: "Error",
     fieldCode: "Code",
     fieldFile: "File",
     codes: {
+      translationModelMissing: {
+        title: "Translation model not installed",
+        message: "The English translation model is not installed yet.",
+      },
+      translationFailed: {
+        title: "Translation failed",
+        message: "The English translation failed.",
+      },
+      noLanguageSelected: {
+        title: "No version selected",
+        message: "Select at least one version to generate.",
+      },
       modelMissing: {
         title: "Model not installed",
         message: "The transcription model is not installed yet.",

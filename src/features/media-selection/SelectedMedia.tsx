@@ -2,12 +2,22 @@ import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatBytes } from "./formatBytes";
 import { ChevronDownIcon, FileIcon, GlobeIcon, SizeIcon, TypeIcon } from "./icons";
+import { OutputLanguageCards } from "./OutputLanguageCards";
+import { DEFAULT_OUTPUTS, fileCount, hasFormat, hasLanguage, isLaunchable } from "./outputs";
+import type { OutputSelection } from "./outputs";
 import { asSupportedLanguage } from "../../i18n/locale";
-import type { MediaInfo, OutputSelection } from "./types";
+import type { MediaInfo } from "./types";
 
 interface SelectedMediaProps {
   media: MediaInfo;
   modelReady: boolean;
+  /** Whether the English translation model is installed. English can still
+   * be selected without it — the download is offered inline instead of the
+   * checkbox being disabled with no explanation. */
+  translationModelReady: boolean;
+  translationModelSize: number | null;
+  translationModelBusy: boolean;
+  onDownloadTranslationModel: () => void;
   onChangeFile: () => void;
   onGenerate: (outputs: OutputSelection) => void;
 }
@@ -15,17 +25,21 @@ interface SelectedMediaProps {
 export function SelectedMedia({
   media,
   modelReady,
+  translationModelReady,
+  translationModelSize,
+  translationModelBusy,
+  onDownloadTranslationModel,
   onChangeFile,
   onGenerate,
 }: SelectedMediaProps) {
   const { t, i18n } = useTranslation();
   const language = asSupportedLanguage(i18n.language);
   const languageId = useId();
-  const [outputs, setOutputs] = useState<OutputSelection>({
-    srt: true,
-    txt: true,
-  });
-  const hasOutputSelected = outputs.srt || outputs.txt;
+  const [outputs, setOutputs] = useState<OutputSelection>(DEFAULT_OUTPUTS);
+
+  const count = fileCount(outputs);
+  const needsTranslationModel = outputs.languages.english && !translationModelReady;
+  const canLaunch = isLaunchable(outputs) && modelReady && !needsTranslationModel;
 
   return (
     <div className="job">
@@ -60,14 +74,57 @@ export function SelectedMedia({
       </section>
 
       <section className="field">
+        <span className="field__label">{t("outputs.versions")}</span>
+        <OutputLanguageCards
+          languages={outputs.languages}
+          englishNotice={
+            needsTranslationModel ? (
+              <span className="language-card__notice">
+                {translationModelSize !== null
+                  ? t("outputs.translationModelRequired", {
+                      size: formatBytes(translationModelSize, language),
+                    })
+                  : t("outputs.translationModelRequiredNoSize")}
+                <button
+                  type="button"
+                  className="language-card__download"
+                  disabled={translationModelBusy}
+                  onClick={(e) => {
+                    // The card is a <label>: without this the click would
+                    // also toggle the checkbox it sits inside.
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onDownloadTranslationModel();
+                  }}
+                >
+                  {translationModelBusy
+                    ? t("outputs.translationModelDownloading")
+                    : t("outputs.downloadTranslationModel")}
+                </button>
+              </span>
+            ) : null
+          }
+          onChange={(languages) => setOutputs((current) => ({ ...current, languages }))}
+        />
+        {!hasLanguage(outputs) && (
+          <p className="drop-zone__error" role="alert">
+            {t("outputs.languagesError")}
+          </p>
+        )}
+      </section>
+
+      <section className="field">
         <span className="field__label">{t("media.outputs")}</span>
         <div className="checkboxes">
           <label className="checkbox">
             <input
               type="checkbox"
-              checked={outputs.srt}
+              checked={outputs.formats.srt}
               onChange={(e) =>
-                setOutputs((current) => ({ ...current, srt: e.target.checked }))
+                setOutputs((current) => ({
+                  ...current,
+                  formats: { ...current.formats, srt: e.target.checked },
+                }))
               }
             />
             <span className="checkbox__box" aria-hidden="true" />
@@ -76,16 +133,19 @@ export function SelectedMedia({
           <label className="checkbox">
             <input
               type="checkbox"
-              checked={outputs.txt}
+              checked={outputs.formats.txt}
               onChange={(e) =>
-                setOutputs((current) => ({ ...current, txt: e.target.checked }))
+                setOutputs((current) => ({
+                  ...current,
+                  formats: { ...current.formats, txt: e.target.checked },
+                }))
               }
             />
             <span className="checkbox__box" aria-hidden="true" />
             {t("media.txt")}
           </label>
         </div>
-        {!hasOutputSelected && (
+        {!hasFormat(outputs) && (
           <p className="drop-zone__error" role="alert">
             {t("media.outputsError")}
           </p>
@@ -99,11 +159,13 @@ export function SelectedMedia({
         <button
           type="button"
           className="button button--primary"
-          disabled={!hasOutputSelected || !modelReady}
+          disabled={!canLaunch}
           title={!modelReady ? t("media.generateDisabledTitle") : undefined}
           onClick={() => onGenerate(outputs)}
         >
-          {t("media.generate")}
+          {/* The count is real (languages × formats), computed by the same
+              rule Rust uses — never a guess. */}
+          {count > 0 ? t("media.generateCount", { count }) : t("media.generate")}
         </button>
       </div>
     </div>

@@ -29,7 +29,4 @@ export type MediaSelectionState =
   | { status: "selected"; media: MediaInfo }
   | { status: "error"; code: MediaSelectionErrorCode };
 
-export interface OutputSelection {
-  srt: boolean;
-  txt: boolean;
-}
+export type { OutputSelection } from "./outputs";

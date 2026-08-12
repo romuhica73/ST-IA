@@ -14,11 +14,25 @@ const fr = {
   media: {
     changeFile: "Changer de fichier",
     generate: "Générer les sous-titres",
+    generateCount_one: "Générer {{count}} fichier",
+    generateCount_other: "Générer {{count}} fichiers",
     generateDisabledTitle: "Le modèle de transcription doit être installé au préalable.",
     outputs: "Sorties",
     outputsError: "Sélectionnez au moins un format de sortie.",
     srt: "SRT",
     txt: "TXT",
+  },
+  outputs: {
+    versions: "Versions à générer",
+    french: "Français",
+    english: "English",
+    original: "Original",
+    translation: "Traduction",
+    languagesError: "Sélectionnez au moins une version.",
+    translationModelRequired: "Modèle de traduction requis ({{size}}, traitement 100 % local, téléchargement unique).",
+    translationModelRequiredNoSize: "Modèle de traduction requis (traitement 100 % local, téléchargement unique).",
+    downloadTranslationModel: "Télécharger le modèle",
+    translationModelDownloading: "Téléchargement…",
   },
   transcription: {
     language: "Langue de transcription",
@@ -29,8 +43,8 @@ const fr = {
   progress: {
     label: "Progression",
     audioPreparation: "Préparation de l'audio",
-    modelLoading: "Chargement du modèle",
-    transcription: "Transcription",
+    transcription: "Transcription française",
+    translation: "Traduction anglaise",
     outputGeneration: "Génération des fichiers",
     stateDone: "Terminée",
     stateActive: "En cours…",
@@ -51,12 +65,25 @@ const fr = {
   error: {
     chooseAnother: "Choisir un autre fichier",
     installModel: "Installer le modèle",
+    installTranslationModel: "Installer le modèle de traduction",
     retry: "Réessayer",
     technicalDetails: "Détails techniques",
     fieldError: "Erreur",
     fieldCode: "Code",
     fieldFile: "Fichier",
     codes: {
+      translationModelMissing: {
+        title: "Modèle de traduction non installé",
+        message: "Le modèle de traduction anglaise n'est pas encore installé.",
+      },
+      translationFailed: {
+        title: "La traduction a échoué",
+        message: "La traduction anglaise a échoué.",
+      },
+      noLanguageSelected: {
+        title: "Aucune version sélectionnée",
+        message: "Sélectionnez au moins une version à générer.",
+      },
       modelMissing: {
         title: "Modèle non installé",
         message: "Le modèle de transcription n'est pas encore installé.",

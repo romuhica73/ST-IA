@@ -8,6 +8,7 @@ interface TranscriptionFailureProps {
   onChooseAnother: () => void;
   onRetry: () => void;
   onInstallModel: () => void;
+  onInstallTranslationModel: () => void;
 }
 
 export function TranscriptionFailure({
@@ -16,9 +17,17 @@ export function TranscriptionFailure({
   onChooseAnother,
   onRetry,
   onInstallModel,
+  onInstallTranslationModel,
 }: TranscriptionFailureProps) {
   const { t } = useTranslation();
-  const isModelMissing = code === "modelMissing";
+  // Two different models can be missing, and offering the wrong download
+  // would send the user to fetch a file they already have.
+  const missingModel =
+    code === "modelMissing"
+      ? "transcription"
+      : code === "translationModelMissing"
+        ? "translation"
+        : null;
   const title = t(`error.codes.${code}.title`);
 
   return (
@@ -35,9 +44,17 @@ export function TranscriptionFailure({
         <button type="button" className="button button--secondary" onClick={onChooseAnother}>
           {t("error.chooseAnother")}
         </button>
-        {isModelMissing ? (
-          <button type="button" className="button button--primary" onClick={onInstallModel}>
-            {t("error.installModel")}
+        {missingModel !== null ? (
+          <button
+            type="button"
+            className="button button--primary"
+            onClick={
+              missingModel === "translation" ? onInstallTranslationModel : onInstallModel
+            }
+          >
+            {missingModel === "translation"
+              ? t("error.installTranslationModel")
+              : t("error.installModel")}
           </button>
         ) : (
           <button type="button" className="button button--primary" onClick={onRetry}>

@@ -1,20 +1,23 @@
 import { useTranslation } from "react-i18next";
 import { AudioWaveIcon, LockIcon } from "../media-selection/icons";
-import { realProgress, stageState, type StageKey } from "./stages";
+import { realProgress, stageState, stagesFor, type StageKey } from "./stages";
 import type { JobStatus } from "./types";
 
 interface TranscriptionProgressProps {
   fileName: string;
   status: JobStatus;
+  /** Whether this job was asked for both versions — determines whether the
+   * translation step is part of the sequence at all. */
+  bilingual: boolean;
   onCancel: () => void;
 }
 
-const STEP_KEYS: { key: StageKey; labelKey: string }[] = [
-  { key: "audio", labelKey: "progress.audioPreparation" },
-  { key: "model", labelKey: "progress.modelLoading" },
-  { key: "transcribing", labelKey: "progress.transcription" },
-  { key: "writing", labelKey: "progress.outputGeneration" },
-];
+const STEP_LABELS: Record<StageKey, string> = {
+  audio: "progress.audioPreparation",
+  transcribing: "progress.transcription",
+  translating: "progress.translation",
+  writing: "progress.outputGeneration",
+};
 
 const STATE_LABEL_KEY: Record<ReturnType<typeof stageState>, string> = {
   done: "progress.stateDone",
@@ -25,11 +28,13 @@ const STATE_LABEL_KEY: Record<ReturnType<typeof stageState>, string> = {
 export function TranscriptionProgress({
   fileName,
   status,
+  bilingual,
   onCancel,
 }: TranscriptionProgressProps) {
   const { t } = useTranslation();
   const progress = realProgress(status);
   const cancelling = status.status === "cancelling";
+  const stages = stagesFor(bilingual);
 
   return (
     <div className="job">
@@ -44,7 +49,11 @@ export function TranscriptionProgress({
 
       <section className="progress-field">
         <div className="progress-field__header">
-          <span className="field__label">{t("progress.label")}</span>
+          <span className="field__label">
+            {status.status === "transcribing" && status.variant === "englishTranslation"
+              ? t("progress.translation")
+              : t("progress.label")}
+          </span>
           {progress !== null && (
             <span className="progress-field__percent">{Math.round(progress * 100)} %</span>
           )}
@@ -69,14 +78,14 @@ export function TranscriptionProgress({
         <p className="model-gate__subtitle fade-in">{t("progress.cancellingText")}</p>
       ) : (
         <ul className="steps">
-          {STEP_KEYS.map((step) => {
-            const state = stageState(status, step.key);
+          {stages.map((stage) => {
+            const state = stageState(status, stage, stages);
             return (
-              <li key={step.key} className={`steps__item steps__item--${state}`}>
+              <li key={stage} className={`steps__item steps__item--${state}`}>
                 <span className={`steps__marker steps__marker--${state}`} aria-hidden="true">
                   {state === "done" ? "✓" : ""}
                 </span>
-                <span className="steps__label">{t(step.labelKey)}</span>
+                <span className="steps__label">{t(STEP_LABELS[stage])}</span>
                 <span className="steps__state">{t(STATE_LABEL_KEY[state])}</span>
               </li>
             );
