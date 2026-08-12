@@ -44,6 +44,12 @@ export type JobStatus =
       variant: TranscribingVariant;
       phase: TranscribingPhase;
       progress: number | null;
+      /** How far into the audio this pass has got, and how long the audio is.
+       * Both measured — the end timestamp Whisper printed for the segment it
+       * just finished, and the WAV header. `null` until the first segment is
+       * decoded: "not known yet" is not the same as "at 0:00". */
+      processedAudioSeconds: number | null;
+      totalAudioSeconds: number | null;
     }
   | { status: "writingOutputs" }
   | {

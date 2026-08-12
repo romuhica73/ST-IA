@@ -10,6 +10,8 @@ const transcribing = (
   variant,
   phase: progress === null ? "loadingModel" : "processing",
   progress,
+  processedAudioSeconds: progress === null ? null : progress * 1090,
+  totalAudioSeconds: 1090,
 });
 
 describe("stage sequence", () => {

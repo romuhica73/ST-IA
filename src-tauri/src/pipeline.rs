@@ -315,6 +315,8 @@ pub async fn run(app: AppHandle, request: StartRequest) {
                 variant,
                 phase: TranscribingPhase::LoadingModel,
                 progress: None,
+                processed_audio_seconds: None,
+                total_audio_seconds: total_duration_secs,
             },
         );
 
@@ -587,6 +589,12 @@ async fn run_whisper(
                     let progress = total_duration_secs
                         .filter(|total| *total > 0.0)
                         .map(|total| (end_secs / total).clamp(0.0, 1.0));
+                    // Clamped to the known duration: Whisper occasionally
+                    // prints an end timestamp slightly past the end of the
+                    // audio, and "18:11 of 18:10" reads as a bug.
+                    let processed = total_duration_secs
+                        .map(|total| end_secs.min(total))
+                        .unwrap_or(end_secs);
                     emit_status(
                         app,
                         state,
@@ -594,6 +602,8 @@ async fn run_whisper(
                             variant,
                             phase: TranscribingPhase::Processing,
                             progress,
+                            processed_audio_seconds: Some(processed),
+                            total_audio_seconds: total_duration_secs,
                         },
                     );
                 }

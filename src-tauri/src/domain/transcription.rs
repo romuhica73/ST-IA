@@ -312,6 +312,18 @@ pub enum JobStatus {
         variant: TranscribingVariant,
         phase: TranscribingPhase,
         progress: Option<f32>,
+        /// How far into the audio this pass has got, in seconds, and how long
+        /// the audio is. Both come from real measurements — the end timestamp
+        /// Whisper prints for the segment it just finished, and the WAV's own
+        /// header — never from an elapsed-time estimate.
+        ///
+        /// This exists because the percentage alone is a poor signal of life:
+        /// Whisper decodes in windows and emits a burst of segments per
+        /// window, so the percentage legitimately sits still for tens of
+        /// seconds (23.2s measured on a 3-minute sample). "08:32 analysed of
+        /// 18:10" tells the user what the app is actually doing.
+        processed_audio_seconds: Option<f32>,
+        total_audio_seconds: Option<f32>,
     },
     WritingOutputs,
     #[serde(rename_all = "camelCase")]
@@ -886,16 +898,37 @@ mod tests {
     }
 
     #[test]
-    fn transcribing_status_serializes_variant_and_phase() {
+    fn transcribing_status_serializes_variant_phase_and_audio_position() {
         let status = JobStatus::Transcribing {
             variant: TranscribingVariant::EnglishTranslation,
             phase: TranscribingPhase::Processing,
             progress: Some(0.42),
+            processed_audio_seconds: Some(512.0),
+            total_audio_seconds: Some(1090.0),
         };
         let json = serde_json::to_value(&status).unwrap();
         assert_eq!(json["status"], "transcribing");
         assert_eq!(json["variant"], "englishTranslation");
         assert_eq!(json["phase"], "processing");
+        assert_eq!(json["processedAudioSeconds"], 512.0);
+        assert_eq!(json["totalAudioSeconds"], 1090.0);
+        assert!(json.get("processed_audio_seconds").is_none());
+    }
+
+    #[test]
+    fn audio_position_is_absent_before_any_segment_is_decoded() {
+        // No fabricated zero: "we do not know yet" and "we are at 0:00" are
+        // different things, and the UI renders them differently.
+        let status = JobStatus::Transcribing {
+            variant: TranscribingVariant::Original,
+            phase: TranscribingPhase::LoadingModel,
+            progress: None,
+            processed_audio_seconds: None,
+            total_audio_seconds: Some(1090.0),
+        };
+        let json = serde_json::to_value(&status).unwrap();
+        assert!(json["processedAudioSeconds"].is_null());
+        assert_eq!(json["totalAudioSeconds"], 1090.0);
     }
 
     #[test]
