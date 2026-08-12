@@ -7,9 +7,14 @@ Application macOS locale transformant un média audio/vidéo en :
 * SRT ;
 * TXT.
 
-La transcription est **en français** — la seule langue qualifiée à ce stade. ST-IA ne produit pas de traduction (voir [ADR-008](docs/architecture/ADR-008-bilingual-output-pipeline.md)).
+Deux versions au choix, dans le même traitement :
 
-Le modèle de transcription (~547 Mo) est téléchargé une seule fois, sur action explicite de l'utilisateur, puis stocké localement (`Application Support`). Après cette installation, la transcription fonctionne entièrement hors ligne — vos médias ne quittent jamais votre Mac.
+* **Français** — la transcription originale ;
+* **English** — une traduction anglaise, produite **localement**, sans aucun service en ligne.
+
+La langue parlée doit être le français (seule langue qualifiée à ce stade). Voir [ADR-010](docs/architecture/ADR-010-local-english-translation.md).
+
+Le modèle de transcription (~547 Mo) est téléchargé une seule fois, sur action explicite de l'utilisateur, puis stocké localement (`Application Support`). La traduction anglaise utilise un **second** modèle (~3,1 Go), téléchargé uniquement si vous demandez cette version — jamais autrement. Après installation, tout fonctionne entièrement hors ligne : vos médias ne quittent jamais votre Mac.
 
 ## Principes
 
@@ -39,14 +44,18 @@ FFmpeg sidecar
 WAV temporaire
         ↓
 whisper.cpp sidecar
+   ├─ passe 1 — transcription française
+   └─ passe 2 — traduction anglaise (si demandée)
         ↓
 SRT + TXT
 ```
 
+Les passes sont **séquentielles** : jamais deux moteurs en parallèle, et FFmpeg n'extrait l'audio qu'une seule fois.
+
 ## Configuration requise
 
 * macOS sur Apple Silicon (arm64) — M1 ou plus récent ;
-* environ 600 Mo d'espace disque pour le modèle, plus l'espace de travail temporaire d'une transcription.
+* environ 600 Mo d'espace disque pour le modèle de transcription, plus 3,1 Go pour le modèle de traduction si vous utilisez la sortie anglaise, plus l'espace de travail temporaire d'un traitement.
 
 Intel n'est pas pris en charge. Il n'existe pas de build Windows.
 
@@ -110,8 +119,9 @@ scripts/provision-dev-model.sh /chemin/vers/ggml-large-v3-turbo-q5_0.bin
 * [ADR-005 — Cycle de vie des jobs, annulation et nettoyage](docs/architecture/ADR-005-runtime-lifecycle-and-cancellation.md)
 * [ADR-006 — Identité de production, portabilité et migration](docs/architecture/ADR-006-release-identity-and-data-migration.md)
 * [ADR-007 — Préférences locales et localisation](docs/architecture/ADR-007-local-preferences-and-interface-localization.md)
-* [ADR-008 — Pipeline de sortie bilingue (rejeté)](docs/architecture/ADR-008-bilingual-output-pipeline.md)
+* [ADR-008 — Pipeline de sortie bilingue : constat sur le modèle turbo](docs/architecture/ADR-008-bilingual-output-pipeline.md)
 * [ADR-009 — Splashscreen et packaging de release](docs/architecture/ADR-009-splashscreen-and-release-packaging.md)
+* [ADR-010 — Traduction anglaise locale](docs/architecture/ADR-010-local-english-translation.md)
 * [Démarrage rapide](docs/QUICKSTART.md)
 * [Construire depuis les sources](docs/BUILDING.md)
 * [Contribuer](CONTRIBUTING.md)

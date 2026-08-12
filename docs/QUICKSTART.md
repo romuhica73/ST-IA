@@ -27,7 +27,18 @@ ST-IA se distribue sous la forme d'une image disque `ST-IA-<version>-macos-arm64
    utilise le réseau.
 3. **Déposez votre vidéo ou votre audio** dans la fenêtre, ou cliquez pour la
    sélectionner.
-4. **Choisissez vos formats** (SRT, TXT, ou les deux) et lancez la génération.
+4. **Choisissez vos versions et vos formats.**
+   * **Versions** — *Français (original)*, *English (traduction)*, ou les deux.
+     Le français seul est sélectionné par défaut.
+   * **Formats** — SRT, TXT, ou les deux.
+
+   Le bouton indique combien de fichiers seront créés : deux versions × deux
+   formats = 4 fichiers.
+
+   La première fois que vous cochez **English**, ST-IA propose de télécharger
+   son modèle de traduction (~3,1 Go, une seule fois, traitement 100 % local).
+   Rien n'est téléchargé sans votre clic, et le français seul n'en a jamais
+   besoin.
 5. **Récupérez vos fichiers.** Ils sont écrits dans un dossier
    `<nom-du-média>-sous-titres/`, créé **à côté de votre média**. Le bouton
    « Ouvrir le dossier » vous y emmène directement.
@@ -43,23 +54,40 @@ ST-IA se distribue sous la forme d'une image disque `ST-IA-<version>-macos-arm64
 téléchargement du modèle, ST-IA fonctionne entièrement hors ligne — vous pouvez couper
 le Wi-Fi et vérifier.
 
-**Le modèle n'est téléchargé qu'une fois.** Il est conservé dans
-`~/Library/Application Support/com.romainbourbon.stia/` et réutilisé ensuite.
+**Les modèles ne sont téléchargés qu'une fois.** Ils sont conservés dans
+`~/Library/Application Support/com.romainbourbon.stia/models/` et réutilisés
+ensuite. Celui de traduction n'est récupéré que si vous demandez l'anglais.
 
 **Formats acceptés** : `.mp4`, `.mov`, `.wav`, `.mp3`, `.m4a`, `.flac`.
 
-**Les fichiers produits.** Vous choisissez `SRT`, `TXT`, ou les deux. Le SRT contient
-les sous-titres avec leurs timecodes, destiné au montage ; le TXT contient le texte
-seul, sans horodatage. Ils portent le nom de votre média : `IMG_8484.srt`,
-`IMG_8484.txt`.
+**Les fichiers produits.** Le SRT contient les sous-titres avec leurs timecodes,
+destiné au montage ; le TXT contient le texte seul, sans horodatage. Les noms
+dérivent de celui de votre média :
 
-**La transcription est en français.** C'est la seule langue qualifiée à ce stade, et
-ST-IA ne produit pas de traduction. La langue de l'*interface* (Système / Français /
-English) est un réglage séparé et n'affecte ni la transcription ni le nom des fichiers.
+| Ce que vous demandez | Ce que vous obtenez |
+| --- | --- |
+| Français seul | `IMG_8484.srt`, `IMG_8484.txt` |
+| English seul | `IMG_8484.en.srt`, `IMG_8484.en.txt` |
+| Les deux | `IMG_8484.fr.srt`, `IMG_8484.fr.txt`, `IMG_8484.en.srt`, `IMG_8484.en.txt` |
 
-**Comptez à peu près la durée du média.** Une vidéo de 10 minutes prend de l'ordre de
-10 minutes. Vous pouvez annuler à tout moment : rien n'est écrit tant que la
-transcription n'est pas terminée.
+Le français ne prend le suffixe `.fr` que s'il y a une version anglaise à côté —
+sinon les noms restent ceux que vous connaissez.
+
+**La langue parlée doit être le français.** C'est la seule langue qualifiée à ce
+stade, pour la transcription comme pour la traduction. La langue de l'*interface*
+(Système / Français / English) est un réglage séparé et n'affecte ni le traitement
+ni le nom des fichiers.
+
+**La traduction est plus lente que la transcription.** Elle utilise un modèle
+plus grand et plus précis : comptez environ la durée du média, contre un dixième
+pour la transcription française seule. Demander les deux versions additionne les
+deux temps — le traitement est séquentiel, jamais simultané.
+
+**Tout ou rien.** Si vous annulez, ou si quelque chose échoue, aucun fichier n'est
+créé — pas même la moitié déjà calculée. Relancez simplement.
+
+**Vous pouvez annuler à tout moment.** Rien n'est écrit tant que le traitement
+n'est pas entièrement terminé.
 
 **Configuration requise** : macOS sur Apple Silicon (M1 ou plus récent). Les Mac Intel
 ne sont pas supportés.
@@ -79,6 +107,10 @@ Icône engrenage, en haut à droite :
 
 **« Modèle endommagé »** — le fichier téléchargé ne correspond pas à l'empreinte
 attendue. Relancez le téléchargement ; ST-IA n'utilisera jamais un modèle non vérifié.
+
+**« Modèle de traduction non installé »** — vous avez demandé la version anglaise
+sans avoir téléchargé son modèle. Le bouton d'installation est proposé directement
+sur l'écran.
 
 **« Espace disque insuffisant »** — ST-IA a besoin de la taille de votre média plus
 environ 256 Mo de marge.

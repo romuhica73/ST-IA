@@ -1,6 +1,15 @@
 # ADR-008 — Pipeline de sortie bilingue (français + anglais)
 
-Statut : `REJECTED (blocked by the pinned model)` — décidé en M9, à réexaminer en v0.2.
+Statut : `SUPERSEDED by ADR-010` — le constat technique reste valable, la
+décision de renoncer ne l'est plus.
+
+> **Mise à jour.** L'auteur a levé la contrainte « ne pas ajouter de modèle »
+> après ce constat, avec pour priorité la meilleure qualité de traduction
+> possible. La sortie bilingue est donc implémentée, par un **second** modèle
+> dédié (`large-v3` non-turbo) qui laisse le modèle de transcription français
+> inchangé — voir [ADR-010](ADR-010-local-english-translation.md).
+> Tout ce qui suit reste exact : c'est la mesure qui a rendu ce second modèle
+> nécessaire.
 
 Date : 2026-08-12
 

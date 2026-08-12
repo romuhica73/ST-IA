@@ -10,18 +10,50 @@ la baseline de référence, ni le [modèle de menace](THREAT_MODEL.md), inchang�
 
 ## Résumé
 
-M9 n'a introduit **aucune nouvelle commande privilégiée, aucune nouvelle
-permission, aucune nouvelle dépendance réseau et aucun élargissement de la
-CSP**. La seule surface réellement nouvelle est une seconde fenêtre, créée
-délibérément sans aucune capability.
+M9 n'élargit **ni la CSP, ni les permissions de plugins, ni la surface
+réseau**. Il ajoute une seconde fenêtre, deux commandes non privilégiées, une
+seconde passe Whisper, un second modèle téléchargeable — et il **corrige une
+faiblesse réelle du contrôle d'accès** décrite ci-dessous, qui préexistait à
+M9 et affectait déjà M8.
 
-Trois des surfaces prévues au périmètre M9 n'existent pas : l'option de
-traduction, la seconde passe Whisper et la sélection de langue de sortie
-n'ont pas été implémentées (voir
-[ADR-008](../architecture/ADR-008-bilingual-output-pipeline.md)). Le pipeline
-de transcription est **strictement inchangé** par rapport à M8 — aucun
-fichier de `src-tauri/src/pipeline.rs` ni de
-`src-tauri/src/domain/transcription.rs` n'a été modifié.
+### Finding — les commandes applicatives n'étaient soumises à aucun ACL
+
+**Sévérité : MEDIUM. Statut : corrigé.**
+
+La revue M8 et la première version de ce document affirmaient que la fenêtre
+splash « ne peut invoquer aucune commande » parce que son label n'apparaissait
+dans aucune capability. **C'était faux.**
+
+Dans Tauri 2, le système de capabilities ne gouverne par défaut que les
+commandes de *plugins*. Les commandes définies par l'application et
+enregistrées via `invoke_handler` sont autorisées **dans toutes les fenêtres**,
+quel que soit le contenu de `capabilities/`, sauf si l'application déclare
+explicitement un manifeste ACL (`tauri_build::AppManifest::commands`).
+
+Conséquence concrète avant correctif : n'importe quel script s'exécutant dans
+la fenêtre splash pouvait appeler `start_transcription`, `install_model`,
+`open_output_folder`, `save_settings` — l'intégralité de la surface
+applicative. Les protections de fond tenaient toujours (validation du chemin
+média, dérivation de la cible Finder depuis l'état backend, épinglage de
+l'URL de modèle), donc l'impact réel était limité ; mais la **propriété
+d'isolation annoncée n'existait pas**.
+
+Correctif : `src-tauri/build.rs` déclare désormais un manifeste ACL listant
+les 13 commandes de l'application. Les fichiers de capabilities deviennent
+autoritatifs pour elles aussi, et les deux fenêtres sont scindées :
+
+* `capabilities/main.json` — fenêtre `main` : `core:default`, dialogue,
+  sidecars nommés, `reveal-item-in-dir`, et les 12 autres commandes
+  applicatives ;
+* `capabilities/splash.json` — fenêtre `splashscreen` : **une seule**
+  permission, `allow-notify-splash-finished`.
+
+Huit tests d'intégration verrouillent l'ensemble, dont un qui vérifie que le
+manifeste ACL existe (sans lui, tout le reste redevient décoratif) et un qui
+vérifie que toute commande enregistrée y figure.
+
+Ce point est signalé comme correction explicite d'une affirmation antérieure
+inexacte, et non comme une nouveauté.
 
 ## Surfaces évaluées
 
@@ -29,8 +61,8 @@ fichier de `src-tauri/src/pipeline.rs` ni de
 
 | Aspect | Constat |
 | --- | --- |
-| Capabilities | **Aucune.** Le label n'apparaît dans aucun fichier de `capabilities/`. |
-| IPC | Impossible — sans capability, tout `invoke` est refusé. |
+| Capabilities | **Une seule** : `allow-notify-splash-finished`. |
+| IPC | Cette commande et rien d'autre — refus par l'ACL applicatif pour tout le reste. |
 | Événements | Impossible — `core:event:allow-listen` n'est pas accordé. |
 | Sidecars | Aucun accès (`shell:allow-execute` reste limité à `main`). |
 | Filesystem | Aucun accès. |
@@ -39,30 +71,57 @@ fichier de `src-tauri/src/pipeline.rs` ni de
 | Données utilisateur | Aucune. Ni chemin, ni nom de fichier, ni transcription n'atteint cette fenêtre. |
 | Contenu affiché | HTML/CSS/JS locaux embarqués dans le binaire. |
 
-Verrouillé par trois tests d'intégration
-(`src-tauri/tests/capability_surface.rs`) : toute capability doit être
-explicitement rattachée à des fenêtres nommées sans joker, aucune ne doit
-citer le splash, et la fenêtre principale doit continuer d'en détenir une.
+Verrouillé par huit tests d'intégration
+(`src-tauri/tests/capability_surface.rs`) : le manifeste ACL doit exister,
+toute commande enregistrée doit y figurer, toute capability doit être
+explicitement rattachée à des fenêtres nommées sans joker, le splash doit
+détenir exactement une permission et aucune permission privilégiée ou de
+plugin, et la fenêtre principale doit conserver les siennes.
 
-Le troisième test importe : sans lui, supprimer tout le contenu de
-`capabilities/` ferait passer les deux premiers.
+Ce dernier test importe : sans lui, vider `capabilities/` ferait passer tous
+les autres.
 
-### 2. Nouvelle commande `notify_ui_ready`
+### 2. Deux nouvelles commandes de bascule
 
-Unique ajout à la surface IPC. Exposée à la fenêtre principale, qui détient
-déjà les capabilities de l'application.
+`notify_ui_ready` (fenêtre `main`) et `notify_splash_finished` (fenêtre
+`splashscreen`). Ce sont les deux moitiés du même handshake.
 
-* **Entrée** : un booléen (`reduced_motion`). Aucun chemin, aucune chaîne
-  libre, donc rien à valider au sens de la frontière IPC M8.
+* **Entrée** : aucune, pour les deux. Aucun chemin, aucune chaîne libre, donc
+  rien à valider au sens de la frontière IPC M8.
 * **Sortie** : rien.
-* **Effet** : affiche la fenêtre principale et ferme le splash, au plus une
-  fois (test-and-set).
-* **Rejouabilité** : un appelant hostile qui l'invoquerait en boucle
-  n'obtiendrait rien après le premier appel, et son seul pouvoir serait
-  d'écourter une animation de 820 ms sur sa propre fenêtre.
-* **Fuite d'information** : aucune — la commande ne retourne aucune valeur.
+* **Effet** : enregistrent un signal ; la bascule n'a lieu que lorsque les
+  deux sont arrivés, et au plus une fois (test-and-set).
+* **Rejouabilité** : un appelant hostile qui les invoquerait en boucle
+  n'obtiendrait rien après la première bascule. Le seul pouvoir conféré est
+  d'écourter une animation de 6 s sur sa propre fenêtre.
+* **Fuite d'information** : aucune — aucune valeur de retour.
 
-Surface de commandes totale : **12** (11 en M8 + celle-ci).
+Surface de commandes totale : **13** (11 en M8 + ces deux), désormais toutes
+soumises à l'ACL applicatif et attribuées par fenêtre.
+
+### 2 bis. Seconde passe Whisper et second modèle
+
+* **Invocation de processus** : inchangée dans sa nature — le même sidecar
+  `whisper-cli`, lancé sans shell, avec des arguments construits en Rust à
+  partir de valeurs typées. La seconde passe ajoute le drapeau `-tr` et un
+  chemin de modèle différent ; aucune entrée utilisateur libre n'entre dans
+  la ligne de commande.
+* **Concurrence** : les passes s'exécutent dans une boucle unique, sans
+  `spawn` ni `join`. Au plus **un** enfant `whisper-cli` à tout instant — la
+  garantie M4 est préservée littéralement, et testée.
+* **Modèle de traduction** : mêmes garanties de téléchargement que le modèle
+  existant (HTTPS strict, URL épinglée sur le **même commit vérifié**,
+  redirections bornées, plafond de taille en flux, SHA-256 vérifié, fichier
+  temporaire, promotion atomique). Taille et empreinte pinnées :
+  3 095 033 483 o / `64d182b440…d1e2`.
+* **Nettoyage** : les deux fichiers `.download` sont désormais purgés au
+  démarrage, pas seulement celui du modèle de transcription.
+* **Aucun téléchargement silencieux** : le modèle de traduction n'est
+  récupéré que sur clic explicite, et uniquement si la version anglaise est
+  demandée.
+* **Sorties** : les noms de fichiers dérivent du nom du média source par une
+  fonction pure, testée contre les collisions ; aucune combinaison ne produit
+  deux fichiers de même nom.
 
 ### 3. Préférences transmises dans le fragment de l'URL
 
@@ -157,7 +216,7 @@ Uniquement ceux que M9 pouvait affecter (§56).
 | Surface des commandes | 12 commandes, +1 (`notify_ui_ready`, booléen, sans retour) |
 | Invocation de processus | Inchangée — `whisper-cli` et `ffmpeg` en sidecars, jamais de shell |
 | Absence de shell | Confirmée — M9 n'ajoute aucun appel de processus |
-| Modèle exclu des artefacts | Vérifié sur le `.app` et sur le `.dmg` monté |
+| Modèles exclus des artefacts | Vérifié sur le `.app` et sur le `.dmg` monté — **aucun** des deux modèles n'est embarqué |
 | Réseau au repos | **0 socket ouvert** sur 5 configurations de démarrage (`lsof -i` par PID) |
 | Avis de dépendances | `pnpm audit` : 0 vulnérabilité. `cargo audit` : 0 vulnérabilité, 17 warnings *allowed* — identiques à M8 (bindings GTK jamais compilés sur macOS) |
 | Historique Git | Non rejoué (§56) — M9 n'ajoute aucun fichier binaire ni secret |
@@ -170,7 +229,10 @@ valeurs par défaut, sans crash).
 
 ## Ce que M9 n'a pas touché
 
-* le pipeline de transcription et son cycle de vie (M4/M5) ;
+* le modèle et les arguments de la transcription française (mêmes fichiers
+  produits, mêmes noms, même vitesse) ;
+* le cycle de vie des jobs et l'annulation (M4/M5) — étendus à deux passes,
+  mais sans changer les garanties ;
 * la validation des chemins média à la frontière IPC (M8) ;
 * le gestionnaire de modèle, son épinglage d'endpoint et sa vérification
   SHA-256 (M3/M8) ;
@@ -184,8 +246,11 @@ Aucune régression. Le splash n'atteint pas le réseau, ne lit aucun fichier
 utilisateur et n'affiche aucun contenu localisé — il ne peut donc pas non plus
 révéler la langue de l'utilisateur avant le chargement des réglages.
 
-La traduction anglaise ayant été abandonnée, la question « la traduction
-est-elle bien locale ? » est sans objet en M9 : il n'y a pas de traduction.
+**La traduction anglaise est intégralement locale.** Elle est produite par le
+même binaire `whisper-cli` déjà embarqué, exécuté sur la même machine, à
+partir du même WAV temporaire. Aucun texte, aucun média, aucun chemin ne
+quitte le Mac. Le seul accès réseau de tout le produit reste le téléchargement
+explicite d'un modèle, et il n'envoie qu'une requête GET.
 
 ## Réserves
 

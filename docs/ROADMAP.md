@@ -199,84 +199,88 @@ distribution de FFmpeg sous LGPL, et reproductibilité des sidecars binaires sui
 Git (compromis documenté). Les paramètres GitHub restent recommandés et non appliqués —
 voir [`docs/release/GITHUB_PUBLICATION_CHECKLIST.md`](release/GITHUB_PUBLICATION_CHECKLIST.md).
 
-## M9 — Splashscreen & Release Packaging
+## M9 — Bilingual Outputs, Splashscreen & Release Packaging
 
-Statut : `DONE (périmètre réduit)`
+Statut : `DONE`
 
-Objectif initial : sorties bilingues français + anglais, splashscreen animé, et
-packaging utilisateur pour une future release GitHub.
+### Sortie bilingue française + anglaise
 
-### Sortie bilingue — abandonnée en M9
+L'audit préalable a d'abord établi que le modèle épinglé `large-v3-turbo-q5_0`
+**ne sait pas traduire** : il accepte `-tr` sans erreur et renvoie du français,
+en blocs de 30 s. Un témoin `ggml-small`, mêmes binaire et arguments, produit
+de l'anglais correct — le blocage est le modèle, pas notre build
+([ADR-008](architecture/ADR-008-bilingual-output-pipeline.md)).
 
-L'audit préalable exigé avant toute implémentation a établi que le modèle
-épinglé **ne sait pas traduire**. Sur le fixture français qualifié, avec le
-binaire embarqué et la ligne de commande de production :
+L'auteur a levé la contrainte « pas de second modèle », avec pour priorité la
+meilleure qualité possible. Un modèle **dédié à la traduction** a donc été
+ajouté, sans toucher au modèle de transcription
+([ADR-010](architecture/ADR-010-local-english-translation.md)) :
 
-| Modèle | Arguments | Sortie | Segments |
-| --- | --- | --- | --- |
-| `large-v3-turbo-q5_0` (épinglé) | `-l fr` | français (attendu) | 88 |
-| `large-v3-turbo-q5_0` (épinglé) | `-l fr -tr` | **français** (échec) | 14, blocs de 30 s |
-| `ggml-small` (témoin) | `-l fr -tr` | **anglais correct** | 36 |
+| | Transcription | Traduction |
+| --- | --- | --- |
+| Modèle | `large-v3-turbo-q5_0` (inchangé) | `large-v3`, non-turbo, non quantisé |
+| Taille | 574 Mo | 3,1 Go |
+| Téléchargé | au premier usage | uniquement si English est demandé |
+| Vitesse mesurée | ~0,12× le temps réel | ~0,9× le temps réel |
+| Pic RAM mesuré | — | 3,85 Go |
 
-whisper.cpp accepte pourtant la tâche (`task = translate` dans son propre
-journal) et charge le modèle sans erreur : le drapeau `-tr` fonctionne, c'est
-`large-v3-turbo` — décodeur distillé entraîné sur de la transcription
-uniquement — qui ne réalise pas la tâche. Toutes les voies de contournement
-(mettre à jour whisper.cpp, changer de modèle, second modèle, second moteur,
-API distante) étaient hors périmètre M9. Conformément au protocole, la partie
-a été arrêtée plutôt que bricolée, et le descope confirmé par l'auteur.
+Pipeline : FFmpeg **une fois**, puis les passes Whisper **séquentiellement**
+dans une boucle unique — au plus un enfant `whisper-cli` à tout instant, la
+garantie M4 tenant littéralement pour un job bilingue. Publication atomique :
+une annulation ou un échec pendant la traduction ne publie **rien**, pas même
+la moitié française déjà calculée.
 
-Aucun code de pipeline bilingue n'a été écrit : le pipeline de transcription
-est **strictement identique** à celui de M8. Voir
-[ADR-008](architecture/ADR-008-bilingual-output-pipeline.md) (`REJECTED`),
-preuves dans [`spike/out/m9-translation-audit/`](../spike/out/m9-translation-audit/).
-Reporté en v0.2 avec ses options chiffrées.
+Nommage : `IMG_8484.srt` pour le français seul (noms historiques préservés),
+`IMG_8484.en.srt` pour l'anglais seul, `IMG_8484.fr.srt` + `IMG_8484.en.srt`
+pour les deux.
 
-### Livré
+UX : cartes sélectionnables construites sur de vraies cases à cocher (focus,
+clavier et rôle ARIA natifs), bouton indiquant le nombre réel de fichiers,
+étape « Traduction anglaise » visible dans la progression avec sa progression
+Whisper réelle, résultats groupés par version. Catalogues FR/EN à parité.
 
-* **Splashscreen animé** : deux vraies fenêtres (fenêtre `main` masquée,
-  fenêtre `splashscreen` construite en premier dans `setup`), bascule pilotée
-  par Rust — afficher `main` puis fermer le splash, jamais l'inverse.
-  Composition CSS locale (waveform qui se structure → lignes de sous-titres →
-  mot-symbole), 0,5 ko de JavaScript et 3 ko de CSS.
-* **Splash sans aucune capability** : son label n'apparaît dans aucun fichier
-  de `capabilities/`. Aucune commande, aucun événement, aucun sidecar, aucun
-  filesystem, aucun réseau. Handshake limité à une seule commande
-  (`notify_ui_ready`, un booléen, sans retour) sur la fenêtre principale.
-* **CSP inchangée**, et désormais épinglée par 7 tests — un durcissement par
-  rapport à M8, où elle était appliquée mais non testée.
-* **Reduced motion respecté** : plancher d'affichage de 820 ms en motion
-  normale, 160 ms en motion réduite. Aucune attente bloquante (timers
-  asynchrones, jamais de `thread::sleep`), chien de garde borné à 10 s, et
-  bascule idempotente entre trois chemins concurrents.
-* **Packaging de release** : `scripts/package-release.sh` produit
-  `release-artifacts/` (DMG, archive `.app`, `SHA256SUMS.txt` vérifié), audite
-  le bundle avant de collecter et refuse de packager en cas d'échec.
+### Splashscreen
+
+Deux vraies fenêtres, cycle de **6 s** piloté par la fin visuelle de
+l'animation et non par un minuteur parallèle : fondu d'entrée 1 s, composition
+stable 3 s, fondu de sortie 2 s, puis coupe franche vers la fenêtre principale
+(qui n'a aucun fondu propre). La bascule n'a lieu que lorsque *deux* signaux
+sont arrivés — l'animation est terminée, et le frontend sait quel écran
+afficher — de sorte que l'animation n'est jamais tronquée et que la fenêtre
+principale n'apparaît jamais derrière un splash visible.
+
+Reduced Motion conserve **la même durée** : seules les décorations
+disparaissent (waveform, tracés, translations). C'est une demande de retirer
+le mouvement, pas d'imposer une version pressée du produit.
+
+Deux défauts trouvés par l'instrumentation, tous deux corrigés : les
+préférences passées en query string ne résolvaient aucun asset (fenêtre
+blanche, URL pourtant normale), et une animation lancée pendant que la fenêtre
+était encore masquée pouvait ne jamais émettre `animationend` (1 échec sur 20,
+rattrapé par le chien de garde). 20/20 lancements conformes après correction.
+
+### Packaging
+
+`scripts/package-release.sh` produit `release-artifacts/` (DMG, archive `.app`,
+`SHA256SUMS.txt` vérifié), audite le bundle avant de collecter et refuse de
+packager en cas d'échec. Aucun des deux modèles n'est embarqué : le `.app`
+pèse 22 Mo.
+
+### Correctif de sécurité
+
+L'implémentation a révélé que **les commandes applicatives n'étaient soumises
+à aucun ACL** : dans Tauri 2, les capabilities ne gouvernent par défaut que
+les commandes de plugins, si bien que la fenêtre splash pouvait appeler
+`start_transcription` ou `install_model`. Corrigé par un manifeste ACL
+applicatif (`build.rs`) et deux capabilities distinctes ; le splash n'en
+détient plus qu'**une seule**. Voir le
+[delta de sécurité M9](security/M9_SECURITY_DELTA.md).
 
 ### Qualification
 
-10/10 lancements empaquetés successifs conformes : splash créé, document
-résolu et chargé, bascule exactement une fois, chien de garde jamais
-déclenché, aucun processus résiduel. DMG monté et audité (identifiant,
-version, icône, `Applications`, licences, notices ; aucun modèle, média,
-secret ou log). 33 tests frontend et 103 tests Rust (79 en M8).
-
-Un défaut réel a été trouvé et corrigé par l'instrumentation ajoutée : la
-première implémentation passait les préférences en query string, ce que le
-résolveur d'assets embarqués de Tauri ne gère pas — la fenêtre s'ouvrait
-blanche tout en rapportant une URL parfaitement normale. Les préférences
-voyagent désormais dans le fragment de l'URL, qui n'atteint jamais le
-résolveur.
-
-Voir [ADR-009](architecture/ADR-009-splashscreen-and-release-packaging.md) et
-le [delta de sécurité M9](security/M9_SECURITY_DELTA.md).
-
-### Hors périmètre, reporté en M10
-
-Signature Developer ID, notarisation, publication GitHub, création du tag et
-de la release. Les artefacts produits restent **non signés et non notariés**
-(`PUBLIC_DISTRIBUTION_SIGNING_PENDING`) et ne doivent pas être publiés en
-l'état.
+20/20 lancements empaquetés (10 par mode de motion), 5/5 cas de démarrage
+robuste, **0 socket réseau** au repos comme pendant les deux passes, DMG monté
+et audité. 52 tests frontend et 134 tests Rust (33 et 79 avant cette mission).
 
 ## M10 — Signature, notarisation et publication (non commencée)
 
