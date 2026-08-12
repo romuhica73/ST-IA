@@ -76,6 +76,11 @@ notarization-*.json
 *.app/
 *.pkg
 
+# Release artifacts assembled by scripts/package-release.sh. Regenerated
+# from a build on demand, never committed: they are hundreds of megabytes,
+# they are unsigned, and Git is not a binary distribution channel.
+/release-artifacts/
+
 # Downloaded Whisper models. The real location is Application Support, but a
 # 574 MB .bin must never be committable from anywhere in the tree.
 *.bin
