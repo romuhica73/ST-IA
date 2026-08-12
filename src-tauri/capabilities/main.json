@@ -21,6 +21,7 @@
     "allow-open-output-folder",
     "allow-get-model-status",
     "allow-get-model-manifest",
+    "allow-get-model-cards",
     "allow-install-model",
     "allow-get-settings",
     "allow-save-settings",

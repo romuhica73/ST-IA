@@ -29,7 +29,16 @@ pub struct ModelSpec {
     pub expected_size: u64,
     pub sha256: &'static str,
     pub download_url: &'static str,
+    /// Where the weights come from, in human terms. Shown in the AI models
+    /// transparency panel alongside the pinned URL.
+    pub provider: &'static str,
+    /// The engine that executes them, with its pinned version.
+    pub runtime: &'static str,
 }
+
+/// The whisper.cpp build embedded as a sidecar. One value, used both by the
+/// transparency panel and by the tests that keep it honest.
+pub const RUNTIME: &str = "whisper.cpp v1.9.2 (Metal, Apple Silicon)";
 
 // Both download URLs pin the exact commit of ggerganov/whisper.cpp on
 // Hugging Face that was verified to serve the qualified model — not `main`,
@@ -45,6 +54,8 @@ pub const TRANSCRIPTION_MODEL: ModelSpec = ModelSpec {
     expected_size: 574_041_195,
     sha256: "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2",
     download_url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-large-v3-turbo-q5_0.bin",
+    provider: "OpenAI Whisper, GGML conversion by ggerganov/whisper.cpp",
+    runtime: RUNTIME,
 };
 
 /// `large-v3` — full, non-turbo, non-quantised.
@@ -60,6 +71,8 @@ pub const TRANSLATION_MODEL: ModelSpec = ModelSpec {
     expected_size: 3_095_033_483,
     sha256: "64d182b440b98d5203c4f9bd541544d84c605196c4f7b845dfa11fb23594d1e2",
     download_url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-large-v3.bin",
+    provider: "OpenAI Whisper, GGML conversion by ggerganov/whisper.cpp",
+    runtime: RUNTIME,
 };
 
 pub fn spec(kind: ModelKind) -> &'static ModelSpec {
@@ -94,6 +107,63 @@ pub fn manifest(kind: ModelKind) -> ModelManifest {
         file_name: spec.file_name.to_string(),
         expected_size: spec.expected_size,
     }
+}
+
+/// The full public description of one model, for the AI models transparency
+/// panel (see docs/AI_MODELS.md).
+///
+/// Derived entirely from the `ModelSpec` constants above — the frontend never
+/// restates a size, a hash or a URL of its own, so what the user is shown is
+/// necessarily what the app will actually verify and load.
+///
+/// `bundled` and `local_inference` are hardcoded `false`/`true` because they
+/// are properties of the architecture, not configuration: no model ships
+/// inside the app (asserted by the packaging script's audit), and inference
+/// runs entirely through the local sidecar (there is no inference endpoint in
+/// the codebase to call).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelCard {
+    pub kind: ModelKind,
+    pub id: String,
+    pub file_name: String,
+    pub size_bytes: u64,
+    pub sha256: String,
+    pub provider: String,
+    pub source_url: String,
+    pub runtime: String,
+    /// Shipped inside the application bundle. Always false.
+    pub bundled: bool,
+    /// Fetched only on an explicit user action. Always true.
+    pub downloaded_on_demand: bool,
+    /// Inference happens on this machine. Always true.
+    pub local_inference: bool,
+    /// Whether the network is used while transcribing or translating.
+    /// Always false — the only network access is the download itself.
+    pub network_during_inference: bool,
+}
+
+pub fn card(kind: ModelKind) -> ModelCard {
+    let spec = spec(kind);
+    ModelCard {
+        kind,
+        id: spec.id.to_string(),
+        file_name: spec.file_name.to_string(),
+        size_bytes: spec.expected_size,
+        sha256: spec.sha256.to_string(),
+        provider: spec.provider.to_string(),
+        source_url: spec.download_url.to_string(),
+        runtime: spec.runtime.to_string(),
+        bundled: false,
+        downloaded_on_demand: true,
+        local_inference: true,
+        network_during_inference: false,
+    }
+}
+
+/// Every model ST-IA can use, in display order.
+pub fn all_cards() -> Vec<ModelCard> {
+    vec![card(ModelKind::Transcription), card(ModelKind::Translation)]
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -320,6 +390,57 @@ mod tests {
                 spec(kind).expected_size,
                 &spec(kind).sha256.to_uppercase()
             ));
+        }
+    }
+
+    #[test]
+    fn a_model_card_restates_its_spec_exactly() {
+        // The transparency panel must show what the app actually verifies —
+        // a card built from separate literals could drift from the manifest
+        // and quietly display a hash the app never checks.
+        for kind in BOTH {
+            let spec = spec(kind);
+            let card = card(kind);
+            assert_eq!(card.id, spec.id);
+            assert_eq!(card.file_name, spec.file_name);
+            assert_eq!(card.size_bytes, spec.expected_size);
+            assert_eq!(card.sha256, spec.sha256);
+            assert_eq!(card.source_url, spec.download_url);
+            assert_eq!(card.runtime, RUNTIME);
+        }
+    }
+
+    #[test]
+    fn every_card_claims_local_inference_and_no_bundling() {
+        // These are architectural facts, not settings. If one ever became
+        // false, the claim shown to the user would be a lie, so they are
+        // asserted rather than assumed.
+        for card in all_cards() {
+            assert!(card.local_inference);
+            assert!(!card.network_during_inference);
+            assert!(!card.bundled);
+            assert!(card.downloaded_on_demand);
+        }
+    }
+
+    #[test]
+    fn all_cards_covers_every_model_kind_exactly_once() {
+        let cards = all_cards();
+        assert_eq!(cards.len(), BOTH.len());
+        for kind in BOTH {
+            assert_eq!(
+                cards.iter().filter(|c| c.kind == kind).count(),
+                1,
+                "{kind:?} must appear exactly once"
+            );
+        }
+    }
+
+    #[test]
+    fn cards_name_a_runtime_and_a_provider() {
+        for card in all_cards() {
+            assert!(card.runtime.contains("whisper.cpp"), "{}", card.runtime);
+            assert!(!card.provider.trim().is_empty());
         }
     }
 

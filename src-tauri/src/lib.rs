@@ -57,6 +57,7 @@ pub fn run() {
             commands::transcription::open_output_folder,
             commands::model::get_model_status,
             commands::model::get_model_manifest,
+            commands::model::get_model_cards,
             commands::model::install_model,
             settings::get_settings,
             settings::save_settings,

@@ -10,6 +10,24 @@ export interface ModelManifest {
   expectedSize: number;
 }
 
+/** Full public description of a model, for the AI models panel. Mirrors
+ * `ModelCard` in Rust, which builds it from the pinned manifests — nothing
+ * here is restated in TypeScript. */
+export interface ModelCard {
+  kind: ModelKind;
+  id: string;
+  fileName: string;
+  sizeBytes: number;
+  sha256: string;
+  provider: string;
+  sourceUrl: string;
+  runtime: string;
+  bundled: boolean;
+  downloadedOnDemand: boolean;
+  localInference: boolean;
+  networkDuringInference: boolean;
+}
+
 export type ModelErrorCode = "networkError" | "writeError" | "integrityMismatch";
 
 export interface ModelError {

@@ -20,6 +20,7 @@ fn main() {
         "open_output_folder",
         "get_model_status",
         "get_model_manifest",
+        "get_model_cards",
         "install_model",
         "get_settings",
         "save_settings",

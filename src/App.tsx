@@ -216,6 +216,7 @@ function App() {
       {showSettings ? (
         <SettingsPanel
           settings={settings}
+          modelStatuses={{ transcription: modelStatus, translation: translationStatus }}
           onThemeChange={setTheme}
           onMotionChange={setMotion}
           onLanguageChange={setLanguage}

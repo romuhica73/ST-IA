@@ -1,5 +1,5 @@
 use crate::domain::model::{
-    self, ModelError, ModelErrorCode, ModelKind, ModelManifest, ModelStatus,
+    self, ModelCard, ModelError, ModelErrorCode, ModelKind, ModelManifest, ModelStatus,
 };
 use crate::model as model_manager;
 use crate::pipeline::JobState;
@@ -21,6 +21,16 @@ pub async fn get_model_status(app: AppHandle, kind: ModelKind) -> Result<ModelSt
 #[tauri::command]
 pub fn get_model_manifest(kind: ModelKind) -> ModelManifest {
     model::manifest(kind)
+}
+
+/// Every model ST-IA can use, with its provenance, for the AI models panel.
+///
+/// Read straight from the pinned manifests, so the panel cannot show a size,
+/// hash or source the app does not actually enforce. No status here — that is
+/// `get_model_status`, which is the expensive call.
+#[tauri::command]
+pub fn get_model_cards() -> Vec<ModelCard> {
+    model::all_cards()
 }
 
 /// Refuses to download while a transcription is running: the two would

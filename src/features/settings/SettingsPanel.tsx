@@ -1,11 +1,16 @@
 import { useTranslation } from "react-i18next";
 import { useAppVersion } from "./useAppVersion";
 import { SettingChoice } from "./SettingChoice";
+import { AiModels } from "./AiModels";
 import { CloseIcon } from "./icons";
 import type { Settings } from "./types";
+import type { ModelKind, ModelStatus } from "../model-manager/types";
 
 interface SettingsPanelProps {
   settings: Settings;
+  /** Statuses the app has already resolved. Passed in rather than fetched
+   * here so that opening Settings never triggers a fresh 3.1 GB hash. */
+  modelStatuses: Partial<Record<ModelKind, ModelStatus | null>>;
   onThemeChange: (theme: Settings["theme"]) => void;
   onMotionChange: (motion: Settings["motion"]) => void;
   onLanguageChange: (language: Settings["language"]) => void;
@@ -14,6 +19,7 @@ interface SettingsPanelProps {
 
 export function SettingsPanel({
   settings,
+  modelStatuses,
   onThemeChange,
   onMotionChange,
   onLanguageChange,
@@ -86,6 +92,8 @@ export function SettingsPanel({
             ]}
           />
         </section>
+
+        <AiModels statuses={modelStatuses} />
 
         <section className="settings-section">
           <h3 className="settings-section__title">{t("settings.about")}</h3>
