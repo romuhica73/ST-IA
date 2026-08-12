@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "splash-window",
+  "description": "Capability for the splash window: one single command, used to report that its fade-out animation has ended. Deliberately nothing else — no core defaults, no dialog, no sidecar, no filesystem, no Finder, no transcription, no model manager and no settings. The splash displays local assets and reports one event.",
+  "windows": ["splashscreen"],
+  "permissions": ["allow-notify-splash-finished"]
+}
