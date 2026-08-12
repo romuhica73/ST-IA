@@ -8,20 +8,38 @@
  * cannot be broken by a change to the main app's cascade.
  *
  * No inline <style> and no style="" attribute anywhere: the M8 CSP
- * (`style-src 'self'`) forbids both, and M9 does not relax it. */
+ * (`style-src 'self'`) forbids both, and this does not relax it.
+ *
+ * ## Timeline (mirrored in src-tauri/src/splash.rs)
+ *
+ *   0.0s ─ 1.0s   fade in           (ease-out)
+ *   1.0s ─ 2.0s   graphic animates
+ *   2.0s ─ 4.0s   composition rests
+ *   4.0s ─ 6.0s   fade out          (ease-in-out)
+ *   6.0s          `animationend` → Rust cuts to the main window
+ *
+ * The container's own fade is what the app listens for, and it is identical
+ * in both motion variants — so the cut lands at the same moment whether or
+ * not the decorative animation ran.
+ */
 
 :root {
   --splash-bg: #ffffff;
   --splash-fg: #1a1d22;
   --splash-accent: #0c7180;
-  --splash-accent-soft: rgba(12, 113, 128, 0.22);
   --splash-line: rgba(12, 113, 128, 0.16);
 
-  /* One shared clock for the whole composition, so retiming the splash is a
-     single edit rather than nine keyframe adjustments. */
-  --wave-duration: 380ms;
-  --wave-stagger: 26ms;
-  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  /* One clock for the whole composition. Rust asserts this exact literal, so
+     retiming the splash is a single edit that cannot silently disagree with
+     the watchdog's margin. */
+  --cycle-duration: 6000ms;
+
+  /* Percentages of the cycle: 1s and 4s of 6s. */
+  --fade-in-end: 16.667%;
+  --fade-out-start: 66.667%;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.6, 1);
 
   color-scheme: light dark;
 }
@@ -30,7 +48,6 @@
   --splash-bg: #1a1c20;
   --splash-fg: #f2f3f5;
   --splash-accent: #2dd4bf;
-  --splash-accent-soft: rgba(45, 212, 191, 0.26);
   --splash-line: rgba(45, 212, 191, 0.18);
 }
 
@@ -48,60 +65,111 @@ body {
   cursor: default;
 }
 
+/* --- The cycle ---------------------------------------------------------- */
+
 .splash {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 22px;
+  gap: 24px;
   height: 100%;
+  opacity: 0;
+  animation: splash-cycle var(--cycle-duration) forwards;
 }
+
+/* Every animation starts paused, and is released by main.ts on the first
+   rendered frame.
+ *
+ * The window is created hidden and shown once its document has loaded, and
+ * WebKit does not advance animations in a window that is not on screen. Left
+ * to itself, the cycle could begin while hidden and then never fire its
+ * `animationend` — observed once in twenty launches, which the Rust watchdog
+ * had to rescue 15 seconds later. Gating on `requestAnimationFrame` ties the
+ * start of the animation to the first frame actually rendered, which is
+ * exactly the guarantee needed. */
+.splash,
+.wave__bar,
+.lines__line,
+.splash__wordmark {
+  animation-play-state: paused;
+}
+
+:root[data-splash="running"] .splash,
+:root[data-splash="running"] .wave__bar,
+:root[data-splash="running"] .lines__line,
+:root[data-splash="running"] .splash__wordmark {
+  animation-play-state: running;
+}
+
+/* Per-keyframe easing: soft in, flat hold, soft out. No cut at either end of
+   the splash itself — the only hard transition in the whole sequence is the
+   final one, from an empty splash to the main window. */
+@keyframes splash-cycle {
+  0% {
+    opacity: 0;
+    animation-timing-function: var(--ease-out);
+  }
+  16.667% {
+    opacity: 1;
+    animation-timing-function: linear;
+  }
+  66.667% {
+    opacity: 1;
+    animation-timing-function: var(--ease-in-out);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* --- Waveform: the ST-IA mark's motif, structuring itself --------------- */
 
 .splash__mark {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
-
-/* --- Waveform: the ST-IA mark's motif, structuring itself --------------- */
 
 .wave {
   display: flex;
   align-items: center;
   gap: 5px;
-  height: 56px;
+  height: 60px;
 }
 
 .wave__bar {
   width: 5px;
   border-radius: 999px;
   background: var(--splash-accent);
-  /* Grown from the centre so the bars read as a waveform rising out of a
-     flat line, not as columns dropping in from the top. */
   height: var(--bar-height);
+  /* Grown from the centre so the bars read as a waveform rising out of a
+     flat line, not as columns dropping in from the top. Starts at rest and
+     animates during the 1s–2s window, once the fade-in has finished — the
+     entry and the graphic are two separate beats, not one busy blur. */
   transform: scaleY(0.06);
-  animation: wave-rise var(--wave-duration) var(--ease-out) forwards;
-  animation-delay: var(--bar-delay);
+  animation: wave-rise 620ms var(--ease-out) forwards;
+  animation-delay: calc(1000ms + var(--bar-delay));
 }
 
 /* Heights follow a symmetric envelope peaking at the centre bar. Written out
    rather than generated: nine static values are clearer than a preprocessor
    loop, and this file has no build step of its own. */
 .wave__bar:nth-child(1) { --bar-height: 16px; --bar-delay: 0ms; }
-.wave__bar:nth-child(2) { --bar-height: 28px; --bar-delay: var(--wave-stagger); }
-.wave__bar:nth-child(3) { --bar-height: 44px; --bar-delay: calc(var(--wave-stagger) * 2); }
-.wave__bar:nth-child(4) { --bar-height: 34px; --bar-delay: calc(var(--wave-stagger) * 3); }
-.wave__bar:nth-child(5) { --bar-height: 56px; --bar-delay: calc(var(--wave-stagger) * 4); }
-.wave__bar:nth-child(6) { --bar-height: 34px; --bar-delay: calc(var(--wave-stagger) * 5); }
-.wave__bar:nth-child(7) { --bar-height: 44px; --bar-delay: calc(var(--wave-stagger) * 6); }
-.wave__bar:nth-child(8) { --bar-height: 28px; --bar-delay: calc(var(--wave-stagger) * 7); }
-.wave__bar:nth-child(9) { --bar-height: 16px; --bar-delay: calc(var(--wave-stagger) * 8); }
+.wave__bar:nth-child(2) { --bar-height: 28px; --bar-delay: 34ms; }
+.wave__bar:nth-child(3) { --bar-height: 46px; --bar-delay: 68ms; }
+.wave__bar:nth-child(4) { --bar-height: 34px; --bar-delay: 102ms; }
+.wave__bar:nth-child(5) { --bar-height: 60px; --bar-delay: 136ms; }
+.wave__bar:nth-child(6) { --bar-height: 34px; --bar-delay: 170ms; }
+.wave__bar:nth-child(7) { --bar-height: 46px; --bar-delay: 204ms; }
+.wave__bar:nth-child(8) { --bar-height: 28px; --bar-delay: 238ms; }
+.wave__bar:nth-child(9) { --bar-height: 16px; --bar-delay: 272ms; }
 
 @keyframes wave-rise {
   from {
     transform: scaleY(0.06);
-    opacity: 0.35;
+    opacity: 0.4;
   }
   to {
     transform: scaleY(1);
@@ -115,7 +183,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
 }
 
 .lines__line {
@@ -126,17 +194,17 @@ body {
      rather than a shape appearing. */
   transform: scaleX(0);
   transform-origin: left center;
-  animation: line-wipe 300ms var(--ease-out) forwards;
+  animation: line-wipe 420ms var(--ease-out) forwards;
 }
 
 .lines__line:nth-child(1) {
-  width: 104px;
-  animation-delay: 300ms;
+  width: 116px;
+  animation-delay: 1380ms;
 }
 
 .lines__line:nth-child(2) {
-  width: 68px;
-  animation-delay: 400ms;
+  width: 74px;
+  animation-delay: 1520ms;
 }
 
 @keyframes line-wipe {
@@ -149,13 +217,13 @@ body {
 
 .splash__wordmark {
   margin: 0;
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   color: var(--splash-fg);
   opacity: 0;
   transform: translateY(6px);
-  animation: wordmark-in 320ms var(--ease-out) 480ms forwards;
+  animation: wordmark-in 480ms var(--ease-out) 1620ms forwards;
 }
 
 @keyframes wordmark-in {
@@ -171,14 +239,15 @@ body {
    off `prefers-reduced-motion` directly — for the same reason as the main
    app (see global.css): the M7 setting can force reduction *or* force full
    motion against the OS, and a media query can only report the OS state.
-   main.ts folds the "System" case into this attribute before first paint.
  *
- * This is not the global "make every duration 0.001ms" trick used in
- * global.css: collapsing the durations here would still run the rise/wipe/
- * translate, just imperceptibly fast, which is exactly the decorative motion
- * that must not happen at all. Instead every element is declared in its
- * final state with no animation, and the composition as a whole gets one
- * short fade. */
+ * What reduced motion changes here is only the decoration: the waveform no
+ * longer rises, the lines no longer wipe, the wordmark no longer translates.
+ * Everything is simply present, in its final state, from the first frame.
+ *
+ * What it deliberately does NOT change is the cycle: the same 1s fade in,
+ * the same 3s hold, the same 2s fade out. Reduced motion is a request to
+ * remove movement, not to be shown a different, hurried product. A cross-
+ * fade of opacity is not the kind of motion it is asking about. */
 :root[data-motion="reduce"] .wave__bar {
   animation: none;
   transform: scaleY(1);
@@ -194,17 +263,4 @@ body {
   animation: none;
   opacity: 1;
   transform: none;
-}
-
-:root[data-motion="reduce"] .splash {
-  animation: splash-fade 120ms linear forwards;
-}
-
-@keyframes splash-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }

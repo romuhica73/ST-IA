@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { MediaDropZone } from "./features/media-selection/MediaDropZone";
 import { SelectedMedia } from "./features/media-selection/SelectedMedia";
 import { useMediaSelection } from "./features/media-selection/useMediaSelection";
-import type { MediaInfo, OutputSelection } from "./features/media-selection/types";
+import type { MediaInfo } from "./features/media-selection/types";
+import type { OutputSelection } from "./features/media-selection/outputs";
 import { TranscriptionProgress } from "./features/transcription/TranscriptionProgress";
 import { TranscriptionSuccess } from "./features/transcription/TranscriptionSuccess";
 import { TranscriptionFailure } from "./features/transcription/TranscriptionFailure";
@@ -15,7 +16,6 @@ import { ModelCorrupted } from "./features/model-manager/ModelCorrupted";
 import { useModelManager } from "./features/model-manager/useModelManager";
 import { useSettings } from "./features/settings/useSettings";
 import { useApplySettings } from "./features/settings/useApplySettings";
-import { resolveMotion } from "./features/settings/resolve";
 import { useSplashHandoff } from "./features/startup/useSplashHandoff";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { ThemeQuickAction } from "./features/settings/ThemeQuickAction";
@@ -28,20 +28,27 @@ function App() {
   useApplySettings(settings);
   const [showSettings, setShowSettings] = useState(false);
 
-  const { status: modelStatus, manifest, install } = useModelManager();
+  const { state: mediaState, selectViaDialog, reset: resetMedia } = useMediaSelection();
+  // Verifying the 3.1 GB translation model costs seconds of I/O; it is only
+  // worth paying once a media file is in hand, never during startup.
+  const translationCheckEnabled = mediaState.status === "selected";
+
+  const { status: modelStatus, manifest, install } = useModelManager("transcription");
+  // The translation model is tracked independently: it is only needed if the
+  // user asks for English output, and it must never gate an ordinary French
+  // job behind a 3.1 GB download.
+  const {
+    status: translationStatus,
+    manifest: translationManifest,
+    install: installTranslation,
+  } = useModelManager("translation", translationCheckEnabled);
   const [bypassModelGate, setBypassModelGate] = useState(false);
 
-  // End the splash once the first real screen is known — see
-  // useSplashHandoff for why model status is the readiness signal. The
-  // resolved motion value travels with it so the splash's minimum display
-  // time can honour reduced motion (Rust cannot read the OS setting).
-  useSplashHandoff(
-    modelStatus !== null,
-    resolveMotion(settings.motion, window.matchMedia("(prefers-reduced-motion: reduce)").matches) ===
-      "reduce",
-  );
+  // One half of the splash handover — see useSplashHandoff for why model
+  // status is the readiness signal. The splash's own animation end is the
+  // other half; the cut happens when both have arrived.
+  useSplashHandoff(modelStatus !== null);
 
-  const { state: mediaState, selectViaDialog, reset: resetMedia } = useMediaSelection();
   const { status: jobStatus, start, cancel: cancelJob, reset: resetJob } = useTranscription();
   const [jobMedia, setJobMedia] = useState<MediaInfo | null>(null);
   const [lastOutputs, setLastOutputs] = useState<OutputSelection | null>(null);
@@ -50,20 +57,15 @@ function App() {
     if (mediaState.status !== "selected") return;
     setJobMedia(mediaState.media);
     setLastOutputs(outputs);
-    void start({
-      mediaPath: mediaState.media.path,
-      outputSrt: outputs.srt,
-      outputTxt: outputs.txt,
-    });
+    void start(toStartInput(mediaState.media.path, outputs));
   }
 
   function handleRetry() {
+    // Retry re-runs the *same* request, including both versions — a
+    // bilingual job that failed halfway published nothing, so there is
+    // nothing partial to resume around.
     if (!jobMedia || !lastOutputs) return;
-    void start({
-      mediaPath: jobMedia.path,
-      outputSrt: lastOutputs.srt,
-      outputTxt: lastOutputs.txt,
-    });
+    void start(toStartInput(jobMedia.path, lastOutputs));
   }
 
   function handleNewFile() {
@@ -79,11 +81,18 @@ function App() {
     void selectViaDialog();
   }
 
+  function handleInstallTranslationModelFromFailure() {
+    resetJob();
+    void installTranslation();
+  }
+
   function handleInstallModelFromFailure() {
     resetJob();
     setBypassModelGate(false);
     void install();
   }
+
+  const bilingual = lastOutputs?.languages.french === true && lastOutputs?.languages.english === true;
 
   const isJobActive =
     jobStatus.status === "preparingAudio" ||
@@ -138,6 +147,7 @@ function App() {
         <TranscriptionProgress
           fileName={displayFileName}
           status={jobStatus}
+          bilingual={bilingual === true}
           onCancel={() => void cancelJob()}
         />
       );
@@ -159,6 +169,7 @@ function App() {
           onChooseAnother={handleChooseAnother}
           onRetry={handleRetry}
           onInstallModel={handleInstallModelFromFailure}
+          onInstallTranslationModel={handleInstallTranslationModelFromFailure}
         />
       );
     }
@@ -167,6 +178,13 @@ function App() {
         <SelectedMedia
           media={mediaState.media}
           modelReady={modelReady}
+          translationModelReady={translationStatus?.status === "ready"}
+          translationModelSize={translationManifest?.expectedSize ?? null}
+          translationModelBusy={
+            translationStatus?.status === "downloading" ||
+            translationStatus?.status === "verifying"
+          }
+          onDownloadTranslationModel={installTranslation}
           onChangeFile={selectViaDialog}
           onGenerate={handleGenerate}
         />
@@ -208,6 +226,18 @@ function App() {
       )}
     </main>
   );
+}
+
+/** The wire shape Rust expects. Kept in one place so the initial launch and
+ * the retry path can never disagree about what was requested. */
+function toStartInput(mediaPath: string, outputs: OutputSelection) {
+  return {
+    mediaPath,
+    outputFrench: outputs.languages.french,
+    outputEnglish: outputs.languages.english,
+    outputSrt: outputs.formats.srt,
+    outputTxt: outputs.formats.txt,
+  };
 }
 
 export default App;

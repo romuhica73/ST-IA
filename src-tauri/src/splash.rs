@@ -4,66 +4,96 @@
 //! hidden and `splashscreen` is created visible, and the handover — show
 //! main, close splash — happens exactly once, in Rust.
 //!
-//! The splash is granted **no capability whatsoever** (its label appears in
-//! no capability file), so it cannot invoke a command, listen to an event,
-//! spawn a sidecar, touch the filesystem or reach the network. It is a
-//! purely presentational window whose lifecycle is driven from here. The
-//! only handshake is one command on the *main* window — which already holds
-//! the app's capabilities — reporting that the UI is ready to be shown.
+//! The splash is a presentational window. It holds a capability for exactly
+//! one command (`notify_splash_finished`) and nothing else: no transcription,
+//! no model manager, no settings, no Finder, no sidecar, no filesystem, no
+//! network. That isolation is enforced by the app ACL manifest declared in
+//! `build.rs` — without it, Tauri would allow every app command in every
+//! window regardless of what the capability files say.
+//!
+//! ## Handover
+//!
+//! Two independent things must be true before the main window appears:
+//!
+//! * the splash animation has played out to its end (the *visual* end, not a
+//!   timer racing it — the page itself reports it);
+//! * the frontend has resolved which screen it will show first.
+//!
+//! Whichever arrives last triggers the transition, so the animation is never
+//! cut off mid-fade and the main window never appears behind a visible
+//! splash. A watchdog covers the case where either signal never arrives.
 
 use crate::domain::settings::Settings;
 use std::sync::Mutex;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
 pub const SPLASH_LABEL: &str = "splashscreen";
 pub const MAIN_LABEL: &str = "main";
 
-/// How long the splash stays up at minimum, so a fast startup still reads as
-/// a deliberate intro rather than a flash of a window. Sized to just outrun
-/// the CSS composition (bars 0–380ms, lines 300–700ms, wordmark 480–800ms).
-pub const MIN_VISIBLE: Duration = Duration::from_millis(820);
+/// The splash's own timeline, mirrored in `src/splash/splash.css`. Kept here
+/// so the watchdog can be reasoned about against it, and so the tests can
+/// assert the two stay consistent.
+pub const FADE_IN: Duration = Duration::from_millis(1000);
+pub const HOLD: Duration = Duration::from_millis(3000);
+pub const FADE_OUT: Duration = Duration::from_millis(2000);
 
-/// The same floor when the user asked for reduced motion: enough to avoid a
-/// visual glitch, short enough not to be a decorative delay — which is
-/// exactly what reduced motion is asking us not to impose.
-pub const MIN_VISIBLE_REDUCED: Duration = Duration::from_millis(160);
+/// Total time from first frame to the cut. ~6s by design: long enough to read
+/// as a product intro rather than a flash.
+pub fn total_duration() -> Duration {
+    FADE_IN + HOLD + FADE_OUT
+}
 
-/// Upper bound on the whole splash phase. If the frontend never reports
-/// ready — a corrupt settings file, a webview that failed to boot, a bug we
-/// have not thought of — the app must still become usable rather than sit
-/// behind a splash forever.
-pub const WATCHDOG: Duration = Duration::from_secs(10);
+/// Upper bound on the whole splash phase. If a signal never arrives — a
+/// corrupt settings file, a webview that failed to boot, a bug we have not
+/// thought of — the app must still become usable rather than sit behind a
+/// splash forever. Sized well clear of the animation so it never races it.
+pub const WATCHDOG: Duration = Duration::from_secs(15);
 
+#[derive(Default)]
 struct Inner {
-    shown_at: Instant,
-    /// Set by whichever path gets there first (frontend ready, watchdog, or
-    /// the splash being destroyed). Makes the handover idempotent.
+    /// The splash page reported its fade-out finished.
+    animation_finished: bool,
+    /// The frontend resolved which screen it will show first.
+    ui_ready: bool,
+    /// Set by whichever path completes the handover. Makes it idempotent.
     handed_over: bool,
 }
 
+#[derive(Default)]
 pub struct SplashState(Mutex<Inner>);
 
-impl Default for SplashState {
-    fn default() -> Self {
-        Self(Mutex::new(Inner {
-            shown_at: Instant::now(),
-            handed_over: false,
-        }))
-    }
+/// Which of the two signals arrived.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Signal {
+    AnimationFinished,
+    UiReady,
 }
 
 impl SplashState {
-    /// How much of the minimum display time is left. `None` once the floor
-    /// has already elapsed — the caller then hands over immediately.
-    fn remaining_hold(&self, floor: Duration) -> Option<Duration> {
-        let elapsed = self.0.lock().ok()?.shown_at.elapsed();
-        floor.checked_sub(elapsed).filter(|d| !d.is_zero())
+    /// Records a signal and reports whether the handover should now run.
+    /// Returns true for exactly one caller ever: the one that both completes
+    /// the pair and wins the test-and-set.
+    fn record(&self, signal: Signal) -> bool {
+        match self.0.lock() {
+            Ok(mut inner) => {
+                match signal {
+                    Signal::AnimationFinished => inner.animation_finished = true,
+                    Signal::UiReady => inner.ui_ready = true,
+                }
+                if inner.handed_over || !(inner.animation_finished && inner.ui_ready) {
+                    return false;
+                }
+                inner.handed_over = true;
+                true
+            }
+            Err(_) => false,
+        }
     }
 
-    /// Test-and-set: returns true only for the first caller, so two paths
-    /// racing to finish the splash cannot both show the main window.
-    fn claim(&self) -> bool {
+    /// Forces the handover regardless of the signals, for the watchdog and
+    /// the destroyed-window recovery. Returns true only for the first caller.
+    fn force(&self) -> bool {
         match self.0.lock() {
             Ok(mut inner) if !inner.handed_over => {
                 inner.handed_over = true;
@@ -98,17 +128,16 @@ fn splash_url(settings: &Settings) -> String {
 /// startup work, so it is on screen for whatever that work costs.
 ///
 /// The stored theme/motion *preferences* travel in the URL rather than being
-/// read by the splash itself: that is what lets the window keep zero
-/// capabilities while still honouring a forced dark theme or a forced
-/// reduced-motion setting on the very first frame. They are preferences, not
-/// user data — no path, no filename, no transcript ever reaches this window.
+/// read by the splash itself: that is what lets the window honour a forced
+/// dark theme or a forced reduced-motion setting on its very first frame
+/// without holding a settings capability. They are preferences, not user
+/// data — no path, no filename, no transcript ever reaches this window.
 pub fn create(app: &AppHandle, settings: &Settings) -> tauri::Result<()> {
     let url = splash_url(settings);
 
     WebviewWindowBuilder::new(app, SPLASH_LABEL, WebviewUrl::App(url.into()))
-        // A window that opens is not a window that displays. The splash holds
-        // no capability, so it cannot report for itself; this is the only
-        // screenshot-free signal that its document actually resolved and
+        // A window that opens is not a window that displays. This is the only
+        // screenshot-free signal that the document actually resolved and
         // finished loading, rather than 404-ing to a blank page — the exact
         // failure a mistyped asset URL produces, silently, while `url()` still
         // reports something perfectly normal.
@@ -119,68 +148,65 @@ pub fn create(app: &AppHandle, settings: &Settings) -> tauri::Result<()> {
                 payload.url(),
                 webview.label()
             );
+            // Shown only once the document has finished loading. Created
+            // visible, the window would sit blank for the ~0.5s the webview
+            // takes to boot, and the fade-in would start from an already-
+            // visible rectangle instead of from nothing — the first frame
+            // the user sees must be the first frame of the animation.
+            if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
+                let _ = webview.show();
+            }
         })
         .title("ST-IA")
-        .inner_size(400.0, 260.0)
+        .inner_size(420.0, 280.0)
         .resizable(false)
         .decorations(false)
         .center()
         .always_on_top(true)
         .shadow(true)
         .focused(true)
+        .visible(false)
         .build()?;
 
     eprintln!(
-        "[st-ia] splash: window created (theme={}, motion={})",
+        "[st-ia] splash: window created (theme={}, motion={}, timeline={}ms)",
         settings.theme.as_str(),
-        settings.motion.as_str()
+        settings.motion.as_str(),
+        total_duration().as_millis()
     );
     Ok(())
 }
 
-/// Shows the main window and closes the splash, at most once.
+/// Closes the splash and shows the main window — a hard cut, by design.
 ///
-/// Ordering is deliberate: the main window is shown *before* the splash is
-/// closed, so there is never a frame with no ST-IA window on screen (which
-/// reads as a flicker, and on macOS briefly bounces focus to another app).
+/// The main window gets no fade of its own: the splash has already faded to
+/// nothing, so the app should simply *be there*. Order matters — the splash
+/// is closed first here precisely because it is already invisible by this
+/// point, and closing it first avoids showing `main` underneath a window that
+/// still exists.
 fn reveal_main(app: &AppHandle) {
-    eprintln!("[st-ia] splash: handover, showing main window");
-    if let Some(main) = app.get_webview_window(MAIN_LABEL) {
-        let _ = main.show();
-        let _ = main.set_focus();
-    } else {
-        eprintln!("[st-ia] splash: main window missing at handover");
-    }
+    eprintln!("[st-ia] splash: handover, cutting to main window");
     if let Some(splash) = app.get_webview_window(SPLASH_LABEL) {
         let _ = splash.close();
     }
-}
-
-/// Completes the splash phase once `floor` has elapsed since the window was
-/// created. Non-blocking throughout: the wait is an async timer on Tauri's
-/// runtime, never a `thread::sleep` — nothing about the splash is allowed to
-/// block a thread that could be doing real startup work.
-pub async fn hand_over(app: AppHandle, floor: Duration) {
-    let remaining = {
-        let state = app.state::<SplashState>();
-        if state.already_handed_over() {
-            return;
+    match app.get_webview_window(MAIN_LABEL) {
+        Some(main) => {
+            let _ = main.show();
+            let _ = main.set_focus();
         }
-        state.remaining_hold(floor)
-    };
-
-    if let Some(wait) = remaining {
-        tokio::time::sleep(wait).await;
+        None => eprintln!("[st-ia] splash: main window missing at handover"),
     }
-
-    if !app.state::<SplashState>().claim() {
-        return;
-    }
-    reveal_main(&app);
 }
 
-/// Bounded safety net, armed at startup. Costs one idle timer and settles
-/// the app into a usable state if the readiness signal never arrives.
+/// Records one of the two handover signals, revealing the main window once
+/// both have arrived.
+pub fn signal(app: &AppHandle, signal: Signal) {
+    if app.state::<SplashState>().record(signal) {
+        reveal_main(app);
+    }
+}
+
+/// Bounded safety net, armed at startup.
 pub fn arm_watchdog(app: AppHandle) {
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(WATCHDOG).await;
@@ -188,29 +214,34 @@ pub fn arm_watchdog(app: AppHandle) {
             return;
         }
         eprintln!(
-            "[st-ia] splash: no readiness signal after {}s, showing main window anyway",
+            "[st-ia] splash: incomplete handover after {}s, showing main window anyway",
             WATCHDOG.as_secs()
         );
-        // Floor already long past; this hands over on the next poll.
-        hand_over(app, Duration::ZERO).await;
+        if app.state::<SplashState>().force() {
+            reveal_main(&app);
+        }
     });
 }
 
-/// The single handshake, callable only from the main window.
-///
-/// `reduced_motion` is the value the main window already resolved for itself
-/// (stored preference folded against the OS setting). Passing it here is
-/// what lets the splash's minimum display time honour reduced motion without
-/// giving the splash window any way to read settings — Rust cannot observe
-/// the OS's `prefers-reduced-motion` on its own, and the frontend can.
+/// Reported by the *main* window once it has resolved which screen it will
+/// show first. Half of the handover pair.
 #[tauri::command]
-pub async fn notify_ui_ready(app: AppHandle, reduced_motion: bool) {
-    let floor = if reduced_motion {
-        MIN_VISIBLE_REDUCED
-    } else {
-        MIN_VISIBLE
-    };
-    hand_over(app, floor).await;
+pub fn notify_ui_ready(app: AppHandle) {
+    eprintln!("[st-ia] splash: signal ui-ready");
+    signal(&app, Signal::UiReady);
+}
+
+/// Reported by the *splash* window when its fade-out animation ends. The
+/// other half of the pair, and the only command that window is allowed to
+/// call.
+///
+/// Driving the cut from the animation's real end — rather than from a Rust
+/// timer started in parallel with it — is what keeps the two from drifting:
+/// a timer would either cut the fade short or leave a gap after it.
+#[tauri::command]
+pub fn notify_splash_finished(app: AppHandle) {
+    eprintln!("[st-ia] splash: signal animation-finished");
+    signal(&app, Signal::AnimationFinished);
 }
 
 /// Recovers if the splash window disappears before the handover — a forced
@@ -222,7 +253,7 @@ pub fn on_splash_destroyed(app: &AppHandle) {
         return;
     }
     eprintln!("[st-ia] splash: window destroyed before handover, showing main window");
-    if state.claim() {
+    if state.force() {
         reveal_main(app);
     }
 }
@@ -232,51 +263,73 @@ mod tests {
     use super::*;
 
     #[test]
-    fn handover_is_claimed_exactly_once() {
-        // The watchdog, the readiness command and the destroyed-window
-        // recovery can all fire; only one may show the main window.
+    fn neither_signal_alone_hands_over() {
+        // The whole point of the pair: the animation must not be cut short
+        // because the frontend was fast, and the main window must not appear
+        // before it has decided what to render.
         let state = SplashState::default();
-        assert!(state.claim());
-        assert!(!state.claim());
-        assert!(!state.claim());
-    }
+        assert!(!state.record(Signal::UiReady));
+        assert!(!state.already_handed_over());
 
-    #[test]
-    fn a_fresh_splash_has_not_handed_over() {
-        assert!(!SplashState::default().already_handed_over());
-    }
-
-    #[test]
-    fn hold_is_remaining_time_below_the_floor() {
         let state = SplashState::default();
-        let remaining = state
-            .remaining_hold(Duration::from_secs(30))
-            .expect("a 30s floor cannot already have elapsed");
-        assert!(remaining <= Duration::from_secs(30));
-        assert!(!remaining.is_zero());
+        assert!(!state.record(Signal::AnimationFinished));
+        assert!(!state.already_handed_over());
     }
 
     #[test]
-    fn hold_is_none_once_the_floor_has_elapsed() {
-        // The zero floor is the watchdog's path: hand over on the next poll
-        // rather than waiting again.
+    fn the_second_signal_hands_over_whichever_order_they_arrive_in() {
+        for order in [
+            [Signal::UiReady, Signal::AnimationFinished],
+            [Signal::AnimationFinished, Signal::UiReady],
+        ] {
+            let state = SplashState::default();
+            assert!(!state.record(order[0]));
+            assert!(state.record(order[1]), "{order:?} must complete the pair");
+            assert!(state.already_handed_over());
+        }
+    }
+
+    #[test]
+    fn handover_happens_exactly_once_however_many_signals_repeat() {
+        // A page that fires animationend twice, or a re-mounting frontend,
+        // must not show the main window twice.
         let state = SplashState::default();
-        assert_eq!(state.remaining_hold(Duration::ZERO), None);
+        state.record(Signal::UiReady);
+        assert!(state.record(Signal::AnimationFinished));
+        assert!(!state.record(Signal::AnimationFinished));
+        assert!(!state.record(Signal::UiReady));
+        assert!(!state.force());
     }
 
     #[test]
-    fn reduced_motion_floor_is_much_shorter_than_the_animated_one() {
-        // Reduced motion must not be served a decorative delay.
-        assert!(MIN_VISIBLE_REDUCED < MIN_VISIBLE);
-        assert!(MIN_VISIBLE_REDUCED <= Duration::from_millis(200));
+    fn the_watchdog_can_force_a_handover_with_no_signals_at_all() {
+        let state = SplashState::default();
+        assert!(state.force());
+        assert!(state.already_handed_over());
+        assert!(!state.force());
     }
 
     #[test]
-    fn animated_floor_stays_inside_the_targeted_ux_window() {
-        // 600–900ms: long enough to read as intentional, short enough not to
-        // be felt as a wait.
-        assert!(MIN_VISIBLE >= Duration::from_millis(600));
-        assert!(MIN_VISIBLE <= Duration::from_millis(900));
+    fn a_forced_handover_stops_the_signals_from_running_it_again() {
+        let state = SplashState::default();
+        assert!(state.force());
+        assert!(!state.record(Signal::UiReady));
+        assert!(!state.record(Signal::AnimationFinished));
+    }
+
+    #[test]
+    fn timeline_matches_the_specified_cycle() {
+        assert_eq!(FADE_IN, Duration::from_millis(1000));
+        assert_eq!(HOLD, Duration::from_millis(3000));
+        assert_eq!(FADE_OUT, Duration::from_millis(2000));
+        assert_eq!(total_duration(), Duration::from_millis(6000));
+    }
+
+    #[test]
+    fn the_watchdog_never_races_the_animation() {
+        // It is a failure net, not a second clock: it must leave the full
+        // cycle room to complete plus slack for a slow first paint.
+        assert!(WATCHDOG > total_duration() + Duration::from_secs(5));
     }
 
     #[test]
@@ -284,11 +337,11 @@ mod tests {
         // Regression guard for a real defect: with a query string, Tauri's
         // asset resolver found no `splash.html?theme=…` asset and the window
         // showed a blank page while still reporting a perfectly normal URL.
-        use crate::domain::settings::{MotionPreference, ThemePreference};
+        use crate::domain::settings::{LanguagePreference, MotionPreference, ThemePreference};
         let url = splash_url(&Settings {
             theme: ThemePreference::Dark,
             motion: MotionPreference::On,
-            language: crate::domain::settings::LanguagePreference::Fr,
+            language: LanguagePreference::Fr,
         });
 
         assert_eq!(url, "splash.html#theme=dark&motion=on");
@@ -306,8 +359,14 @@ mod tests {
     }
 
     #[test]
-    fn watchdog_is_bounded_and_longer_than_any_floor() {
-        assert!(WATCHDOG > MIN_VISIBLE);
-        assert!(WATCHDOG <= Duration::from_secs(30));
+    fn the_css_timeline_agrees_with_the_rust_one() {
+        // The stylesheet owns the actual animation; these constants only
+        // describe it. A silent drift would make the watchdog's margin wrong.
+        let css = std::fs::read_to_string("../src/splash/splash.css").expect("read splash.css");
+        let expected = format!("--cycle-duration: {}ms;", total_duration().as_millis());
+        assert!(
+            css.contains(&expected),
+            "splash.css must declare `{expected}`"
+        );
     }
 }
