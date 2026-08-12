@@ -29,9 +29,12 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   const { state: mediaState, selectViaDialog, reset: resetMedia } = useMediaSelection();
-  // Verifying the 3.1 GB translation model costs seconds of I/O; it is only
-  // worth paying once a media file is in hand, never during startup.
-  const translationCheckEnabled = mediaState.status === "selected";
+  // Verifying the 3.1 GB translation model costs seconds of I/O, so it is
+  // never paid during startup. It is paid once a media file is in hand (the
+  // answer is about to be needed) or once the AI models panel is open (the
+  // user is explicitly asking what is installed) — neither is on the launch
+  // path.
+  const translationCheckEnabled = mediaState.status === "selected" || showSettings;
 
   const { status: modelStatus, manifest, install } = useModelManager("transcription");
   // The translation model is tracked independently: it is only needed if the
