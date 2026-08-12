@@ -15,6 +15,8 @@ import { ModelCorrupted } from "./features/model-manager/ModelCorrupted";
 import { useModelManager } from "./features/model-manager/useModelManager";
 import { useSettings } from "./features/settings/useSettings";
 import { useApplySettings } from "./features/settings/useApplySettings";
+import { resolveMotion } from "./features/settings/resolve";
+import { useSplashHandoff } from "./features/startup/useSplashHandoff";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { ThemeQuickAction } from "./features/settings/ThemeQuickAction";
 import { GearIcon } from "./features/settings/icons";
@@ -28,6 +30,16 @@ function App() {
 
   const { status: modelStatus, manifest, install } = useModelManager();
   const [bypassModelGate, setBypassModelGate] = useState(false);
+
+  // End the splash once the first real screen is known — see
+  // useSplashHandoff for why model status is the readiness signal. The
+  // resolved motion value travels with it so the splash's minimum display
+  // time can honour reduced motion (Rust cannot read the OS setting).
+  useSplashHandoff(
+    modelStatus !== null,
+    resolveMotion(settings.motion, window.matchMedia("(prefers-reduced-motion: reduce)").matches) ===
+      "reduce",
+  );
 
   const { state: mediaState, selectViaDialog, reset: resetMedia } = useMediaSelection();
   const { status: jobStatus, start, cancel: cancelJob, reset: resetJob } = useTranscription();

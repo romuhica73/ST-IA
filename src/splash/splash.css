@@ -1,0 +1,210 @@
+/* Splash window styling.
+ *
+ * Self-contained on purpose: this file shares no import with the main app's
+ * stylesheets, because the splash must paint correctly before any of the
+ * app's own machinery (i18n, settings, React) has loaded. The handful of
+ * tokens it needs are repeated here rather than imported — a deliberate,
+ * bounded duplication of five colour values, in exchange for a window that
+ * cannot be broken by a change to the main app's cascade.
+ *
+ * No inline <style> and no style="" attribute anywhere: the M8 CSP
+ * (`style-src 'self'`) forbids both, and M9 does not relax it. */
+
+:root {
+  --splash-bg: #ffffff;
+  --splash-fg: #1a1d22;
+  --splash-accent: #0c7180;
+  --splash-accent-soft: rgba(12, 113, 128, 0.22);
+  --splash-line: rgba(12, 113, 128, 0.16);
+
+  /* One shared clock for the whole composition, so retiming the splash is a
+     single edit rather than nine keyframe adjustments. */
+  --wave-duration: 380ms;
+  --wave-stagger: 26ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+
+  color-scheme: light dark;
+}
+
+:root[data-theme="dark"] {
+  --splash-bg: #1a1c20;
+  --splash-fg: #f2f3f5;
+  --splash-accent: #2dd4bf;
+  --splash-accent-soft: rgba(45, 212, 191, 0.26);
+  --splash-line: rgba(45, 212, 191, 0.18);
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--splash-bg);
+  color: var(--splash-fg);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  /* The window is created with `decorations(false)`; nothing here is
+     selectable or draggable, so suppress the text cursor and selection. */
+  user-select: none;
+  cursor: default;
+}
+
+.splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  height: 100%;
+}
+
+.splash__mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* --- Waveform: the ST-IA mark's motif, structuring itself --------------- */
+
+.wave {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 56px;
+}
+
+.wave__bar {
+  width: 5px;
+  border-radius: 999px;
+  background: var(--splash-accent);
+  /* Grown from the centre so the bars read as a waveform rising out of a
+     flat line, not as columns dropping in from the top. */
+  height: var(--bar-height);
+  transform: scaleY(0.06);
+  animation: wave-rise var(--wave-duration) var(--ease-out) forwards;
+  animation-delay: var(--bar-delay);
+}
+
+/* Heights follow a symmetric envelope peaking at the centre bar. Written out
+   rather than generated: nine static values are clearer than a preprocessor
+   loop, and this file has no build step of its own. */
+.wave__bar:nth-child(1) { --bar-height: 16px; --bar-delay: 0ms; }
+.wave__bar:nth-child(2) { --bar-height: 28px; --bar-delay: var(--wave-stagger); }
+.wave__bar:nth-child(3) { --bar-height: 44px; --bar-delay: calc(var(--wave-stagger) * 2); }
+.wave__bar:nth-child(4) { --bar-height: 34px; --bar-delay: calc(var(--wave-stagger) * 3); }
+.wave__bar:nth-child(5) { --bar-height: 56px; --bar-delay: calc(var(--wave-stagger) * 4); }
+.wave__bar:nth-child(6) { --bar-height: 34px; --bar-delay: calc(var(--wave-stagger) * 5); }
+.wave__bar:nth-child(7) { --bar-height: 44px; --bar-delay: calc(var(--wave-stagger) * 6); }
+.wave__bar:nth-child(8) { --bar-height: 28px; --bar-delay: calc(var(--wave-stagger) * 7); }
+.wave__bar:nth-child(9) { --bar-height: 16px; --bar-delay: calc(var(--wave-stagger) * 8); }
+
+@keyframes wave-rise {
+  from {
+    transform: scaleY(0.06);
+    opacity: 0.35;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* --- Subtitle lines: what the waveform becomes -------------------------- */
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+
+.lines__line {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--splash-line);
+  /* Wiped in left-to-right rather than faded, to read as text being written
+     rather than a shape appearing. */
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: line-wipe 300ms var(--ease-out) forwards;
+}
+
+.lines__line:nth-child(1) {
+  width: 104px;
+  animation-delay: 300ms;
+}
+
+.lines__line:nth-child(2) {
+  width: 68px;
+  animation-delay: 400ms;
+}
+
+@keyframes line-wipe {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* --- Wordmark ----------------------------------------------------------- */
+
+.splash__wordmark {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--splash-fg);
+  opacity: 0;
+  transform: translateY(6px);
+  animation: wordmark-in 320ms var(--ease-out) 480ms forwards;
+}
+
+@keyframes wordmark-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Reduced motion ----------------------------------------------------- */
+
+/* Keyed off [data-motion], set by main.ts from the stored preference — not
+   off `prefers-reduced-motion` directly — for the same reason as the main
+   app (see global.css): the M7 setting can force reduction *or* force full
+   motion against the OS, and a media query can only report the OS state.
+   main.ts folds the "System" case into this attribute before first paint.
+ *
+ * This is not the global "make every duration 0.001ms" trick used in
+ * global.css: collapsing the durations here would still run the rise/wipe/
+ * translate, just imperceptibly fast, which is exactly the decorative motion
+ * that must not happen at all. Instead every element is declared in its
+ * final state with no animation, and the composition as a whole gets one
+ * short fade. */
+:root[data-motion="reduce"] .wave__bar {
+  animation: none;
+  transform: scaleY(1);
+  opacity: 1;
+}
+
+:root[data-motion="reduce"] .lines__line {
+  animation: none;
+  transform: scaleX(1);
+}
+
+:root[data-motion="reduce"] .splash__wordmark {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+:root[data-motion="reduce"] .splash {
+  animation: splash-fade 120ms linear forwards;
+}
+
+@keyframes splash-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

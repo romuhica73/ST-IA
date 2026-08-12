@@ -5,8 +5,9 @@ mod migration;
 mod model;
 mod pipeline;
 mod settings;
+mod splash;
 
-use tauri::RunEvent;
+use tauri::{Manager, RunEvent, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -16,7 +17,21 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(pipeline::JobState::default())
         .manage(model::ModelManagerState::default())
+        .manage(splash::SplashState::default())
         .setup(|app| {
+            // The splash window is built first so it is on screen for
+            // whatever the rest of startup costs. `main` is declared hidden
+            // in tauri.conf.json and is only shown at the handover.
+            let settings = settings::load(app.handle());
+            if let Err(e) = splash::create(app.handle(), &settings) {
+                // A splash that cannot be built must never prevent the app
+                // from starting: show the main window and carry on.
+                eprintln!("[st-ia] splash: could not create window ({e}), showing main directly");
+                splash::on_splash_destroyed(app.handle());
+            } else {
+                splash::arm_watchdog(app.handle().clone());
+            }
+
             // Recover from a previous run that was killed mid-job before the
             // window is even shown.
             cleanup::run(app.handle());
@@ -25,6 +40,14 @@ pub fn run() {
             // upgrading user is never asked to download it again.
             migration::run(app.handle());
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // If the splash goes away before the handover, the main window
+            // would otherwise stay hidden forever and the app would look
+            // like it failed to launch.
+            if window.label() == splash::SPLASH_LABEL && matches!(event, WindowEvent::Destroyed) {
+                splash::on_splash_destroyed(window.app_handle());
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::media::inspect_media,
@@ -38,6 +61,7 @@ pub fn run() {
             settings::get_settings,
             settings::save_settings,
             settings::get_app_version,
+            splash::notify_ui_ready,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

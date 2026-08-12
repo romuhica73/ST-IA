@@ -32,6 +32,33 @@ pub enum LanguagePreference {
     En,
 }
 
+// The splash window cannot read settings.json (it holds no capability), so
+// Rust forwards these two preferences to it as query parameters. These must
+// stay byte-identical to the serde representation above: the same strings
+// are what `src/splash/resolve.ts` matches on, and a silent drift would not
+// fail to compile — it would just make the splash quietly ignore a forced
+// dark theme or a forced reduced-motion setting. The tests below pin them to
+// the serialized form rather than to hand-written literals.
+impl ThemePreference {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::System => "system",
+            Self::Light => "light",
+            Self::Dark => "dark",
+        }
+    }
+}
+
+impl MotionPreference {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::System => "system",
+            Self::On => "on",
+            Self::Off => "off",
+        }
+    }
+}
+
 /// The application's UI language and the language `whisper-cli` is told to
 /// transcribe in are deliberately two separate settings (see ADR-007) — this
 /// struct only ever represents the former. Nothing here reaches the
@@ -114,6 +141,59 @@ mod tests {
     #[test]
     fn missing_fields_fall_back_to_defaults() {
         assert_eq!(Settings::parse(r#"{"theme":"dark"}"#), Settings::default());
+    }
+
+    /// The wire value serde actually produces, so the assertions below
+    /// compare `as_str()` against serialization rather than against a second
+    /// hand-written copy of the same literal.
+    fn serialized(value: impl Serialize) -> String {
+        serde_json::to_value(value)
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .to_string()
+    }
+
+    #[test]
+    fn theme_as_str_matches_its_serialized_form() {
+        for theme in [
+            ThemePreference::System,
+            ThemePreference::Light,
+            ThemePreference::Dark,
+        ] {
+            assert_eq!(theme.as_str(), serialized(theme));
+        }
+    }
+
+    #[test]
+    fn motion_as_str_matches_its_serialized_form() {
+        for motion in [
+            MotionPreference::System,
+            MotionPreference::On,
+            MotionPreference::Off,
+        ] {
+            assert_eq!(motion.as_str(), serialized(motion));
+        }
+    }
+
+    #[test]
+    fn preference_strings_are_url_safe() {
+        // They are interpolated into the splash window's query string; a
+        // value needing percent-encoding would silently break the match in
+        // splash/resolve.ts.
+        for value in [
+            ThemePreference::System.as_str(),
+            ThemePreference::Light.as_str(),
+            ThemePreference::Dark.as_str(),
+            MotionPreference::System.as_str(),
+            MotionPreference::On.as_str(),
+            MotionPreference::Off.as_str(),
+        ] {
+            assert!(
+                value.chars().all(|c| c.is_ascii_lowercase()),
+                "{value:?} would need percent-encoding"
+            );
+        }
     }
 
     #[test]

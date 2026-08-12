@@ -31,6 +31,11 @@ sha2 = "0.10"
 # Used only for statvfs (free disk space). Already in the dependency tree
 # transitively; declared here because we call it directly.
 libc = "0.2"
+# Used only for the splash window's non-blocking timers (minimum display
+# time and readiness watchdog — see splash.rs). Same rationale as libc: it is
+# already Tauri's own async runtime, declared here because we call it
+# directly. "time" only — no net, no fs, no process.
+tokio = { version = "1", features = ["time"] }
 
 [dev-dependencies]
 tempfile = "3"
