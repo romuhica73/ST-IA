@@ -118,6 +118,52 @@ Dans les deux passes, `-l fr` désigne la langue **parlée**. Seul `-tr`
 distingue la traduction. Mettre `-l en` reviendrait à affirmer que l'audio est
 anglais, ce qu'il n'est pas.
 
+## Décision 5 bis — `-mc 0` sur la passe de traduction
+
+Le modèle entrait en boucle de décodage sur le média qualifié : 11 répétitions
+consécutives d'une même phrase, horodatages de durée nulle, et — le plus
+grave — **~15 secondes de discours réellement prononcé perdues**, remplacées
+par la phrase répétée.
+
+Cause isolée : `--max-context`, non borné par défaut dans whisper.cpp. Chaque
+fenêtre de décodage reçoit le texte que la précédente a produit ; quand une
+phrase se répète, sa propre répétition devient le contexte qui la fait se
+répéter à nouveau.
+
+Variantes mesurées sur le média qualifié, passe de traduction :
+
+| Arguments | Cues | Plus longue répétition | Cues de durée nulle | Temps |
+| --- | --- | --- | --- | --- |
+| défaut (`-mc -1`) | 41 | **11** | 14 | 96,5 s |
+| `-et 2.8` | 41 | 11 | 14 | 93,8 s |
+| `-sns` | 42 | 11 | 0 | 52,0 s |
+| **`-mc 0`** | 36 | **1** | **0** | **38,0 s** |
+
+`-et 2.8` produit une sortie strictement identique. `-sns` nettoie les cues
+dégénérées sans casser la boucle. **`-mc 0` supprime le phénomène**, restitue
+le passage perdu (vérifié contre la transcription française de référence) et
+divise le temps de traitement par 2,5 — une boucle consomme des étapes de
+décodage pour rien.
+
+Ce n'est **pas** une déduplication a posteriori. Le mission brief interdisait
+de supprimer automatiquement des segments identiques sans contexte, et c'est
+exactement ce qui n'est pas fait ici : la boucle est *empêchée*, aucun segment
+n'est retiré, donc une répétition légitime du discours reste intacte.
+
+Contrepartie assumée : moins de cohérence à longue portée entre fenêtres
+(pronoms, terminologie). Sur l'échantillon qualifié la sortie reste cohérente
+de bout en bout, et perdre quinze secondes de parole est une défaillance bien
+pire qu'un pronom moins bien relié.
+
+**Portée strictement limitée à la passe de traduction.** La passe française ne
+présente pas ce défaut et ses arguments sont ceux qualifiés depuis M2 ;
+les modifier reviendrait à risquer une régression sur le cas d'usage principal
+pour corriger un problème qu'il n'a pas. Un test l'impose dans les deux sens.
+
+Le réglage n'élimine pas la classe de défaut : d'autres médias peuvent encore
+déclencher une hallucination. Le traitement large (VAD, seuils, prompt initial)
+reste le sujet de v0.2.
+
 ## Décision 6 — Contrat de nommage
 
 | Sélection | Fichiers |

@@ -124,23 +124,32 @@ produits et les noms propres sont fréquemment approximés
 (« Claude Code » → « Cloud Code », « Rust » → « REST »). Cela concerne la
 transcription comme la traduction. Chantier de la version 0.2.
 
-**Répétitions occasionnelles à la traduction.** Le modèle `large-v3` peut
-entrer dans une boucle de décodage et répéter la même phrase plusieurs fois
-d'affilée, avec des horodatages dégénérés (durée nulle ou quasi nulle).
-Observé et reproduit sur le média qualifié : 11 répétitions consécutives entre
-00:01:25,8 et 00:01:30,7, et 3 entre 00:00:56,08 et 00:00:56,10. Preuves dans
+**Répétitions à la traduction — atténuées.** Le modèle `large-v3` pouvait
+entrer dans une boucle de décodage et répéter la même phrase de nombreuses
+fois, avec des horodatages de durée nulle — et, plus grave, **perdre le
+discours réellement prononcé pendant ce temps**.
+
+La cause a été isolée : le contexte textuel que whisper.cpp reporte d'une
+fenêtre de décodage à la suivante (`--max-context`, non borné par défaut).
+Quand une phrase se répète, sa propre répétition devient le contexte qui la
+fait se répéter encore.
+
+ST-IA passe donc `-mc 0` **sur la passe de traduction uniquement**. Mesuré sur
+le média qualifié : 11 répétitions consécutives → 1, 14 cues de durée nulle →
+0, le passage perdu correctement traduit, et un traitement 2,5× plus rapide.
+
+Ce n'est **pas** une déduplication a posteriori : la boucle est empêchée, pas
+masquée. Aucun segment identique n'est supprimé, donc une répétition légitime
+du discours reste intacte. Contrepartie : moins de cohérence à longue portée
+entre fenêtres.
+
+La passe française n'est pas modifiée — elle ne présente pas ce défaut.
+
+Le phénomène reste une **limite du modèle** que ce réglage atténue sans la
+supprimer : d'autres médias peuvent encore le déclencher. Le réglage
+anti-hallucination plus large (VAD, seuils, prompt initial) appartient à la
+mission v0.2 Transcription Quality. Détail complet et preuves :
 [`spike/out/m9-english-repetition/`](../spike/out/m9-english-repetition/).
-
-C'est une **limite du modèle**, pas un défaut du pipeline : le phénomène est
-présent dans la sortie native de whisper.cpp, et les fichiers publiés en sont
-la copie exacte (vérifié par comparaison d'empreintes). Le repli de
-température de Whisper — son mécanisme intégré contre ces boucles — est déjà
-actif, ST-IA ne le désactive pas.
-
-Aucune déduplication automatique n'est appliquée : supprimer des segments
-identiques sans comprendre le contexte risquerait d'effacer des répétitions
-légitimes du discours. Le réglage anti-hallucination (VAD, seuils, prompt
-initial) appartient à la mission v0.2 Transcription Quality.
 
 **Langue source.** Seul le français est qualifié, en entrée comme point de
 départ de la traduction.

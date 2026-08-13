@@ -181,6 +181,11 @@ const fr = {
       transcription: "Transcription française",
       translation: "Traduction vers l'anglais",
     },
+    networkOnlyForDownload:
+      "Le téléchargement de ce modèle est la seule étape qui utilise le réseau.",
+    limitationsTitle: "Limites connues",
+    limitationsBody:
+      "Résultat à relire : les noms propres et le vocabulaire technique restent approximatifs. La traduction anglaise peut occasionnellement répéter un passage.",
     runsLocally: "Exécuté localement sur ce Mac",
     statusInstalled: "Installé",
     statusNotInstalled: "Non installé",

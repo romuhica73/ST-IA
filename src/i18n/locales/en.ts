@@ -180,6 +180,11 @@ const en = {
       transcription: "French transcription",
       translation: "English translation",
     },
+    networkOnlyForDownload:
+      "Downloading this model is the only step that uses the network.",
+    limitationsTitle: "Known limitations",
+    limitationsBody:
+      "Review the result: proper nouns and technical vocabulary remain approximate. The English translation can occasionally repeat a passage.",
     runsLocally: "Runs locally on this Mac",
     statusInstalled: "Installed",
     statusNotInstalled: "Not installed",

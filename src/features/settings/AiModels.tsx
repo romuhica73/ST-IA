@@ -63,11 +63,13 @@ export function AiModels({ statuses }: AiModelsProps) {
           <div className="model-card__head">
             <p className="model-card__name">Whisper {card.id}</p>
             <p className="model-card__role">{t(`aiModels.role.${card.kind}`)}</p>
+            <p className="model-card__runtime">{card.runtime}</p>
           </div>
           <p className="model-card__facts">
             {statusLabel(card.kind)} · {formatBytes(card.sizeBytes, language)}
           </p>
           <p className="model-card__local">{t("aiModels.runsLocally")}</p>
+          <p className="model-card__network">{t("aiModels.networkOnlyForDownload")}</p>
 
           {/* The full provenance lives behind a disclosure: it is the kind of
               detail that must be available and verifiable, but that would
@@ -103,6 +105,10 @@ export function AiModels({ statuses }: AiModelsProps) {
           </details>
         </div>
       ))}
+
+      <p className="settings-section__note settings-section__note--limits">
+        <strong>{t("aiModels.limitationsTitle")}</strong> {t("aiModels.limitationsBody")}
+      </p>
     </section>
   );
 }
