@@ -5,10 +5,10 @@ mod migration;
 mod model;
 mod pipeline;
 mod settings;
-mod splash;
+mod window;
 
 use domain::shell;
-use tauri::{Manager, RunEvent, WindowEvent};
+use tauri::RunEvent;
 
 /// Resolves the shell size for this session from the primary monitor's
 /// usable area.
@@ -51,29 +51,17 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(pipeline::JobState::default())
         .manage(model::ModelManagerState::default())
-        .manage(splash::SplashState::default())
         .setup(|app| {
             // The splash window is built first so it is on screen for
             // whatever the rest of startup costs. `main` is declared hidden
             // in tauri.conf.json and is only shown at the handover.
             let settings = settings::load(app.handle());
 
-            // The session's shell geometry, decided exactly once, here,
-            // before any window is shown. Both windows use it, so the splash
-            // and the app are the same size in the same place and the cut
-            // between them changes nothing but the content. Content never
-            // influences this — see ADR-011.
+            // The session's window geometry, decided exactly once, here,
+            // before anything is shown. Content never influences it — see
+            // ADR-011.
             let size = shell_size_for(app.handle());
-            app.manage(size);
-
-            if let Err(e) = splash::create(app.handle(), &settings, size) {
-                // A splash that cannot be built must never prevent the app
-                // from starting: show the main window and carry on.
-                eprintln!("[st-ia] splash: could not create window ({e}), showing main directly");
-                splash::on_splash_destroyed(app.handle());
-            } else {
-                splash::arm_watchdog(app.handle().clone());
-            }
+            window::create(app.handle(), &settings, size)?;
 
             // Recover from a previous run that was killed mid-job before the
             // window is even shown.
@@ -83,14 +71,6 @@ pub fn run() {
             // upgrading user is never asked to download it again.
             migration::run(app.handle());
             Ok(())
-        })
-        .on_window_event(|window, event| {
-            // If the splash goes away before the handover, the main window
-            // would otherwise stay hidden forever and the app would look
-            // like it failed to launch.
-            if window.label() == splash::SPLASH_LABEL && matches!(event, WindowEvent::Destroyed) {
-                splash::on_splash_destroyed(window.app_handle());
-            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::media::inspect_media,
@@ -105,8 +85,6 @@ pub fn run() {
             settings::get_settings,
             settings::save_settings,
             settings::get_app_version,
-            splash::notify_ui_ready,
-            splash::notify_splash_finished,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

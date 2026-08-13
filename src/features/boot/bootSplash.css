@@ -1,111 +1,74 @@
-/* Splash window styling.
+/* Boot splash — a layer inside the application window (ADR-009).
  *
- * Self-contained on purpose: this file shares no import with the main app's
- * stylesheets, because the splash must paint correctly before any of the
- * app's own machinery (i18n, settings, React) has loaded. The handful of
- * tokens it needs are repeated here rather than imported — a deliberate,
- * bounded duplication of five colour values, in exchange for a window that
- * cannot be broken by a change to the main app's cascade.
+ * Previously a separate Tauri window with its own document and stylesheet.
+ * It is now rendered over the app's own content, which is already mounted
+ * behind it, so the end of the intro is a layer being removed rather than
+ * one native window being swapped for another.
+ *
+ * It reuses the app's own theme tokens rather than redefining them: it is
+ * part of the same document now, so `--bg`, `--fg` and the accent respond to
+ * the theme exactly like everything else, including a live OS theme change
+ * during the six seconds it is on screen.
  *
  * No inline <style> and no style="" attribute anywhere: the M8 CSP
  * (`style-src 'self'`) forbids both, and this does not relax it.
  *
- * ## Timeline (mirrored in src-tauri/src/splash.rs)
+ * ## Timeline
  *
  *   0.0s ─ 1.0s   fade in           (ease-out)
  *   1.0s ─ 2.0s   graphic animates
  *   2.0s ─ 4.0s   composition rests
  *   4.0s ─ 6.0s   fade out          (ease-in-out)
- *   6.0s          `animationend` → Rust cuts to the main window
+ *   6.0s          `animationend` → the layer is removed
  *
  * The container's own fade is what the app listens for, and it is identical
- * in both motion variants — so the cut lands at the same moment whether or
- * not the decorative animation ran.
+ * in both motion variants — so the intro lasts the same six seconds whether
+ * or not the decorative animation inside it ran.
  */
 
 :root {
-  --splash-bg: #ffffff;
-  --splash-fg: #1a1d22;
-  --splash-accent: #0c7180;
+  /* Only the values the splash needs beyond the app's own tokens. The
+     background, foreground and accent all come from the theme. */
   --splash-line: rgba(12, 113, 128, 0.16);
 
-  /* One clock for the whole composition. Rust asserts this exact literal, so
-     retiming the splash is a single edit that cannot silently disagree with
-     the watchdog's margin. */
+  /* One clock for the whole composition: 1s in, 3s stable, 2s out. */
   --cycle-duration: 6000ms;
-
-  /* Percentages of the cycle: 1s and 4s of 6s. */
-  --fade-in-end: 16.667%;
-  --fade-out-start: 66.667%;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.6, 1);
-
-  color-scheme: light dark;
 }
 
 :root[data-theme="dark"] {
-  --splash-bg: #1a1c20;
-  --splash-fg: #f2f3f5;
-  --splash-accent: #2dd4bf;
   --splash-line: rgba(45, 212, 191, 0.18);
-}
-
-html,
-body {
-  margin: 0;
-  height: 100%;
-  overflow: hidden;
-  background: var(--splash-bg);
-  color: var(--splash-fg);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-  /* The window is created with `decorations(false)`; nothing here is
-     selectable or draggable, so suppress the text cursor and selection. */
-  user-select: none;
-  cursor: default;
 }
 
 /* --- The cycle ---------------------------------------------------------- */
 
-.splash {
+/* Covers the whole webview, which on macOS is exactly the content area —
+   the native title bar and its traffic lights live outside it and stay
+   visible for the entire intro. Opaque, and above everything, so the
+   interface mounted behind cannot be seen or clicked while it plays. */
+.boot-splash {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 24px;
-  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  user-select: none;
+  cursor: default;
   opacity: 0;
-  animation: splash-cycle var(--cycle-duration) forwards;
+  animation: boot-splash-cycle var(--cycle-duration) forwards;
 }
 
-/* Every animation starts paused, and is released by main.ts on the first
-   rendered frame.
- *
- * The window is created hidden and shown once its document has loaded, and
- * WebKit does not advance animations in a window that is not on screen. Left
- * to itself, the cycle could begin while hidden and then never fire its
- * `animationend` — observed once in twenty launches, which the Rust watchdog
- * had to rescue 15 seconds later. Gating on `requestAnimationFrame` ties the
- * start of the animation to the first frame actually rendered, which is
- * exactly the guarantee needed. */
-.splash,
-.wave__bar,
-.lines__line,
-.splash__wordmark {
-  animation-play-state: paused;
-}
-
-:root[data-splash="running"] .splash,
-:root[data-splash="running"] .wave__bar,
-:root[data-splash="running"] .lines__line,
-:root[data-splash="running"] .splash__wordmark {
-  animation-play-state: running;
-}
-
-/* Per-keyframe easing: soft in, flat hold, soft out. No cut at either end of
-   the splash itself — the only hard transition in the whole sequence is the
-   final one, from an empty splash to the main window. */
-@keyframes splash-cycle {
+/* Per-keyframe easing: soft in, flat hold, soft out. The layer ends at
+   opacity 0, so by the time it is removed the interface behind it is already
+   fully visible — nothing is swapped, revealed or resized. */
+@keyframes boot-splash-cycle {
   0% {
     opacity: 0;
     animation-timing-function: var(--ease-out);
@@ -125,7 +88,7 @@ body {
 
 /* --- Waveform: the ST-IA mark's motif, structuring itself --------------- */
 
-.splash__mark {
+.boot-splash__mark {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -142,7 +105,7 @@ body {
 .wave__bar {
   width: 5px;
   border-radius: 999px;
-  background: var(--splash-accent);
+  background: var(--accent-text);
   height: var(--bar-height);
   /* Grown from the centre so the bars read as a waveform rising out of a
      flat line, not as columns dropping in from the top. Starts at rest and
@@ -215,12 +178,12 @@ body {
 
 /* --- Wordmark ----------------------------------------------------------- */
 
-.splash__wordmark {
+.boot-splash__wordmark {
   margin: 0;
   font-size: 21px;
   font-weight: 600;
   letter-spacing: 0.18em;
-  color: var(--splash-fg);
+  color: var(--fg);
   opacity: 0;
   transform: translateY(6px);
   animation: wordmark-in 480ms var(--ease-out) 1620ms forwards;
@@ -259,7 +222,7 @@ body {
   transform: scaleX(1);
 }
 
-:root[data-motion="reduce"] .splash__wordmark {
+:root[data-motion="reduce"] .boot-splash__wordmark {
   animation: none;
   opacity: 1;
   transform: none;

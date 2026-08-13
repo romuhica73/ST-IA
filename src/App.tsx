@@ -16,8 +16,8 @@ import { ModelCorrupted } from "./features/model-manager/ModelCorrupted";
 import { useModelManager } from "./features/model-manager/useModelManager";
 import { useSettings } from "./features/settings/useSettings";
 import { useApplySettings } from "./features/settings/useApplySettings";
-import { useSplashHandoff } from "./features/startup/useSplashHandoff";
-import { useLaunchEntrance } from "./features/startup/useLaunchEntrance";
+import { BootSplash } from "./features/boot/BootSplash";
+import { useBootPhase } from "./features/boot/useBootPhase";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { ThemeQuickAction } from "./features/settings/ThemeQuickAction";
 import { GearIcon } from "./features/settings/icons";
@@ -28,9 +28,9 @@ function App() {
   const { settings, setTheme, setMotion, setLanguage } = useSettings();
   useApplySettings(settings);
   const [showSettings, setShowSettings] = useState(false);
-  // Plays once, on the first screen after the splash cut — never again on
-  // navigation. See useLaunchEntrance for why the flag is process-wide.
-  const isLaunch = useLaunchEntrance();
+  // The intro is a layer over this same window; the interface below is
+  // mounted and laid out the whole time it is showing.
+  const { phase, isEntering, finishBoot } = useBootPhase();
 
   const { state: mediaState, selectViaDialog, reset: resetMedia } = useMediaSelection();
   // Verifying the 3.1 GB translation model costs seconds of I/O, so it is
@@ -50,11 +50,6 @@ function App() {
     install: installTranslation,
   } = useModelManager("translation", translationCheckEnabled);
   const [bypassModelGate, setBypassModelGate] = useState(false);
-
-  // One half of the splash handover — see useSplashHandoff for why model
-  // status is the readiness signal. The splash's own animation end is the
-  // other half; the cut happens when both have arrived.
-  useSplashHandoff(modelStatus !== null);
 
   const { status: jobStatus, start, cancel: cancelJob, reset: resetJob } = useTranscription();
   const [jobMedia, setJobMedia] = useState<MediaInfo | null>(null);
@@ -113,8 +108,15 @@ function App() {
   // Brief startup check — avoid flashing the wrong screen before the first
   // real answer arrives. Settings aren't reachable yet either; this state
   // is expected to last a handful of milliseconds.
+  // Startup check, normally over in milliseconds and hidden entirely behind
+  // the intro layer. The layer is still rendered here so the very first
+  // frame of the window is already the splash rather than an empty shell.
   if (modelStatus === null) {
-    return <main className="app" />;
+    return (
+      <main className="app">
+        {phase === "splash" && <BootSplash onFinished={finishBoot} />}
+      </main>
+    );
   }
 
   const modelReady = modelStatus.status === "ready";
@@ -207,7 +209,7 @@ function App() {
   }
 
   return (
-    <main className={`app ${isLaunch ? "app--entrance" : ""}`}>
+    <main className={`app ${isEntering ? "app--entrance" : ""}`}>
       <div className="app-header">
         <ThemeQuickAction theme={settings.theme} onChange={setTheme} />
         <button
@@ -234,6 +236,7 @@ function App() {
           renderScreen()
         )}
       </div>
+      {phase === "splash" && <BootSplash onFinished={finishBoot} />}
     </main>
   );
 }

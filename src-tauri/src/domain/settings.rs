@@ -32,29 +32,16 @@ pub enum LanguagePreference {
     En,
 }
 
-// The splash window cannot read settings.json (it holds no capability), so
-// Rust forwards these two preferences to it as query parameters. These must
-// stay byte-identical to the serde representation above: the same strings
-// are what `src/splash/resolve.ts` matches on, and a silent drift would not
-// fail to compile — it would just make the splash quietly ignore a forced
-// dark theme or a forced reduced-motion setting. The tests below pin them to
-// the serialized form rather than to hand-written literals.
+// Used for the native window's boot background, which has to be decided
+// before any stylesheet exists (see `window::create`). Pinned to the serde
+// representation by the test below rather than to a hand-written literal, so
+// the two cannot drift.
 impl ThemePreference {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::System => "system",
             Self::Light => "light",
             Self::Dark => "dark",
-        }
-    }
-}
-
-impl MotionPreference {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::System => "system",
-            Self::On => "on",
-            Self::Off => "off",
         }
     }
 }
@@ -162,37 +149,6 @@ mod tests {
             ThemePreference::Dark,
         ] {
             assert_eq!(theme.as_str(), serialized(theme));
-        }
-    }
-
-    #[test]
-    fn motion_as_str_matches_its_serialized_form() {
-        for motion in [
-            MotionPreference::System,
-            MotionPreference::On,
-            MotionPreference::Off,
-        ] {
-            assert_eq!(motion.as_str(), serialized(motion));
-        }
-    }
-
-    #[test]
-    fn preference_strings_are_url_safe() {
-        // They are interpolated into the splash window's query string; a
-        // value needing percent-encoding would silently break the match in
-        // splash/resolve.ts.
-        for value in [
-            ThemePreference::System.as_str(),
-            ThemePreference::Light.as_str(),
-            ThemePreference::Dark.as_str(),
-            MotionPreference::System.as_str(),
-            MotionPreference::On.as_str(),
-            MotionPreference::Off.as_str(),
-        ] {
-            assert!(
-                value.chars().all(|c| c.is_ascii_lowercase()),
-                "{value:?} would need percent-encoding"
-            );
         }
     }
 

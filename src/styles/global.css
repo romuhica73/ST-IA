@@ -129,6 +129,31 @@
   box-sizing: border-box;
 }
 
+/* Boot background, before any JavaScript has run.
+ *
+ * `main.tsx` sets `data-theme` synchronously, but the stylesheet is parsed
+ * and applied before that script executes, so for those few milliseconds
+ * `:root` still holds the light default. On a dark-mode Mac that is a white
+ * flash between the native window appearing and the page painting — the one
+ * artefact the same-window boot is meant to eliminate.
+ *
+ * A `prefers-color-scheme` query is the only thing available that early, so
+ * it seeds the background for that gap. `data-theme` overrides it a moment
+ * later and stays authoritative for everything else, including a forced
+ * theme that disagrees with the OS. The native window is filled with the
+ * matching colour too (see `window::create`), so the whole chain from frame
+ * to paint is one colour.
+ */
+html {
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    background: #1a1c20;
+  }
+}
+
 body {
   margin: 0;
   background: var(--bg);

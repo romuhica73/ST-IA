@@ -25,8 +25,6 @@ fn main() {
         "get_settings",
         "save_settings",
         "get_app_version",
-        "notify_ui_ready",
-        "notify_splash_finished",
     ]);
 
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(app))
