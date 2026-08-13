@@ -12,3 +12,4 @@
 | [ADR-008](ADR-008-bilingual-output-pipeline.md) | Pipeline de sortie bilingue — constat sur le modèle turbo | SUPERSEDED par ADR-010 |
 | [ADR-009](ADR-009-splashscreen-and-release-packaging.md) | Splashscreen applicatif et packaging de release macOS | PROVISIONAL |
 | [ADR-010](ADR-010-local-english-translation.md) | Traduction anglaise locale par un second modèle | PROVISIONAL |
+| [ADR-011](ADR-011-fixed-desktop-shell.md) | Shell desktop fixe et layout interne responsive | PROVISIONAL |
