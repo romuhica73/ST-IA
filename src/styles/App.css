@@ -1,7 +1,23 @@
+/* The window is kept sized to `.app`'s natural content height at all times
+   (see useFitWindow.ts / ADR-011), so `.app-viewport` being exactly 100vh is
+   normally a no-op — its only job is the fallback: if content grows faster
+   than the native resize lands, or the window has hit the screen's maximum
+   allowed size and genuinely cannot grow further, this is what scrolls
+   instead of clipping. Scroll is the fallback, never the default. */
+.app-viewport {
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 .app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  /* Intentionally no min-height here — this element's own size IS the
+     "desired content size" useFitWindow measures and asks the window to
+     become. Forcing it to 100vh would make every state measure as exactly
+     the current window height, which defeats content-aware sizing
+     entirely. */
   padding: 28px;
   -webkit-user-select: none;
   user-select: none;
@@ -771,7 +787,10 @@
 
 .settings-panel {
   gap: 0;
-  height: 100%;
+  /* No forced height: 100% here — see the note on `.app` above. The panel
+     grows to its natural content height like every other screen; the
+     surrounding .app-viewport is what falls back to scrolling if that
+     content ever exceeds the window's maximum allowed size. */
 }
 
 .settings-panel__header {
@@ -817,8 +836,6 @@
   display: flex;
   flex-direction: column;
   gap: 26px;
-  overflow-y: auto;
-  padding-right: 2px;
 }
 
 .settings-section__title {
