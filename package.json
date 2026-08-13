@@ -5,6 +5,7 @@
   "description": "ST-IA — local-first macOS subtitle generator",
   "author": "Romain Bourbon",
   "license": "MIT",
+  "packageManager": "pnpm@10.34.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/romuhica73/ST-IA.git"
