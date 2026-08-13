@@ -1,7 +1,7 @@
 # M10 — Revue de sécurité pour publication publique
 
 Statut : `SOURCE_PUBLICATION_UNBLOCKED` — aucun finding Critical, High ou
-Medium.
+Medium, et tous les gates humains fermés.
 
 Date : 2026-08-13
 Base auditée : `9e55c65` (release candidate 0.1.0)
@@ -401,24 +401,56 @@ Détail et recommandations :
 [`PUBLIC_REPOSITORY_REFS_REVIEW.md`](../release/PUBLIC_REPOSITORY_REFS_REVIEW.md).
 **Aucune branche n'a été supprimée.**
 
-## 7. Métadonnées d'auteur
+## 7. Métadonnées d'auteur — remédiée
+
+**État à l'audit** (avant remédiation) :
 
 | Identité | Commits | Nature |
 |---|---|---|
 | `Romain Bourbon <…@…>` (adresse professionnelle, redacted) | **85** | domaine d'entreprise |
 | `dependabot[bot]` | 6 | bot, adresse noreply |
 
-Deux identités, aucune faute de frappe, aucune adresse périmée — les
-métadonnées sont propres. Le point n'est pas leur qualité mais leur **nature** :
-l'adresse deviendra définitivement publique, rattachera ce projet personnel au
-un domaine d'entreprise, et sera récoltable.
+Deux identités, aucune faute de frappe, aucune adresse périmée : les métadonnées
+étaient propres. Le point n'était pas leur qualité mais leur **nature** — une
+adresse professionnelle sur un domaine d'entreprise, qui serait devenue
+définitivement publique dans chaque commit, chaque clone et chaque miroir, et
+qui aurait rattaché publiquement ce projet personnel à cette organisation.
 
-L'auteur est déjà public par ailleurs (`LICENSE`, identifiant de bundle).
-L'exposition supplémentaire porte sur **l'adresse et le domaine**.
+**Décision humaine, puis remédiation appliquée.** L'historique complet a été
+réécrit avant publication : **90 commits**, `Author` et `Committer`, vers
+l'adresse publique du projet. Seuls les commits portant exactement l'ancienne
+adresse ont été touchés — les commits Dependabot conservent leur identité, comme
+demandé.
 
-**Gate `GIT_AUTHOR_METADATA_ACCEPTANCE_REQUIRED`.** M10 n'a **pas** réécrit
-l'historique et ne le fera pas sans autorisation explicite : cela changerait
-tous les SHA. Options détaillées dans
+| Contrôle après réécriture | Résultat |
+|---|---|
+| Identités sur les branches | `studio@romain-bourbon.com` **uniquement** |
+| Ancienne adresse dans les métadonnées | **0** |
+| Ancienne adresse dans le contenu de l'historique | **0** |
+| Ancienne adresse dans les fichiers suivis | **0** |
+| Arbres avant / après | **SHA identiques** — contenu inchangé |
+| Noms, dates d'auteur et de commit | inchangés |
+| Corps des commits | empreinte SHA-256 de l'ensemble **identique** |
+| Topologie | 93 commits avant, 93 après |
+| `gitleaks` sur l'historique réécrit | **no leaks found** |
+
+Une **seconde passe** a été nécessaire, et mérite d'être notée : la réécriture
+des métadonnées laissait l'adresse dans le **texte** des rapports M10 décrivant
+ce finding. Les publier aurait republié exactement ce que la réécriture venait
+de retirer.
+
+**Ce que la réécriture n'atteint pas.** Un force-push ne supprime pas d'objets.
+Vérifié explicitement plutôt que supposé : les quinze `refs/pull/N/head` du
+dépôt pointent toujours vers les commits d'avant réécriture, et un
+`git fetch origin <ancien-SHA>` **réussit encore**.
+
+**Arbitrage : `FRESH_REPOSITORY_ACCEPTED`.** Le dépôt de développement reste
+**privé définitivement** et devient l'archive du projet ; Community est publié
+depuis un **dépôt neuf**, amorcé avec le seul `main` réécrit. Le résidu
+disparaît par construction plutôt que par nettoyage, sans dépendre d'un tiers,
+et le résultat est vérifiable avant publication plutôt qu'espéré après.
+
+Détail :
 [`COMMUNITY_PUBLIC_READINESS.md`](../release/COMMUNITY_PUBLIC_READINESS.md).
 
 ## 8. Dépendances
@@ -570,9 +602,18 @@ publication.
 
 **Remédiation de l'historique.** Sur décision humaine du gate M10,
 l'historique complet a été réécrit avant publication pour remplacer l'adresse
-de commit professionnelle par l'adresse publique du projet. Le détail, les
-preuves de vérification et les limites de cette remédiation côté GitHub sont
-dans
+de commit professionnelle par l'adresse publique du projet. Arbres, noms,
+dates, messages et topologie sont inchangés et vérifiés.
+
+Un force-push ne supprimant pas les objets, le dépôt actuel conserve l'ancien
+historique dans ses `refs/pull/*` — vérifié explicitement, un `git fetch` d'un
+ancien SHA réussit encore. L'arbitrage humain a tranché
+`FRESH_REPOSITORY_ACCEPTED` : **le dépôt actuel reste privé définitivement** et
+devient l'archive de développement, la publication se faisant depuis un **dépôt
+neuf** amorcé avec le seul `main` réécrit. Le résidu est ainsi supprimé par
+construction plutôt que par nettoyage, et sans dépendre d'un tiers.
+
+Détail et preuves :
 [`COMMUNITY_PUBLIC_READINESS.md`](../release/COMMUNITY_PUBLIC_READINESS.md).
 
 **Distribution binaire : toujours BLOQUÉE** par les réserves portées, inchangées

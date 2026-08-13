@@ -22,21 +22,31 @@ décision irréversible dans un seul sens.
 ## Décision 1 — Trois produits, deux dépôts
 
 ```text
-ST-IA Community
-GitHub public / MIT
-        │
-        │ upstream
-        ▼
-ST-IA Desktop
-dépôt privé (n'existe pas encore)
-        │
-        ├── Desktop Free
-        └── Desktop Plus
+Archive de développement            ST-IA Community
+dépôt actuel, privé définitivement  dépôt neuf, GitHub public / MIT
+(historique des PR M1→M10)                  │
+                                            │ upstream
+                                            ▼
+                                    ST-IA Desktop
+                                    dépôt privé (n'existe pas encore)
+                                            │
+                                            ├── Desktop Free
+                                            └── Desktop Plus
 ```
 
-**ST-IA Community** — ce dépôt. Public, MIT, destiné à un public technique
-capable de cloner, installer les dépendances de développement et construire
-l'application lui-même.
+**ST-IA Community** — public, MIT, destiné à un public technique capable de
+cloner, installer les dépendances de développement et construire l'application
+lui-même.
+
+> **Précision ajoutée en M10 :** Community ne sera pas publié depuis ce dépôt.
+> L'historique ayant dû être réécrit avant publication, et un force-push ne
+> supprimant pas les objets côté GitHub, le dépôt de développement conserve
+> l'ancien historique dans ses références de pull request. **Il reste donc
+> privé définitivement et devient l'archive de développement** ; Community est
+> publié depuis un **dépôt neuf** amorcé avec le seul `main` réécrit. Cela ne
+> change rien à la frontière décidée ici — seulement l'emplacement du dépôt
+> public. Voir
+> [`../release/GITHUB_PUBLICATION_CHECKLIST.md`](../release/GITHUB_PUBLICATION_CHECKLIST.md).
 
 **ST-IA Desktop** — futur dépôt **privé**, distinct. Distribution officielle
 prête à installer : installateurs, signature, notarisation, updater, support.

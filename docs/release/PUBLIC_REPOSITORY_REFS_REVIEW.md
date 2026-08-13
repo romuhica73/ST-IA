@@ -1,7 +1,26 @@
 # Revue des références publiées — avant passage en public
 
-Établie par M10 sur `9e55c65`. **Aucune branche n'a été supprimée.** Ce document
-prépare une décision ; il ne l'applique pas.
+Établie par M10 sur `9e55c65`, puis mise à jour après la réécriture de
+l'historique et l'arbitrage du mode de publication. **Aucune branche n'a été
+supprimée par cette mission.**
+
+> ## Ce que l'arbitrage a changé
+>
+> La publication se fera depuis un **dépôt neuf** ; le dépôt actuel reste
+> **privé définitivement** et devient l'archive de développement
+> (`FRESH_REPOSITORY_ACCEPTED`).
+>
+> Cette revue garde toute sa valeur — elle a établi qu'aucune référence ne
+> contenait de secret, de média privé ni de contenu inattendu — mais ses
+> **recommandations de suppression deviennent sans objet** : des branches qui
+> ne seront jamais publiées n'ont pas besoin d'être supprimées avant
+> publication. Elles restent dans l'archive, qui est leur place.
+>
+> Seul `main` sera poussé vers le dépôt Community. Les branches `feat/m*` n'y
+> seront pas recréées.
+>
+> **Les six branches Dependabot ont disparu d'elles-mêmes** : Dependabot les a
+> fermées et supprimées quand la réécriture a rendu leurs PR non fusionnables.
 
 ## Pourquoi ce document existe
 
@@ -19,18 +38,23 @@ raisons de sécurité.** Ce qui suit est de l'hygiène, pas une remédiation.
 
 ## 1. Branches de mission `feat/m*` — 10 branches
 
-| Branche | HEAD | Fusionnée dans `main` | Commits uniques | Risque | Recommandation |
+> Les SHA de ce tableau sont ceux **d'avant la réécriture d'historique**, état
+> dans lequel l'audit a été mené. La correspondance ancien → nouveau est
+> conservée dans la sauvegarde de la mission ; le contenu, lui, est identique
+> (arbres inchangés).
+
+| Branche | HEAD (avant réécriture) | Fusionnée dans `main` | Commits uniques | Risque | Recommandation |
 |---|---|---|---|---|---|
-| `feat/m0b-french-model-qualification` | `d2154cd` | oui | **0** | aucun | DELETE_BEFORE_PUBLICATION |
-| `feat/m1-desktop-shell` | `ab8e806` | oui | **0** | aucun | DELETE_BEFORE_PUBLICATION |
-| `feat/m2-local-transcription-pipeline` | `d54277e` | oui | **0** | aucun | DELETE_BEFORE_PUBLICATION |
-| `feat/m3-model-manager` | `8b752be` | oui | **0** | aucun | DELETE_BEFORE_PUBLICATION |
-| `feat/m4-runtime-robustness` | `610195f` | oui | **0** | aucun | DELETE_BEFORE_PUBLICATION |
-| `feat/m5-macos-release-candidate` | `5241bdc` | oui | **0** | aucun | DELETE_BEFORE_PUBLICATION |
-| `feat/m6-visual-polish-motion` | `5e1410b` | oui | **0** | aucun | DELETE_BEFORE_PUBLICATION |
-| `feat/m7-settings-i18n-versioning` | `5fdf487` | oui | **0** | aucun | DELETE_BEFORE_PUBLICATION |
-| `feat/m8-open-source-security-readiness` | `3e3fc2c` | oui | **0** | aucun | DELETE_BEFORE_PUBLICATION |
-| `feat/m9-bilingual-splash-release-packaging` | `9e55c65` | oui — **HEAD identique à `main`** | **0** | aucun | DELETE_BEFORE_PUBLICATION |
+| `feat/m0b-french-model-qualification` | `d2154cd` | oui | **0** | aucun | KEEP_IN_PRIVATE_ARCHIVE |
+| `feat/m1-desktop-shell` | `ab8e806` | oui | **0** | aucun | KEEP_IN_PRIVATE_ARCHIVE |
+| `feat/m2-local-transcription-pipeline` | `d54277e` | oui | **0** | aucun | KEEP_IN_PRIVATE_ARCHIVE |
+| `feat/m3-model-manager` | `8b752be` | oui | **0** | aucun | KEEP_IN_PRIVATE_ARCHIVE |
+| `feat/m4-runtime-robustness` | `610195f` | oui | **0** | aucun | KEEP_IN_PRIVATE_ARCHIVE |
+| `feat/m5-macos-release-candidate` | `5241bdc` | oui | **0** | aucun | KEEP_IN_PRIVATE_ARCHIVE |
+| `feat/m6-visual-polish-motion` | `5e1410b` | oui | **0** | aucun | KEEP_IN_PRIVATE_ARCHIVE |
+| `feat/m7-settings-i18n-versioning` | `5fdf487` | oui | **0** | aucun | KEEP_IN_PRIVATE_ARCHIVE |
+| `feat/m8-open-source-security-readiness` | `3e3fc2c` | oui | **0** | aucun | KEEP_IN_PRIVATE_ARCHIVE |
+| `feat/m9-bilingual-splash-release-packaging` | `9e55c65` | oui — **HEAD identique à `main`** | **0** | aucun | KEEP_IN_PRIVATE_ARCHIVE |
 
 Vérification appliquée à chacune :
 
@@ -39,18 +63,13 @@ git merge-base --is-ancestor <ref> origin/main   # exit 0 pour les 10
 git rev-list --count origin/main..<ref>          # 0 pour les 10
 ```
 
-**Aucun commit n'existe sur ces branches qui ne soit déjà dans `main`.** Les
-supprimer ne perd rien — l'historique complet reste atteignable depuis `main`, et
-les messages de commit comme les diffs restent intacts. Les garder ne présente
-aucun risque de sécurité non plus : c'est un choix de lisibilité.
+**Aucun commit n'existe sur ces branches qui ne soit déjà dans `main`.**
 
-**Recommandation : supprimer après publication de `v0.1.0`**, pas avant. Tant
-qu'aucun tag n'existe, ces branches sont le seul repère nommé des jalons du
-projet. Une fois `v0.1.0` taguée, elles deviennent purement redondantes.
-
-> Cette recommandation est plus prudente que « supprimer avant publication » :
-> l'ordre importe peu puisque le risque est nul, et attendre le tag évite de
-> perdre les seuls repères de milestone existants.
+**Recommandation finale : les conserver dans l'archive privée.** L'arbitrage du
+mode de publication a rendu la question de leur suppression sans objet — elles
+ne seront jamais publiées, puisque seul `main` sera poussé vers le dépôt
+Community. Dans une archive de développement, ces branches sont exactement ce
+qu'on veut garder : le repère nommé de chaque jalon, avec sa PR.
 
 ## 2. Branches Dependabot — 6 branches
 
@@ -66,18 +85,15 @@ projet. Une fois `v0.1.0` taguée, elles deviennent purement redondantes.
 Ces six branches ne touchent **que** des fichiers de dépendances et de CI. Aucun
 média, aucun secret, aucun binaire nouveau. Elles sont publiables telles quelles.
 
-« REVIEW_REQUIRED » désigne ici une décision de **maintenance**, pas de sécurité :
-fusionner ou fermer les PR correspondantes. Supprimer la branche sans fermer la
-PR est inutile — Dependabot la recrée.
+> **Résolu depuis.** Ces six branches et leurs PR (#8 à #13) ont été **fermées
+> et supprimées par Dependabot lui-même** lorsque la réécriture de l'historique
+> a rendu leurs PR non fusionnables. Cette mission n'en a supprimé aucune. Le
+> conflit annoncé ci-dessous s'est donc réglé de la manière prévue : Dependabot
+> recréera les mises à jour encore pertinentes, contre la nouvelle base.
 
-Cinq d'entre elles sont en retard de 31 commits sur `main`. `sha2-0.11.0` est à
-jour et constitue une vraie décision de dépendance (changement de version
-majeure).
-
-> ⚠️ Une conséquence à connaître : **`gitleaks-action` v2 → v3 et les bumps
-> d'actions modifient `security.yml`, que M10 vient également de modifier**
-> (extraction du scan de secrets vers `secret-scan.yml`). Ces PR entreront donc
-> en conflit et devront être rebasées ou refaites.
+Le conflit anticipé était réel : `gitleaks-action` v2 → v3 et les bumps
+d'actions modifient `security.yml`, que M10 a également modifié en extrayant le
+scan de secrets vers `secret-scan.yml`.
 
 ## 3. Tags, notes et autres références
 
@@ -109,14 +125,14 @@ transmis par `git push`** : ils n'apparaîtront pas sur GitHub. Aucune action.
 
 ---
 
-## Décision demandée à l'humain
+## Décisions — closes
 
-- [ ] **Branches `feat/m*`** — supprimer les 10 après le tag `v0.1.0`, ou les
-      conserver ? *(recommandation : supprimer après le tag ; aucun impact
-      sécurité dans les deux cas)*
-- [ ] **PR Dependabot** — fusionner ou fermer les 6, en tenant compte du conflit
-      annoncé sur `security.yml`
-- [ ] Confirmer qu'aucune branche ne doit être supprimée **avant** la publication
+- [x] **Branches `feat/m*`** — **conservées** dans l'archive privée. La question
+      « supprimer avant publication » ne se pose plus : elles ne seront pas
+      publiées. Elles ont été réécrites et ne portent plus l'ancienne adresse.
+- [x] **PR et branches Dependabot** — fermées et supprimées **par Dependabot
+      lui-même** lors de la réécriture de la base. Aucune suppression manuelle.
+- [x] **Aucune branche supprimée avant publication** — sans objet : la
+      publication passe par un dépôt neuf, amorcé avec `main` seul.
 
-Tant que ces cases ne sont pas cochées, **aucune branche ne doit être
-supprimée** : M10 s'interdit toute suppression de référence.
+M10 n'a supprimé aucune référence.

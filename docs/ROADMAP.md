@@ -342,7 +342,8 @@ La suite est exclusivement :
 
 ## M10 — Community Public Release Readiness
 
-Statut : `READY_FOR_HUMAN_QA` — en attente du gate humain.
+Statut : `DONE` — gates humains fermés le 2026-08-13, remédiation appliquée.
+Verdict : `M10_COMMUNITY_PUBLIC_READY_TO_PUBLISH`.
 
 M10 répond à une seule question, de manière démontrable : *le dépôt peut-il
 devenir public sans exposer de secret, de donnée privée, d'artefact
@@ -402,15 +403,48 @@ matière ; le suffixe `.download` du gestionnaire de modèles échappait à la
 règle `*.bin`. Le scan de secrets, jusque-là filtré sur les fichiers de
 dépendances, ne tournait sur **aucune PR de code** : il a sa propre workflow.
 
-### Décisions humaines en attente
+### Remédiation de l'historique
 
-* **métadonnées d'auteur** — 85 commits sur 91 portent une adresse
-  professionnelle qui deviendra définitivement publique
-  (`GIT_AUTHOR_METADATA_ACCEPTANCE_REQUIRED`) ;
-* transcriptions de la voix de l'auteur publiées ;
-* `LEGAL_REVIEW_RECOMMENDED` sur l'obligation de relink LGPL FFmpeg — ne
-  bloque pas le source, à trancher avant toute distribution binaire ;
-* sort des 10 branches `feat/m*` et des 6 PR Dependabot.
+Les commits portaient une adresse professionnelle sur un domaine d'entreprise.
+Sur autorisation explicite, l'historique complet a été **réécrit avant
+publication** : 90 commits, `Author` et `Committer`, vers l'adresse publique du
+projet. Arbres, noms, dates, messages et topologie sont inchangés — vérifiés par
+égalité des SHA d'arbre et empreinte identique de l'ensemble des corps de
+commit. `main` passe de `9e55c65` à `7cfc298`.
+
+Une seconde passe a été nécessaire : la réécriture des métadonnées laissait
+l'adresse dans le **texte** des rapports M10 qui décrivaient le finding —
+les publier aurait republié exactement ce que la réécriture venait de retirer.
+
+### Mode de publication — dépôt neuf
+
+Un force-push ne supprime pas les objets. Vérification faite plutôt que
+supposée : les quinze `refs/pull/N/head` pointent toujours vers les commits
+d'avant réécriture, et récupérer un ancien commit par SHA **réussit encore**.
+
+Arbitrage humain : `FRESH_REPOSITORY_ACCEPTED`. Le dépôt de développement
+**reste privé définitivement** et devient l'archive du projet ; **ST-IA
+Community sera publié depuis un dépôt neuf**, amorcé en M11 avec le seul `main`
+réécrit. Le résidu disparaît par construction, sans dépendre d'un tiers, et le
+résultat est vérifiable avant publication plutôt qu'espéré après.
+
+Les six branches Dependabot et leurs PR se sont fermées et supprimées
+d'elles-mêmes lorsque la base a été réécrite. Cette mission n'a supprimé aucune
+branche.
+
+### Durcissement appliqué au gate
+
+* **M10-F04** — `tokio` retiré : aucune appelant ne subsistait et son
+  commentaire citait un fichier supprimé. `Cargo.lock` change d'une ligne.
+* **M10-F11** — `shell:allow-execute` retiré de la WebView. La permission
+  n'était nécessaire à rien : Rust lance les sidecars, et un appel Rust ne
+  traverse pas le système de capabilities. Requalifié sur le `.app` empaqueté —
+  FR, EN, annulation, relance, gestionnaire de modèles.
+
+### Réserves maintenues
+
+`LEGAL_REVIEW_RECOMMENDED` sur l'obligation de relink LGPL FFmpeg — concerne la
+distribution binaire, explicitement pas le source.
 
 ### Statut de plateforme et de signature
 
@@ -421,11 +455,17 @@ nécessaire est chiffré dans le
 `WINDOWS_CODE_SIGNING_NOT_CONFIGURED` bloquent la **distribution binaire
 officielle**, pas la publication du source.
 
-## M11 — Publication et release 0.1.0 (non commencée)
+## M11 — Publication Community et release 0.1.0 (non commencée)
 
-Application des réglages GitHub préparés par M10, passage du dépôt en public,
-puis signature Developer ID, notarisation et release `v0.1.0`. Dépend du gate
-humain M10 et de la disponibilité d'une identité de signature.
+Création du **dépôt Community neuf**, amorçage avec le `main` réécrit,
+application des réglages GitHub préparés par M10, puis passage en public. Le
+dépôt actuel reste privé et devient l'archive de développement.
+
+Ensuite seulement : tag `v0.1.0`, signature Developer ID, notarisation et
+release — ces dernières dépendant de la disponibilité d'une identité de
+signature (`APPLE_DEVELOPER_ID_NOT_AVAILABLE` aujourd'hui).
+
+Procédure : [checklist de publication](release/GITHUB_PUBLICATION_CHECKLIST.md).
 
 ## Post-MVP
 

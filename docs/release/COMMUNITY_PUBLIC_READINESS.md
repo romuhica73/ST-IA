@@ -1,18 +1,24 @@
 # ST-IA Community — readiness pour publication publique
 
-Établi par M10, mis à jour après remédiation de l'historique. Remplace, pour la question « le dépôt
-peut-il devenir public ? », le rapport
+Établi par M10, mis à jour après remédiation de l'historique et arbitrage du
+mode de publication. Remplace, pour la question « le code peut-il devenir
+public ? », le rapport
 [`OPEN_SOURCE_READINESS.md`](../security/OPEN_SOURCE_READINESS.md) de M8, qui
 reste valable pour tout ce qu'il a établi.
 
-**M10 n'a rendu aucun dépôt public, n'a créé aucun tag et n'a supprimé aucune
-branche.**
+**M10 n'a rendu aucun dépôt public, n'a créé aucun tag, n'a créé aucun dépôt et
+n'a supprimé aucune branche.**
+
+> **Deux dépôts, à partir de maintenant.** Le dépôt actuel
+> `romuhica73/ST-IA` **reste privé définitivement** : il devient l'archive de
+> développement. **ST-IA Community sera publié depuis un dépôt neuf**, créé en
+> M11 à partir de l'historique réécrit. Voir §arbitrage.
 
 ---
 
 ## Question posée
 
-> Le dépôt ST-IA peut-il devenir public aujourd'hui sans exposer de secret, de
+> Le code ST-IA peut-il devenir public aujourd'hui sans exposer de secret, de
 > donnée privée, d'artefact indésirable, de code commercial, de dépendance
 > cachée ou de procédure de build non reproductible ?
 
@@ -23,10 +29,12 @@ M10 ont été prises et appliquées : frontière commerciale acceptée (ADR-012)
 métadonnées d'auteur remédiées par réécriture d'historique, et les deux findings
 de durcissement corrigés puis requalifiés.
 
-Un point de vigilance subsiste et n'est **pas** une question technique : les
-branches Dependabot et les anciennes références de pull request portent encore
-l'ancienne adresse dans leur ascendance. Elles doivent être nettoyées avant le
-passage en public — voir §métadonnées.
+Le dernier point ouvert — les références de pull request du dépôt actuel, qui
+conservent l'ancien historique — est **tranché** : la publication se fera depuis
+un **dépôt neuf**, ce qui supprime le résidu par construction plutôt que par
+nettoyage. Le dépôt actuel reste privé définitivement.
+
+**Aucun blocage ne subsiste.**
 
 ---
 
@@ -150,14 +158,13 @@ Le changement de SHA est la conséquence acceptée et attendue.
 | `gitleaks` sur l'historique réécrit | **no leaks found** |
 | Clone propre + build + tests | rejoués intégralement |
 
-### Limite à connaître — ce qui subsiste côté GitHub
+### Ce que la réécriture n'a pas atteint — et pourquoi cela ne bloque plus
 
-Il serait faux d'affirmer que l'ancienne adresse a disparu de GitHub. Ce qui
-suit a été **vérifié après le force-push**, pas supposé.
+Il serait faux d'affirmer que l'ancienne adresse a disparu du dépôt actuel. Ce
+qui suit a été **vérifié après le force-push**, pas supposé.
 
 **1. Les références de pull request conservent l'ancien historique.** Les
-quinze `refs/pull/N/head` du dépôt pointent toujours vers les commits
-d'origine :
+quinze `refs/pull/N/head` pointent toujours vers les commits d'origine :
 
 ```
 git ls-remote origin 'refs/pull/*/head'
@@ -165,80 +172,61 @@ git ls-remote origin 'refs/pull/*/head'
 → refs/pull/1..13    anciens commits de jalons
 ```
 
-**2. Les anciens objets restent récupérables par SHA.** Vérifié
-explicitement :
+**2. Les anciens objets restent récupérables par SHA :**
 
 ```
 git fetch origin 9e55c65858ea637c3e828d0fea685f3d634b1f82
 → réussit
 ```
 
-GitHub conserve ces objets tant que son ramasse-miettes ne les a pas
-collectés, sur un calendrier qu'il ne garantit pas. Un force-push ne les
-supprime pas.
+Un force-push ne supprime pas d'objets, et GitHub les conserve tant que son
+ramasse-miettes ne les a pas collectés — sur un calendrier qu'il ne garantit
+pas.
 
-**Conséquence : la remédiation est complète sur les branches, et incomplète
-sur le dépôt.** Tant que ces références existent, l'ancienne adresse reste
-techniquement accessible à qui sait la chercher. Le dépôt étant **encore
-privé**, elle n'est aujourd'hui visible de personne.
+### Arbitrage tranché — dépôt neuf
 
-### Ce qu'il faut trancher avant le passage en public
+**Décision humaine : `FRESH_REPOSITORY_ACCEPTED`.**
 
-Trois options, à arbitrer en M11 :
+Le dépôt actuel `romuhica73/ST-IA` **reste privé définitivement** et devient
+l'**archive de développement privée** du projet. Il ne sera jamais rendu
+public.
 
-| Option | Effet | Coût |
-|---|---|---|
-| **Demander à GitHub Support** de purger les références de PR et de forcer un GC | Supprime le résidu dans le dépôt existant | Dépend du support, délai non garanti |
-| **Publier depuis un dépôt neuf**, en y poussant uniquement l'historique réécrit | Résidu nul par construction — aucune PR, aucun objet ancien | Perd l'historique des PR et des issues |
-| **Accepter le résidu** | Aucun travail | L'adresse reste récupérable par SHA une fois le dépôt public |
+**ST-IA Community sera publié depuis un dépôt neuf et indépendant**, créé en
+M11 à partir de l'historique réécrit et propre.
 
-Recommandation : **le dépôt neuf** si le résidu n'est pas acceptable, car c'est
-la seule option dont le résultat ne dépend pas d'un tiers. L'historique des PR
-a peu de valeur sur un projet à un seul mainteneur, et il n'existe aucune issue.
+Ce que cela résout, par construction plutôt que par nettoyage :
+
+| Résidu | Sort dans un dépôt neuf |
+|---|---|
+| 15 `refs/pull/*/head` pointant vers l'ancien historique | **n'existent pas** — aucune PR n'a jamais été ouverte |
+| Anciens objets récupérables par SHA | **n'existent pas** — jamais poussés |
+| Ancienne adresse professionnelle | **absente** — seul l'historique réécrit est poussé |
+| Dépendance à un tiers pour purger | **aucune** — rien à demander à GitHub Support |
+
+Aucune purge ne sera demandée à GitHub Support : l'option retenue est la seule
+dont le résultat ne dépend de personne d'autre, et elle est vérifiable avant
+publication plutôt qu'espérée après.
+
+Ce qui est perdu est réel mais mineur : l'historique des pull requests des
+missions M1 à M10. Il n'existe aucune issue, le projet a un seul mainteneur, et
+cet historique reste consultable dans l'archive privée. Les messages de commit —
+qui portent l'essentiel du raisonnement de ce projet — sont intégralement
+conservés, l'historique étant poussé tel quel.
+
+**Conséquence sur ce document :** le dépôt actuel n'a plus vocation à devenir
+public, donc les résidus ci-dessus ne sont plus un blocage de publication. Ils
+restent documentés parce qu'ils décrivent l'archive privée, et parce qu'ils
+expliquent pourquoi la publication passe par un dépôt neuf.
 
 ### Branches Dependabot — résolues d'elles-mêmes
 
 Les six branches Dependabot et leurs PR (#8 à #13) ont été **fermées et
 supprimées par Dependabot lui-même** lorsque la base a été réécrite : elles
 étaient devenues non fusionnables. Cette mission n'a supprimé aucune branche.
-C'est exactement l'issue prévue par la décision humaine — Dependabot recréera
-les mises à jour encore pertinentes.
 
-La PR #15 a été fermée automatiquement par GitHub pour la même raison : elle
+La PR #15 a été fermée automatiquement par GitHub pour la même raison — elle
 référençait l'ancien HEAD de la branche M10 et ne pouvait plus être rouverte.
 Elle est remplacée par la **PR #16**.
-
----|---|---|
-| `Romain Bourbon <…@…>` (adresse professionnelle, redacted) | **85** | domaine d'entreprise |
-| `dependabot[bot] <…@users.noreply.github.com>` | 6 | bot, adresse noreply |
-
-Exactement deux identités, aucune faute de frappe, aucune adresse périmée : les
-métadonnées sont propres. Le point n'est pas leur qualité mais leur **nature**.
-
-Ce qu'il faut savoir avant de décider :
-
-* l'adresse deviendra **définitivement publique** — dans chaque commit, chaque
-  clone, chaque miroir et chaque archive ; la retirer plus tard ne la retire pas
-  des copies déjà faites ;
-* elle rattachait publiquement ce projet personnel à un domaine d'entreprise ;
-* elle est **récoltable** par les moissonneurs d'adresses ;
-* l'auteur est déjà public par ailleurs (`LICENSE`, identifiant de bundle
-  `com.romainbourbon.stia`) : l'exposition supplémentaire porte sur l'**adresse
-  et le domaine**, pas sur l'identité.
-
-**Options :**
-
-1. **Accepter** — aucune action. Le plus simple, et défendable si l'adresse est
-   assumée publiquement par ailleurs.
-2. **Réécrire l'historique** (`git filter-repo`) vers une adresse
-   `@users.noreply.github.com`. Change **tous les SHA**, invalide toute
-   référence externe existante, et **M10 s'interdit formellement de le faire
-   sans autorisation explicite**.
-3. **Changer pour les commits futurs uniquement** — l'historique reste tel quel.
-   Cohérence partielle, aucun SHA modifié.
-
-Aucune de ces options n'est appliquée par M10. C'est le gate
-`GIT_AUTHOR_METADATA_ACCEPTANCE_REQUIRED`.
 
 ---
 
@@ -261,17 +249,34 @@ dans `BUILDING.md`, sans euphémisme.
 |---|---|---|
 | Chemins de build `/Volumes/Workspace/...` dans les deux sidecars (24 occurrences) | LOW | Cosmétique. Aucun nom d'utilisateur, aucun secret. Corrigeable au prochain rebuild via `-ffile-prefix-map` |
 | Sidecars binaires publiés dans Git | INFORMATIONAL | Compromis assumé (STIA-SEC-106) : whisper.cpp ne publie pas de binaire arm64 statique, et exiger une build FFmpeg rendrait le projet inutilisable pour un contributeur |
-| Obligation de relink LGPL FFmpeg | `LEGAL_REVIEW_RECOMMENDED` | Documentée (STIA-SEC-202), non tranchée. Ne bloque pas le source ; à traiter avant distribution binaire |
-| Transcriptions de la voix de l'auteur publiées | LOW | Script de démonstration écrit pour le test, ne nomme personne. Décision humaine |
+| Obligation de relink LGPL FFmpeg | `LEGAL_REVIEW_RECOMMENDED` | Documentée (STIA-SEC-202), **réserve maintenue au gate humain**. Ne bloque pas le source ; à traiter avant distribution binaire |
+| Transcriptions de la voix de l'auteur publiées | LOW | Script de démonstration écrit pour le test, ne nomme personne. **Acceptées** au gate humain |
 | Avis RustSec « unmaintained » sur des crates GTK3 | INFORMATIONAL | 17 warnings, **0 vulnérabilité**. Crates Linux non compilées sur macOS. Déjà hors périmètre dans `SECURITY.md` |
+| Anciennes références de PR portant l'historique d'avant réécriture | — | **Sans objet pour la publication** : elles vivent dans le dépôt actuel, qui reste privé définitivement |
 
 ---
 
 ## Verdict
 
-Aucun blocage technique. Les points ouverts sont des **arbitrages humains**, et
-le seul qui mérite une décision consciente avant la bascule est celui des
-métadonnées d'auteur.
+**`M10_COMMUNITY_PUBLIC_READY_TO_PUBLISH`**
+
+Aucun blocage ne subsiste. Les quatre gates humains sont fermés :
+
+| Gate | Décision |
+|---|---|
+| Frontière Community / Desktop / Plus | acceptée — [ADR-012](../architecture/ADR-012-community-commercial-boundary.md) `ACCEPTED` |
+| Métadonnées d'auteur | remédiées — historique réécrit, 0 occurrence sur les branches |
+| Findings de durcissement M10-F04 / F11 | corrigés et requalifiés sur le `.app` empaqueté |
+| Mode de publication | **dépôt neuf** — le dépôt actuel reste privé définitivement |
+
+Ce qui reste ouvert n'est pas un blocage :
+
+* `LEGAL_REVIEW_RECOMMENDED` (relink LGPL FFmpeg) — concerne la **distribution
+  binaire**, explicitement pas le source ;
+* `APPLE_DEVELOPER_ID_NOT_AVAILABLE` et `WINDOWS_CODE_SIGNING_NOT_CONFIGURED` —
+  même périmètre ;
+* les findings M10-F01, F02, F03, F05 et F09 — Low et Hardening, planifiables
+  après publication.
 
 Voir le [rapport de sécurité M10](../security/M10_COMMUNITY_PUBLIC_SECURITY_REVIEW.md)
 pour le détail des findings.
