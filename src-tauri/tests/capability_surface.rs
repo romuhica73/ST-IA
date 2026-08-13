@@ -162,45 +162,38 @@ fn the_only_window_holds_exactly_the_application_capability() {
         );
     }
     assert!(granted.contains("core:default"));
-    assert!(granted.contains("shell:allow-execute"));
 }
 
 #[test]
-fn sidecar_execution_stays_limited_to_the_two_known_binaries() {
-    // Regression guard for the M8 finding: shell:allow-execute must never
-    // become a generic "run a program" permission.
-    let mut checked = false;
+fn the_webview_is_granted_no_shell_permission_at_all() {
+    // M10-F11. The window used to hold shell:allow-execute, scoped to the two
+    // sidecars but with `args: true`. It was never needed: the sidecars are
+    // spawned from Rust (`app.shell().sidecar(...)` in pipeline.rs), and a
+    // Rust-side call does not traverse the capability system — capabilities
+    // gate IPC calls arriving from the WebView. The frontend does not even
+    // depend on @tauri-apps/plugin-shell.
+    //
+    // Keeping the grant meant a compromised WebView could run ffmpeg with
+    // arbitrary arguments: with the `file` protocol still enabled, a wider
+    // read/write primitive than the validated command surface. Removing it
+    // costs nothing, so the strongest form of this test is that NO shell
+    // permission exists anywhere rather than that it stays narrow.
     for (name, capability) in capability_files() {
         let permissions = capability["permissions"]
             .as_array()
             .expect("permissions array");
         for permission in permissions {
-            if permission.get("identifier").and_then(|i| i.as_str()) != Some("shell:allow-execute")
-            {
-                continue;
-            }
-            checked = true;
-            let allowed: Vec<&str> = permission["allow"]
-                .as_array()
-                .expect("allow array")
-                .iter()
-                .map(|entry| entry["name"].as_str().expect("named binary"))
-                .collect();
-            assert_eq!(
-                allowed,
-                vec!["whisper-cli", "ffmpeg"],
-                "{name}: unexpected executable allow-list"
+            let identifier = permission
+                .as_str()
+                .or_else(|| permission.get("identifier").and_then(|i| i.as_str()))
+                .unwrap_or_default();
+            assert!(
+                !identifier.starts_with("shell:"),
+                "{name}: the WebView must hold no shell permission, found {identifier:?}. \
+                 Sidecars are launched from Rust and need no capability."
             );
-            for entry in permission["allow"].as_array().unwrap() {
-                assert_eq!(
-                    entry["sidecar"].as_bool(),
-                    Some(true),
-                    "{name}: every allowed executable must be a bundled sidecar"
-                );
-            }
         }
     }
-    assert!(checked, "shell:allow-execute permission not found");
 }
 
 #[test]

@@ -1,18 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-window",
-  "description": "Capability for the only window: core defaults, native open-file dialog, execution of exactly the two named transcription sidecars, revealing a generated output file in Finder (no generic shell access), and every ST-IA application command.",
+  "description": "Capability for the only window: core defaults, native open-file dialog, revealing a generated output file in Finder (no generic shell access), and every ST-IA application command. The window is granted NO shell permission at all: the sidecars are spawned from Rust, and a Rust-side call does not traverse the capability system — which gates only IPC calls coming from the WebView. See ADR-003 and finding M10-F11.",
   "windows": ["main"],
   "permissions": [
     "core:default",
     "dialog:allow-open",
-    {
-      "identifier": "shell:allow-execute",
-      "allow": [
-        { "name": "whisper-cli", "sidecar": true, "args": true },
-        { "name": "ffmpeg", "sidecar": true, "args": true }
-      ]
-    },
     "opener:allow-reveal-item-in-dir",
     "allow-inspect-media",
     "allow-start-transcription",
