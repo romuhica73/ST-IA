@@ -13,3 +13,10 @@
 | [ADR-009](ADR-009-splashscreen-and-release-packaging.md) | Splashscreen intégré et packaging de release macOS | ACCEPTED |
 | [ADR-010](ADR-010-local-english-translation.md) | Traduction anglaise locale par un second modèle | ACCEPTED |
 | [ADR-011](ADR-011-fixed-desktop-shell.md) | Shell desktop fixe et layout interne responsive | ACCEPTED |
+| [ADR-012](ADR-012-community-commercial-boundary.md) | Frontière Community / Desktop / Plus | PROPOSED |
+
+## Documents associés
+
+| Document | Objet |
+|---|---|
+| [DESKTOP_UPSTREAM_STRATEGY](DESKTOP_UPSTREAM_STRATEGY.md) | Procédure d'extraction du futur dépôt privé depuis Community (plan, non exécuté) |
