@@ -1,26 +1,43 @@
-/* The window is kept sized to `.app`'s natural content height at all times
-   (see useFitWindow.ts / ADR-011), so `.app-viewport` being exactly 100vh is
-   normally a no-op — its only job is the fallback: if content grows faster
-   than the native resize lands, or the window has hit the screen's maximum
-   allowed size and genuinely cannot grow further, this is what scrolls
-   instead of clipping. Scroll is the fallback, never the default. */
-.app-viewport {
-  height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
+/* --- Fixed desktop shell (ADR-011) --------------------------------------
+   The window is one fixed size for the whole session, decided in Rust before
+   anything is shown. Nothing in here ever resizes it: `.app` fills the
+   viewport exactly, and the layout is composed for that surface rather than
+   the surface chasing the layout.
 
+   `.app` itself never scrolls. When content genuinely exceeds the space —
+   text scaled up, an unusually small screen, a longer localisation — the
+   overflow is handled by the individual panel that needs it (`.app-body`
+   and `.settings-content`), so a local region scrolls instead of the whole
+   application behaving like a web page. */
 .app {
   display: flex;
   flex-direction: column;
-  /* Intentionally no min-height here — this element's own size IS the
-     "desired content size" useFitWindow measures and asks the window to
-     become. Forcing it to 100vh would make every state measure as exactly
-     the current window height, which defeats content-aware sizing
-     entirely. */
-  padding: 28px;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  padding: var(--shell-padding);
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* The single scroll boundary for ordinary screens. At the target shell size
+   every state fits and this never scrolls; it is the accessibility fallback,
+   not the normal mechanism. */
+.app-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Screens are a single centred column rather than full-bleed: 900px of width
+   is more than any of this content wants to span, and a measure that wide
+   would read as a stretched web page rather than a desktop panel. */
+.job {
+  width: 100%;
+  max-width: var(--content-width);
+  margin: 0 auto;
 }
 
 .icon {
@@ -145,7 +162,7 @@
 .job {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--panel-gap);
 }
 
 .file-card {
@@ -787,10 +804,9 @@
 
 .settings-panel {
   gap: 0;
-  /* No forced height: 100% here — see the note on `.app` above. The panel
-     grows to its natural content height like every other screen; the
-     surrounding .app-viewport is what falls back to scrolling if that
-     content ever exceeds the window's maximum allowed size. */
+  /* Fills the shell rather than growing: the panel's own right-hand column
+     (`.settings-content`) is what scrolls when a section is taller than the
+     surface. */
 }
 
 .settings-panel__header {
@@ -1249,4 +1265,220 @@
 
 .settings-section__note--limits {
   margin-top: 12px;
+}
+
+/* --- Settings: desktop navigation layout (ADR-011) ----------------------
+   A compact source list on the left, one section at a time on the right.
+   The previous vertical stack only fitted because the window grew to match
+   it; in a fixed shell it is what forced a scrollbar. */
+
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+  /* Full shell width — Settings is the one screen that earns the whole
+     surface, because it is genuinely two columns. */
+  max-width: none;
+}
+
+.settings-panel__layout {
+  display: grid;
+  grid-template-columns: var(--settings-nav-width) 1fr;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 20px;
+  border-right: 1px solid var(--border);
+}
+
+.settings-nav__item {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.settings-nav__item:hover {
+  background: var(--accent-tint);
+  color: var(--fg);
+}
+
+/* The selected state has to survive without colour alone: the weight change
+   and the tinted background together carry it. */
+.settings-nav__item--active {
+  background: var(--accent-tint);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.settings-nav__item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--panel-gap);
+  min-height: 0;
+  /* The one place a scroll is genuinely expected: AI models with both
+     technical-details disclosures open is legitimately taller than the
+     shell, and that must not resize the window. */
+  overflow-y: auto;
+  padding-right: 4px;
+  animation: section-reveal var(--duration-fast) var(--ease-standard);
+}
+
+.settings-content:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--radius-control);
+}
+
+/* Short, small: switching section should feel like the panel refreshed, not
+   like a page slid past. */
+@keyframes section-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* --- Interaction grammar ------------------------------------------------
+   One vocabulary for every control: a subtle lift on hover, a physical
+   compression on press. The business state always changes immediately —
+   these only describe it. */
+
+.button {
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard),
+    transform var(--duration-instant) var(--ease-standard);
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(var(--hover-lift));
+}
+
+.button:active:not(:disabled) {
+  transform: scale(var(--press-scale));
+  transition-duration: var(--duration-instant);
+}
+
+.app-header__button:active,
+.settings-nav__item:active,
+.settings-panel__close:active {
+  transform: scale(var(--press-scale));
+}
+
+.app-header__button,
+.settings-panel__close {
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-instant) var(--ease-standard);
+}
+
+/* Selectable cards: the check scales in rather than appearing, which reads
+   as the control responding to the click. */
+.language-card__input:checked ~ .language-card__check {
+  animation: check-in var(--duration-fast) var(--ease-emphasis);
+}
+
+@keyframes check-in {
+  from {
+    transform: scale(0.7);
+  }
+}
+
+.language-card:active {
+  transform: scale(0.995);
+}
+
+.language-card {
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-instant) var(--ease-standard);
+}
+
+/* --- Validation error ---------------------------------------------------
+   A few pixels, once. Enough to draw the eye back to the control that needs
+   attention, never enough to feel like the app malfunctioned. */
+
+.field--invalid {
+  animation: field-nudge 180ms var(--ease-standard);
+}
+
+@keyframes field-nudge {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+/* --- Launch entrance ----------------------------------------------------
+   Plays once, immediately after the splash cut. Each direct child of the
+   body settles in turn over ~300ms total. Navigation never replays it —
+   the class is only present on the first screen of the session. */
+
+.app--entrance .app-header,
+.app--entrance .app-body > * > * {
+  animation: entrance var(--duration-emphasis) var(--ease-emphasis) backwards;
+}
+
+.app--entrance .app-header { animation-delay: 0ms; }
+.app--entrance .app-body > * > *:nth-child(1) { animation-delay: calc(var(--entrance-step) * 1); }
+.app--entrance .app-body > * > *:nth-child(2) { animation-delay: calc(var(--entrance-step) * 2); }
+.app--entrance .app-body > * > *:nth-child(3) { animation-delay: calc(var(--entrance-step) * 3); }
+.app--entrance .app-body > * > *:nth-child(4) { animation-delay: calc(var(--entrance-step) * 4); }
+.app--entrance .app-body > * > *:nth-child(n + 5) { animation-delay: calc(var(--entrance-step) * 5); }
+
+@keyframes entrance {
+  from {
+    opacity: 0;
+    transform: translateY(var(--entrance-shift));
+  }
+}
+
+/* --- Reduced motion -----------------------------------------------------
+   Everything decorative stops. What remains is every piece of *information*:
+   colour, borders, selected states, focus rings, real progress, and text.
+   The global near-zero-duration rule in global.css would leave these running
+   imperceptibly instead of not running, so they are cancelled explicitly. */
+
+:root[data-motion="reduce"] .button:hover:not(:disabled),
+:root[data-motion="reduce"] .button:active:not(:disabled),
+:root[data-motion="reduce"] .app-header__button:active,
+:root[data-motion="reduce"] .settings-nav__item:active,
+:root[data-motion="reduce"] .settings-panel__close:active,
+:root[data-motion="reduce"] .language-card:active {
+  transform: none;
+}
+
+:root[data-motion="reduce"] .settings-content,
+:root[data-motion="reduce"] .field--invalid,
+:root[data-motion="reduce"] .app--entrance .app-header,
+:root[data-motion="reduce"] .app--entrance .app-body > * > *,
+:root[data-motion="reduce"] .language-card__input:checked ~ .language-card__check {
+  animation: none;
 }

@@ -73,7 +73,7 @@ export function SelectedMedia({
         </div>
       </section>
 
-      <section className="field">
+      <section className={`field ${!hasLanguage(outputs) ? "field--invalid" : ""}`}>
         <span className="field__label">{t("outputs.versions")}</span>
         <OutputLanguageCards
           languages={outputs.languages}
@@ -113,7 +113,7 @@ export function SelectedMedia({
         )}
       </section>
 
-      <section className="field">
+      <section className={`field ${!hasFormat(outputs) ? "field--invalid" : ""}`}>
         <span className="field__label">{t("media.outputs")}</span>
         <div className="checkboxes">
           <label className="checkbox">

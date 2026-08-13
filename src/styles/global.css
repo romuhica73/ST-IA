@@ -44,13 +44,50 @@
      never stacked ("cards inside cards"). */
   --shadow-sm: 0 1px 2px rgba(16, 24, 32, 0.04), 0 1px 1px rgba(16, 24, 32, 0.03);
 
-  /* Motion scale. Never applied to anything that would delay an action —
-     only to feedback and state reveals. See the reduced-motion block below. */
+  /* --- Shell layout tokens -------------------------------------------
+     Named by role so a screen never restates a raw pixel value. The shell
+     is a fixed 900x640 surface (see ADR-011); these describe how content
+     is arranged inside it. */
+  --shell-padding: 28px 32px;
+  /* Content sits in a centred column: the full 900px is a comfortable
+     window width, not a comfortable measure to read across. */
+  --content-width: 560px;
+  --panel-gap: 22px;
+  --settings-nav-width: 176px;
+
+  /* --- Motion system -------------------------------------------------
+     One grammar for the whole app, so a button in Settings and a card on
+     Home move the same way. Nothing here is ever applied to something that
+     would delay an action: the business state changes immediately and the
+     animation only describes it. See the reduced-motion block below, which
+     is what removes the decorative half of this. */
+
+  /* Durations. `instant` is for pressure feedback that must feel like a
+     physical response rather than a transition; `base` is the default for
+     state reveals; `emphasis` is reserved for the few moments that deserve
+     to be noticed (a result appearing). */
   --duration-instant: 100ms;
   --duration-fast: 150ms;
   --duration-base: 220ms;
+  --duration-emphasis: 320ms;
+  /* Kept as an alias: several M6 rules already reference it by this name. */
   --duration-success: 320ms;
+
+  /* Easing. `standard` decelerates into place — the right curve for almost
+     everything. `emphasis` is slightly softer for entrances. Deliberately
+     no spring or overshoot anywhere: ST-IA is a calm tool, not a toy. */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Interaction geometry. Small enough to read as physical feedback rather
+     than as the layout moving. */
+  --press-scale: 0.98;
+  --hover-lift: -1px;
+
+  /* Launch entrance: the distance elements travel in, and the delay between
+     each one. Multiplied per element to build the stagger. */
+  --entrance-shift: 8px;
+  --entrance-step: 60ms;
 }
 
 /* Dark tokens live in exactly one place, keyed off [data-theme="dark"] —
