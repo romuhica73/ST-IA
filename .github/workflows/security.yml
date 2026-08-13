@@ -46,9 +46,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: rustsec/audit-check@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      # rustsec/audit-check runs from the repository root and this project's
+      # manifest lives in src-tauri/, so the action failed with "Couldn't load
+      # ./Cargo.lock" on every run — it never audited anything. Calling
+      # cargo-audit directly is what actually reads the lockfile.
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      - name: Audit Rust dependencies
+        working-directory: src-tauri
+        # cargo audit fails on a vulnerability and only warns on
+        # unmaintained/unsound advisories. That is the posture this project
+        # documents: the GTK3 bindings it warns about are Linux-only and never
+        # compiled on macOS (see SECURITY.md).
+        run: cargo audit
 
 # Le scan de secrets vivait ici et héritait du filtre `paths` ci-dessus, donc ne
 # tournait pas sur une PR de code. Il a sa propre workflow, sans filtre :
