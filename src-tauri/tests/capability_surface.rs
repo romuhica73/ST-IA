@@ -1,18 +1,19 @@
 //! Pins the capability surface so a window can never silently gain access it
 //! was not designed to have.
 //!
-//! M8 established that the frontend is treated as hostile. A second window
-//! (the splash) exists, and the property that matters is that it stays
-//! *nearly inert*: it displays local assets and reports exactly one event.
+//! M8 established that the frontend is treated as hostile, and that has not
+//! changed now that the startup intro is a layer inside the application
+//! rather than a second window: the webview is still the untrusted side of
+//! the boundary, and the ACL is still what bounds it.
 //!
-//! Two things make that property real, and both are easy to undo by accident:
+//! Two things make that real, and both are easy to undo by accident:
 //!
 //! 1. `build.rs` declares an app ACL manifest. **Without it, Tauri allows
 //!    every command registered via `invoke_handler` in every window**, and
-//!    the capability files below would only gate plugin permissions — the
-//!    splash could call `start_transcription` and the ACL would not care.
+//!    the capability files below would only gate plugin permissions.
 //! 2. Each capability names its windows explicitly. Dropping the `windows`
-//!    key alone grants that capability to every window.
+//!    key alone grants that capability to every window, including any window
+//!    added later.
 //!
 //! Neither mistake fails to compile. These tests are the guard.
 
@@ -20,11 +21,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 
-const SPLASH_LABEL: &str = "splashscreen";
 const MAIN_LABEL: &str = "main";
-
-/// The one command the splash is allowed to call.
-const SPLASH_PERMISSION: &str = "allow-notify-splash-finished";
 
 /// Commands that must never be reachable from the splash window. Not an
 /// exhaustive list of the app's commands — a list of the ones whose exposure
@@ -147,47 +144,16 @@ fn every_capability_is_explicitly_scoped_to_named_windows() {
                 .unwrap_or_else(|| panic!("{name}: non-string window"));
             assert!(
                 !label.contains('*'),
-                "{name}: wildcard window pattern {label:?} would match the splash"
+                "{name}: wildcard window pattern {label:?} would match any window added later"
             );
         }
     }
 }
 
 #[test]
-fn the_splash_window_holds_exactly_one_permission() {
-    // It reports that its animation ended. That is the entire handshake.
-    let granted = permissions_for(SPLASH_LABEL);
-    assert_eq!(
-        granted,
-        HashSet::from([SPLASH_PERMISSION.to_string()]),
-        "the splash window's capability surface changed"
-    );
-}
-
-#[test]
-fn the_splash_window_cannot_reach_anything_privileged() {
-    let granted = permissions_for(SPLASH_LABEL);
-    for permission in PRIVILEGED_PERMISSIONS {
-        assert!(
-            !granted.contains(*permission),
-            "the splash must not be able to call {permission}"
-        );
-    }
-    // Nor any plugin: no dialog, no shell/sidecar, no opener, and not even
-    // core defaults (which would bring event listening and window control).
-    for prefix in ["core:", "shell:", "dialog:", "opener:", "fs:", "http:"] {
-        assert!(
-            !granted.iter().any(|p| p.starts_with(prefix)),
-            "the splash must hold no {prefix} permission, got {granted:?}"
-        );
-    }
-}
-
-#[test]
-fn the_main_window_still_holds_the_application_capability() {
-    // The mirror image: proving the splash has almost nothing is only
-    // meaningful if the main window still has what the app needs —
-    // otherwise an empty capabilities/ directory would pass.
+fn the_only_window_holds_exactly_the_application_capability() {
+    // Without this, an empty capabilities/ directory would satisfy every
+    // other test in this file.
     let granted = permissions_for(MAIN_LABEL);
     for permission in PRIVILEGED_PERMISSIONS {
         assert!(
@@ -197,14 +163,6 @@ fn the_main_window_still_holds_the_application_capability() {
     }
     assert!(granted.contains("core:default"));
     assert!(granted.contains("shell:allow-execute"));
-}
-
-#[test]
-fn the_main_window_does_not_hold_the_splash_only_permission() {
-    // Not a security property, a design one: the splash signal comes from
-    // the splash. Granting it to main too would let the readiness handshake
-    // be short-circuited from the wrong side.
-    assert!(!permissions_for(MAIN_LABEL).contains(SPLASH_PERMISSION));
 }
 
 #[test]
@@ -243,4 +201,20 @@ fn sidecar_execution_stays_limited_to_the_two_known_binaries() {
         }
     }
     assert!(checked, "shell:allow-execute permission not found");
+}
+
+#[test]
+fn only_the_single_application_window_is_granted_anything() {
+    // The startup intro is a layer inside this window now. If a second
+    // window is ever introduced, it must be given its permissions
+    // deliberately rather than inheriting them from a broad capability.
+    for (name, capability) in capability_files() {
+        let windows = capability["windows"].as_array().expect("windows array");
+        let labels: Vec<&str> = windows.iter().filter_map(|w| w.as_str()).collect();
+        assert_eq!(
+            labels,
+            vec![MAIN_LABEL],
+            "{name} grants permissions to a window other than `{MAIN_LABEL}`"
+        );
+    }
 }

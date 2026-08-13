@@ -1,11 +1,11 @@
 //! Pins the Content-Security-Policy established in M8.
 //!
-//! M9 adds a second HTML document (the splash window). The obvious way to
-//! make a new page "just work" is to loosen the policy — allow an inline
-//! `<style>`, allow a remote font, drop the policy entirely — and none of
-//! those would fail a build. The splash was instead written to fit the
-//! existing policy: external stylesheet, external module script, no remote
-//! asset, no inline anything. These tests keep it that way.
+//! The obvious way to make new UI "just work" is to loosen the policy —
+//! allow an inline `<style>`, allow a remote font, drop the policy entirely —
+//! and none of those would fail a build. Everything shipped since, including
+//! the boot splash now rendered inside the application, was written to fit
+//! the existing policy instead: bundled stylesheets, no remote asset, no
+//! inline anything. These tests keep it that way.
 
 use std::fs;
 
@@ -76,41 +76,40 @@ fn csp_keeps_embedding_and_navigation_locked_down() {
 }
 
 #[test]
-fn the_splash_document_carries_no_inline_script_or_style() {
+fn the_single_document_carries_no_inline_script_or_style() {
     // The policy above only helps if the page actually complies; a violation
-    // would show up at runtime as a blank splash, which is exactly the kind
-    // of thing that is easy to miss on a fast machine.
-    let html = fs::read_to_string("../splash.html").expect("read splash.html");
+    // would show up at runtime as a blank or unstyled window, which is easy
+    // to miss on a fast machine.
+    let html = fs::read_to_string("../index.html").expect("read index.html");
     assert!(
         !html.contains("<style"),
-        "splash.html must not contain an inline <style> block"
+        "index.html must not contain an inline <style> block"
     );
     assert!(
         !html.contains("style=\""),
-        "splash.html must not contain a style attribute"
+        "index.html must not contain a style attribute"
     );
-    // The only <script> tag allowed is the external module entry point.
     let script_tags = html.matches("<script").count();
     assert_eq!(
         script_tags, 1,
-        "splash.html must have exactly one script tag"
+        "index.html must have exactly one script tag"
     );
     assert!(
-        html.contains(r#"<script type="module" src="/src/splash/main.ts">"#),
-        "splash.html's script must be an external module, not inline"
+        html.contains(r#"<script type="module" src="/src/main.tsx">"#),
+        "index.html's script must be an external module, not inline"
     );
 }
 
 #[test]
-fn the_splash_document_references_no_remote_asset() {
-    let html = fs::read_to_string("../splash.html").expect("read splash.html");
-    let css = fs::read_to_string("../src/splash/splash.css").expect("read splash.css");
-    for source in [&html, &css] {
-        for scheme in ["http://", "https://", "//fonts.", "url(http"] {
-            assert!(
-                !source.contains(scheme),
-                "splash assets must be fully local; found {scheme:?}"
-            );
-        }
+fn the_boot_splash_references_no_remote_asset() {
+    // The intro is the newest UI and the most likely place for a stray font
+    // or image URL to appear.
+    let css =
+        fs::read_to_string("../src/features/boot/bootSplash.css").expect("read bootSplash.css");
+    for scheme in ["http://", "https://", "//fonts.", "url(http"] {
+        assert!(
+            !css.contains(scheme),
+            "boot splash assets must be fully local; found {scheme:?}"
+        );
     }
 }
