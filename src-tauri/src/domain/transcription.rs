@@ -474,6 +474,32 @@ pub fn build_whisper_args(
     ];
     if language.translates() {
         args.push("-tr".to_string());
+        // No text context carried between decoding windows.
+        //
+        // whisper.cpp defaults to `-mc -1` (unbounded), feeding each window
+        // the text it just produced. On this model that is what lets a
+        // decoding loop take hold: once a phrase repeats, its own repetition
+        // becomes the context that makes it repeat again.
+        //
+        // Measured on the qualified media, translation pass only:
+        //
+        //   default (-mc -1) : 11 consecutive repeats of one sentence,
+        //                      12 duplicate cues, 14 zero-duration cues,
+        //                      and ~15s of real speech LOST and replaced by
+        //                      the repeated phrase. 96.5s wall.
+        //   -mc 0            : longest repeat run 1, 0 duplicate cues,
+        //                      0 zero-duration cues, the lost passage
+        //                      correctly translated. 38.0s wall.
+        //
+        // The trade-off is weaker long-range coherence across window
+        // boundaries. On the qualified sample the output stayed coherent
+        // throughout, and losing a passage of speech entirely is a far worse
+        // failure than a slightly less connected pronoun.
+        //
+        // Applied to the translation pass ONLY. The French transcription
+        // pass is qualified, shows no repetition, and is left untouched.
+        args.push("-mc".to_string());
+        args.push("0".to_string());
     }
     if formats.srt {
         args.push("-osrt".to_string());
@@ -664,6 +690,65 @@ mod tests {
                 "-of",
                 "/tmp/en",
                 "-tr",
+                "-mc",
+                "0",
+                "-osrt",
+                "-otxt",
+            ]
+        );
+    }
+
+    #[test]
+    fn the_translation_pass_carries_no_text_context_between_windows() {
+        // The measured mitigation for the model's repetition loops: with
+        // whisper.cpp's default unbounded context, a repeated phrase becomes
+        // the context that makes it repeat again, and real speech is lost.
+        let args = build_whisper_args(
+            Path::new("/m/large.bin"),
+            Path::new("/tmp/audio.wav"),
+            Path::new("/tmp/en"),
+            OutputLanguage::English,
+            OutputFormats {
+                srt: true,
+                txt: false,
+            },
+        );
+        let mc = args
+            .iter()
+            .position(|a| a == "-mc")
+            .expect("-mc must be set");
+        assert_eq!(args[mc + 1], "0");
+    }
+
+    #[test]
+    fn the_french_pass_is_left_exactly_as_qualified() {
+        // The repetition mitigation is deliberately scoped to translation.
+        // The French pass shows no repetition and its arguments are the ones
+        // qualified since M2 — changing them would risk a regression on the
+        // main use case to fix a problem it does not have.
+        let args = build_whisper_args(
+            Path::new("/m/turbo.bin"),
+            Path::new("/tmp/audio.wav"),
+            Path::new("/tmp/fr"),
+            OutputLanguage::French,
+            OutputFormats {
+                srt: true,
+                txt: true,
+            },
+        );
+        assert!(!args.contains(&"-mc".to_string()));
+        assert!(!args.contains(&"-tr".to_string()));
+        assert_eq!(
+            args,
+            vec![
+                "-m",
+                "/m/turbo.bin",
+                "-f",
+                "/tmp/audio.wav",
+                "-l",
+                "fr",
+                "-of",
+                "/tmp/fr",
                 "-osrt",
                 "-otxt",
             ]

@@ -1,0 +1,144 @@
+1
+00:00:00,000 --> 00:00:04,260
+ Hello everyone, today I would like to talk to you about a very concrete subject,
+
+2
+00:00:04,260 --> 00:00:08,000
+ how artificial intelligence begins to integrate into our daily lives,
+
+3
+00:00:08,000 --> 00:00:12,720
+ both in our professional and personal lives. When we talk about artificial intelligence,
+
+4
+00:00:12,720 --> 00:00:16,200
+ we immediately think of CGPT, Cloud, Gemini or Mistral.
+
+5
+00:00:16,200 --> 00:00:22,240
+ However, behind these tools, there are technologies and very different uses.
+
+6
+00:00:22,240 --> 00:00:27,040
+ For example, a large language model, which is often called LLM, can understand a written
+
+7
+00:00:27,040 --> 00:00:31,360
+ written instructions, analyze a document or help us produce content, but
+
+8
+00:00:31,360 --> 00:00:36,280
+ you have to keep in mind one essential thing: the model does not understand the world
+
+9
+00:00:36,280 --> 00:00:39,820
+ as a human being, it works from a context, a prompt, the information
+
+10
+00:00:39,820 --> 00:00:42,340
+ that is provided to it. In my development projects, I use
+
+11
+00:00:42,340 --> 00:00:46,540
+ Chachipiti, CloudCode and Cursor. CloudCode can work directly
+
+12
+00:00:46,540 --> 00:00:50,540
+ on a project, read the files, modify the code and execute certain commands.
+
+13
+00:00:50,540 --> 00:00:53,680
+ Cursor, on the other hand, is a development environment that allows
+
+14
+00:00:53,680 --> 00:00:58,180
+ use artificial intelligence directly in the editor. But this raises an important question:
+
+15
+00:00:58,180 --> 00:01:03,520
+ how far should we leave artificial intelligence to act on its own? Personally, I prefer
+
+16
+00:01:03,520 --> 00:01:07,180
+ to keep human control over important decisions. Artificial intelligence can propose,
+
+17
+00:01:07,180 --> 00:01:12,040
+ analyze and execute certain actions, but the final decision must remain understandable and
+
+18
+00:01:12,040 --> 00:01:16,780
+ verifiable. Let's take an example: let's imagine that I develop an application in macOS called
+
+19
+00:01:16,780 --> 00:01:22,060
+ STIA. Its objective is very simple: I upload a video, the application extracts the audio track,
+
+20
+00:01:22,060 --> 00:01:28,320
+ then Whisper automatically generates a subtitle file in SRT format as well as a
+
+21
+00:01:28,320 --> 00:01:33,520
+ transcription in text format. Everything must be treated locally on my Macbook Pro equipped with
+
+22
+00:01:33,520 --> 00:01:38,800
+ Nynpus, Apple, Silicon or M4. The video must never be sent to OpenAI,
+
+23
+00:01:38,800 --> 00:01:43,300
+ Anthropic or another distant application. To realize this application, we can use Tori,
+
+24
+00:01:43,300 --> 00:01:50,320
+ React, TypeScript or REST. FFmpeg is in charge of preparing the audio, then Whisper.cpp
+
+25
+00:01:50,320 --> 00:01:55,120
+ makes the transcription directly on the machine. Then the SRT file can be imported
+
+26
+00:01:55,120 --> 00:02:01,240
+ in Davinci Resolve to add subtitles to the video. This type of architecture also poses
+
+27
+00:02:01,240 --> 00:02:05,860
+ performance issues. What happens with a 10-minute, 30-minute or even 1-hour video?
+
+28
+00:02:05,860 --> 00:02:09,940
+ How much living memory do you need to use? How much time do you need to load the model?
+
+29
+00:02:09,940 --> 00:02:14,080
+ Is the result still reliable when you pronounce technical terms,
+
+30
+00:02:14,080 --> 00:02:18,560
+ proper names or English names instead of a French phrase? Let's try some examples:
+
+31
+00:02:18,560 --> 00:02:29,120
+ OpenAI, ChatGPT, Anthropic, CloudCode, Cursor, GitHub, Whisper, FFmpeg, DaVinci Resolve, Apple Silicon, API, LLM, Prompt, TypeScript, and Rust.
+
+32
+00:02:29,120 --> 00:02:36,000
+ And now some numbers. The video was recorded on August 7, 2026. It lasts about 3 minutes.
+
+33
+00:02:36,000 --> 00:02:45,440
+ The machine has 16 Gb of living memory. A model can weigh 747 Mb, while another exceeds 1.4 Gb.
+
+34
+00:02:45,440 --> 00:02:54,240
+ Finally, a last question: Can a local AI really become a simple, fast and reliable tool without sending our data to the cloud?
+
+35
+00:02:54,240 --> 00:02:58,440
+ This is precisely what we are going to try to discover with STILA.
+
+36
+00:02:58,440 --> 00:03:00,440
+ Thank you for watching this video and see you soon!
+
