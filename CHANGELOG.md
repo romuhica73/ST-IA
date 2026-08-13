@@ -1,10 +1,16 @@
 # Changelog
 
-Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et [Semantic Versioning](https://semver.org/lang/fr/). Projet pré-MVP, aucune release publiée.
+Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
-Cible de la release candidate : **0.1.0** (macOS Apple Silicon, MVP local). Aucun tag ni release publiée à ce stade.
+Rien pour l'instant.
+
+## [0.1.0] - 2026-08-13
+
+Première release source de **ST-IA Community** (macOS Apple Silicon, MVP local).
+
+Release **source uniquement** : aucune distribution binaire officielle n'est publiée. L'application se construit depuis les sources ([`docs/BUILDING.md`](docs/BUILDING.md)). Les builds locales ne sont ni signées ni notarisées — `APPLE_DEVELOPER_ID_NOT_AVAILABLE`.
 
 ### Added
 

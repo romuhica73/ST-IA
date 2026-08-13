@@ -96,6 +96,8 @@ knowing as a user or contributor:
 
 ## Versioning
 
-Community follows standard SemVer: `v0.1.0`, `v0.2.0`, and so on. At the time
-of writing, **no version has been tagged and no release has been published**.
-The current state of `main` is a release candidate for `0.1.0`.
+Community follows standard SemVer: `v0.1.0`, `v0.2.0`, and so on.
+
+**`v0.1.0` is the first tagged version** — a **source release**. It publishes
+the code, not a binary: there is no signed installer, no notarized `.app` and
+no `.dmg` attached to it. Building from source is how you run it.

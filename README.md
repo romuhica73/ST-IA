@@ -10,9 +10,9 @@ both. Nothing is uploaded: the speech recognition runs on your machine.
 your media  →  FFmpeg (local)  →  whisper.cpp (local, Metal)  →  SRT + TXT
 ```
 
-> **Status: pre-release.** No version has been tagged and no release has been
-> published. `main` is the release candidate for `0.1.0`. To use ST-IA today you
-> build it from source — see [Build from source](#build-from-source).
+> **Status: `v0.1.0` — source release.** No official binary distribution is
+> published: there is no signed installer and no `.dmg` to download. You build
+> ST-IA from source — see [Build from source](#build-from-source).
 
 *Documentation note: this README and [`docs/COMMUNITY_EDITION.md`](docs/COMMUNITY_EDITION.md)
 are in English. The rest of the project documentation is in French.*
