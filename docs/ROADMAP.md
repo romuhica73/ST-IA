@@ -241,8 +241,8 @@ Whisper réelle, résultats groupés par version. Catalogues FR/EN à parité.
 
 ### Splashscreen
 
-Deux vraies fenêtres, cycle de **6 s** piloté par la fin visuelle de
-l'animation et non par un minuteur parallèle : fondu d'entrée 1 s, composition
+Cycle de **6 s** piloté par la fin visuelle de l'animation et non par un
+minuteur parallèle : fondu d'entrée 1 s, composition
 stable 3 s, fondu de sortie 2 s, puis coupe franche vers la fenêtre principale
 (qui n'a aucun fondu propre). La bascule n'a lieu que lorsque *deux* signaux
 sont arrivés — l'animation est terminée, et le frontend sait quel écran
@@ -281,6 +281,43 @@ détient plus qu'**une seule**. Voir le
 20/20 lancements empaquetés (10 par mode de motion), 5/5 cas de démarrage
 robuste, **0 socket réseau** au repos comme pendant les deux passes, DMG monté
 et audité. 52 tests frontend et 134 tests Rust (33 et 79 avant cette mission).
+
+### Architecture UI finale
+
+Deux directions successives ont été abandonnées après mesure, et la
+documentation les conserve comme telles plutôt que comme des bugs :
+
+* **fenêtre redimensionnée par le contenu** → remplacée par un **shell fixe**
+  900 × 640, chaque écran étant composé pour cette surface
+  ([ADR-011](architecture/ADR-011-fixed-desktop-shell.md)) ;
+* **fenêtre splash séparée** → remplacée par un **splash intégré** à la
+  fenêtre principale. Même avec une géométrie strictement identique, vérifiée
+  sur 20 lancements, le passage d'une fenêtre native à l'autre restait
+  perceptible ([ADR-009](architecture/ADR-009-splashscreen-and-release-packaging.md),
+  section « Splash intégré »).
+
+L'application n'ouvre plus qu'**une seule fenêtre native** pour tout son cycle
+de vie : le chrome macOS est visible dès la première image, l'interface est
+montée derrière la couche d'intro pendant qu'elle s'affiche, et la fin de
+l'intro est le retrait d'une couche déjà transparente.
+
+Réglages refondus en navigation desktop (colonne de sections + panneau),
+grammaire de mouvement unique (survol, pression, sélection, erreur, entrée de
+lancement), Reduced Motion retirant le mouvement sans retirer l'information.
+
+### `V0.1_UI_FEATURE_FREEZE`
+
+L'interface de la v0.1.0 est **gelée**. Aucune nouvelle fonctionnalité ni
+refonte UI avant la release, hors bug bloquant.
+
+La suite est exclusivement :
+
+1. merge de M9 ;
+2. durcissement de release / revue delta complète ;
+3. signature Developer ID et notarisation Apple ;
+4. artefacts d'installation ;
+5. publication du dépôt ;
+6. release v0.1.0.
 
 ## M10 — Signature, notarisation et publication (non commencée)
 

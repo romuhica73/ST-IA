@@ -1,6 +1,28 @@
 # ADR-009 — Splashscreen applicatif et packaging de release macOS
 
-Statut : `PROVISIONAL` — passe à `ACCEPTED` après la qualification humaine M9.
+Statut : `PARTIELLEMENT SUPERSEDED` — le packaging reste en vigueur ; la
+décision d'une **fenêtre splash séparée** est remplacée par un splash intégré
+à la fenêtre principale (voir « Mise à jour » ci-dessous).
+
+> **Mise à jour — splash intégré (2026-08-13).** Le pattern « deux fenêtres
+> natives » décrit ci-dessous a été abandonné. Même avec une géométrie
+> strictement identique — mesurée, vérifiée sur 20 lancements — le passage
+> d'une fenêtre à l'autre restait perceptible : macOS recrée un cadre, et
+> l'œil le voit.
+>
+> Le splash est désormais une **couche à l'intérieur de la fenêtre
+> principale**, rendue par le frontend. Il n'existe plus qu'une seule fenêtre
+> native pendant tout le cycle de vie : le chrome macOS et ses pastilles sont
+> visibles dès la première image, l'interface est montée et disposée derrière
+> la couche pendant qu'elle s'affiche, et la fin de l'intro est le retrait
+> d'une couche déjà transparente — pas un échange de fenêtres.
+>
+> Ce qui reste valable dans cette ADR : le packaging de release (§Décision 6),
+> l'exigence de CSP, et le principe d'isolation du frontend. Ce qui ne l'est
+> plus : la seconde fenêtre, son cycle de vie, sa capability dédiée et le
+> handshake `notify_ui_ready` / `notify_splash_finished`, tous supprimés.
+>
+> Détail de la nouvelle architecture : section « Splash intégré » ci-dessous.
 
 Date : 2026-08-12
 
@@ -205,3 +227,81 @@ non signés, régénérables à la demande.
 * [Delta de sécurité M9](../security/M9_SECURITY_DELTA.md) ;
 * [Checklist de release](../release/RELEASE_CHECKLIST.md) ;
 * pattern officiel Tauri 2 : <https://v2.tauri.app/learn/splashscreen/>.
+
+---
+
+## Splash intégré (remplace les décisions 1 à 5)
+
+### Une seule fenêtre native
+
+Construite au démarrage dans `window::create`, jamais déclarée dans
+`tauri.conf.json`. La raison est précise : la couleur de fond native doit
+correspondre au thème résolu **avant** le premier affichage, et une fenêtre
+déclarée dans la configuration est créée après le retour de `setup` — trop
+tard pour éviter un flash de la mauvaise couleur.
+
+La fenêtre est créée masquée puis affichée quelques instructions plus loin,
+dans le même `setup`. Ce n'est pas un affichage en deux temps : c'est ce qui
+permet de lire le thème du système (`theme()` exige une fenêtre) et de poser
+la bonne couleur de fond avant la première image réellement visible.
+
+### Aucune frame blanche
+
+Trois couches doivent s'accorder, et le font :
+
+1. **la fenêtre native** — `background_color` posé depuis le thème résolu
+   (préférence explicite, sinon thème du système) ;
+2. **le document** — `html` porte un fond issu d'une requête
+   `prefers-color-scheme`, seule chose disponible avant l'exécution de tout
+   script, `data-theme` reprenant la main ensuite ;
+3. **la couche splash** — opaque, sur `var(--bg)`.
+
+### L'interface est montée derrière l'intro
+
+`App` rend son contenu normalement dès le premier instant ; la couche
+`BootSplash` le recouvre. Quand la couche disparaît, il n'y a rien à monter,
+rien à disposer et rien à révéler — d'où l'absence de décalage à la
+transition.
+
+La couche couvre la webview, qui sur macOS est exactement la zone de contenu :
+la barre de titre native est en dehors et reste visible tout du long. Aucun
+faux chrome n'est dessiné, ce qui rend l'approche neutre vis-à-vis de la
+plateforme — un futur portage Windows garderait le même concept avec le
+chrome natif de Windows.
+
+### Cycle de vie
+
+`useBootPhase` : `splash` → `ready`. Le verrou est au niveau du module et non
+dans l'état d'un composant, parce que l'intro appartient au processus : React
+StrictMode monte deux fois en développement, et tout remontage de `App`
+rejouerait sinon six secondes de splash.
+
+La fin de la couche déclenche l'entrée échelonnée de l'interface (~300 ms),
+une seule fois par lancement. La couche s'éteint sur `animationend` de sa
+propre animation de cycle, avec un minuteur de repli si le compositeur ne le
+délivre jamais.
+
+### Neutralité de plateforme
+
+L'approche ne dépend d'aucune particularité de macOS. La couche d'intro
+couvre la webview et ne dessine **aucun** chrome : pas de fausse barre de
+titre, pas de fausses pastilles, aucune hypothèse sur la position ou
+l'existence des contrôles de fenêtre. Le chrome reste celui du système, quel
+qu'il soit.
+
+Un futur portage Windows conserverait donc le même concept — chrome natif de
+la plateforme + splash interne à la même webview — sans retoucher la couche
+d'intro. **ST-IA v0.1.0 reste macOS Apple Silicon uniquement** : c'est une
+propriété de l'architecture, pas une annonce de support.
+
+### Surface supprimée
+
+`splash.rs`, `capabilities/splash.json`, `splash.html`, l'entrée Vite dédiée,
+`src/splash/*`, les commandes `notify_ui_ready` et `notify_splash_finished`
+(du manifeste ACL et de la capability), et `MotionPreference::as_str` qui
+n'existait que pour construire le fragment d'URL du splash.
+
+**L'ACL applicative est conservée intégralement.** La disparition de la
+seconde fenêtre ne change rien au modèle de menace M8 : la webview reste la
+frontière non fiable, et l'autorisation des commandes reste imposée côté
+Rust.

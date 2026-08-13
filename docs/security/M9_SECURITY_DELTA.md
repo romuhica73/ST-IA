@@ -69,19 +69,33 @@ inexacte, et non comme une nouveauté.
 
 ## Surfaces évaluées
 
-### 1. Nouvelle fenêtre `splashscreen`
+### 1. Fenêtre splash — **supprimée**
 
-| Aspect | Constat |
+La seconde fenêtre native a été retirée : l'écran de démarrage est désormais
+une couche rendue par le frontend à l'intérieur de la fenêtre unique de
+l'application.
+
+Conséquence sur la surface : elle **diminue**.
+
+| Élément | État |
 | --- | --- |
-| Capabilities | **Une seule** : `allow-notify-splash-finished`. |
-| IPC | Cette commande et rien d'autre — refus par l'ACL applicatif pour tout le reste. |
-| Événements | Impossible — `core:event:allow-listen` n'est pas accordé. |
-| Sidecars | Aucun accès (`shell:allow-execute` reste limité à `main`). |
-| Filesystem | Aucun accès. |
-| Opener / Finder | Aucun accès. |
-| Réseau | Aucun — aucune ressource distante, et la CSP interdit toute origine externe. |
-| Données utilisateur | Aucune. Ni chemin, ni nom de fichier, ni transcription n'atteint cette fenêtre. |
-| Contenu affiché | HTML/CSS/JS locaux embarqués dans le binaire. |
+| Fenêtre `splashscreen` | supprimée |
+| `capabilities/splash.json` | supprimée |
+| Commandes `notify_ui_ready` / `notify_splash_finished` | supprimées du manifeste ACL et de la capability |
+| Document `splash.html` et son entrée de build | supprimés |
+| `MotionPreference::as_str` | supprimée — n'existait que pour le fragment d'URL du splash |
+
+Aucune permission n'a été transférée vers la fenêtre restante : la couche
+d'intro est du HTML/CSS local, sans IPC d'aucune sorte, et le retrait de
+l'intro est une décision purement frontend.
+
+**L'ACL applicative est intégralement conservée.** La disparition de la
+seconde fenêtre ne change rien au modèle de menace M8 — la webview reste la
+frontière non fiable, et l'autorisation des commandes reste imposée côté
+Rust par le manifeste déclaré dans `build.rs`. Les tests correspondants sont
+conservés et étendus : une nouvelle assertion vérifie qu'**une seule** fenêtre
+est déclarée dans les capabilities, pour qu'une fenêtre ajoutée plus tard ne
+puisse pas hériter de permissions par inadvertance.
 
 Verrouillé par huit tests d'intégration
 (`src-tauri/tests/capability_surface.rs`) : le manifeste ACL doit exister,
@@ -108,8 +122,12 @@ les autres.
   d'écourter une animation de 6 s sur sa propre fenêtre.
 * **Fuite d'information** : aucune — aucune valeur de retour.
 
-Surface de commandes totale : **14** (11 en M8 + les deux signaux de bascule + `get_model_cards`), désormais toutes
-soumises à l'ACL applicatif et attribuées par fenêtre.
+Surface de commandes totale : **12** (11 en M8 + `get_model_cards`).
+
+Les deux signaux de bascule ont existé le temps de l'architecture à deux
+fenêtres et ont été retirés avec elle. Le solde net de M9 sur la surface IPC
+est donc **+1 commande**, sans paramètre, sans valeur de retour, en lecture
+seule sur des constantes compilées.
 
 ### 2 ter. Commande `get_model_cards`
 
@@ -148,20 +166,18 @@ SHA-256, provenance, moteur) pour le panneau de transparence.
   fonction pure, testée contre les collisions ; aucune combinaison ne produit
   deux fichiers de même nom.
 
-### 3. Préférences transmises dans le fragment de l'URL
+### 3. Couleur de fond native au démarrage
 
-`splash.html#theme=…&motion=…` est construit en Rust à partir de valeurs
-d'énumérations, jamais d'entrée utilisateur libre. Les six valeurs possibles
-sont des mots ASCII minuscules, ce qu'un test vérifie explicitement — une
-valeur nécessitant un percent-encoding casserait silencieusement la lecture
-côté TypeScript.
+La fenêtre unique est construite au démarrage plutôt que déclarée dans la
+configuration, afin que sa couleur de fond native corresponde au thème résolu
+**avant** le premier affichage — sinon un utilisateur en thème sombre voit un
+flash blanc entre l'apparition du cadre natif et la première peinture de la
+page.
 
-Aucune donnée personnelle ne transite : le thème et la réduction d'animations
-sont des préférences d'affichage.
-
-Le splash traite toute valeur inconnue comme « système » plutôt que comme une
-erreur, y compris sur une URL modifiée à la main. Une fenêtre de démarrage
-n'a pas d'état d'échec à proposer.
+Aucune surface de sécurité : la couleur est choisie parmi deux constantes
+compilées, à partir de la préférence de thème enregistrée et, pour
+« système », du thème rapporté par macOS. Aucune entrée utilisateur, aucun
+chemin, aucune donnée personnelle n'intervient.
 
 ### 4. CSP
 
@@ -175,9 +191,14 @@ aucune police téléchargée.
 elle-même — présence, `default-src 'self'`, absence de `unsafe-inline` et
 `unsafe-eval`, `connect-src` strictement égal à `'self' ipc:
 http://ipc.localhost`, directives d'embarquement à `'none'` — et vérifie que
-`splash.html` s'y conforme réellement. C'est un durcissement net par rapport
-à M8, où la CSP était appliquée mais non testée : une régression ne se serait
-manifestée qu'à l'exécution.
+le document réellement chargé s'y conforme, ainsi que la feuille de style de
+la couche d'intro (aucune ressource distante). C'est un durcissement net par
+rapport à M8, où la CSP était appliquée mais non testée : une régression ne se
+serait manifestée qu'à l'exécution.
+
+La couche d'intro n'a nécessité **aucune** modification de la politique : elle
+est servie par le bundle principal, sans style ni script inline, sans CDN et
+sans ressource distante.
 
 ### 5. Nouvelle dépendance : `tokio`
 
