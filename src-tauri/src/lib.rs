@@ -64,6 +64,7 @@ pub fn run() {
             settings::get_app_version,
             splash::notify_ui_ready,
             splash::notify_splash_finished,
+            commands::window::fit_window,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

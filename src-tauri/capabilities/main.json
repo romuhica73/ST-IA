@@ -26,6 +26,7 @@
     "allow-get-settings",
     "allow-save-settings",
     "allow-get-app-version",
-    "allow-notify-ui-ready"
+    "allow-notify-ui-ready",
+    "allow-fit-window"
   ]
 }
