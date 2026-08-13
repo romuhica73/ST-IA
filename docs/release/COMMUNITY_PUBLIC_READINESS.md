@@ -152,26 +152,61 @@ Le changement de SHA est la conséquence acceptée et attendue.
 
 ### Limite à connaître — ce qui subsiste côté GitHub
 
-Il serait faux d'affirmer que l'ancienne adresse a disparu de GitHub. Trois
-résidus sont identifiés :
+Il serait faux d'affirmer que l'ancienne adresse a disparu de GitHub. Ce qui
+suit a été **vérifié après le force-push**, pas supposé.
 
-1. **Les six branches Dependabot** n'ont pas été réécrites. Leurs commits
-   propres appartiennent au bot, mais leurs **ancêtres** sont les anciens
-   commits et portent donc encore l'ancienne adresse. Elles restent en place :
-   la décision humaine était de ne supprimer aucune branche dans cette passe.
-2. **Les références de pull request** (`refs/pull/14/head`, `refs/pull/15/head`)
-   pointent vers les anciens commits. GitHub conserve ces références même après
-   un force-push.
-3. **Les anciens objets restent accessibles par SHA direct** sur GitHub tant que
-   son ramasse-miettes ne les a pas collectés — un délai que GitHub ne
-   garantit pas.
+**1. Les références de pull request conservent l'ancien historique.** Les
+quinze `refs/pull/N/head` du dépôt pointent toujours vers les commits
+d'origine :
 
-**Conséquence pratique :** la remédiation est complète sur les branches
-destinées à la publication (`main` et les branches `feat/m*`), et **incomplète
-tant que les branches Dependabot et les anciennes PR existent**. Elles doivent
-être fermées et supprimées au gate de nettoyage prévu, **avant** le passage en
-public. Le dépôt étant encore privé, aucune de ces références n'est aujourd'hui
-visible publiquement.
+```
+git ls-remote origin 'refs/pull/*/head'
+→ refs/pull/14/head  9e55c65…   (ancien main)
+→ refs/pull/1..13    anciens commits de jalons
+```
+
+**2. Les anciens objets restent récupérables par SHA.** Vérifié
+explicitement :
+
+```
+git fetch origin 9e55c65858ea637c3e828d0fea685f3d634b1f82
+→ réussit
+```
+
+GitHub conserve ces objets tant que son ramasse-miettes ne les a pas
+collectés, sur un calendrier qu'il ne garantit pas. Un force-push ne les
+supprime pas.
+
+**Conséquence : la remédiation est complète sur les branches, et incomplète
+sur le dépôt.** Tant que ces références existent, l'ancienne adresse reste
+techniquement accessible à qui sait la chercher. Le dépôt étant **encore
+privé**, elle n'est aujourd'hui visible de personne.
+
+### Ce qu'il faut trancher avant le passage en public
+
+Trois options, à arbitrer en M11 :
+
+| Option | Effet | Coût |
+|---|---|---|
+| **Demander à GitHub Support** de purger les références de PR et de forcer un GC | Supprime le résidu dans le dépôt existant | Dépend du support, délai non garanti |
+| **Publier depuis un dépôt neuf**, en y poussant uniquement l'historique réécrit | Résidu nul par construction — aucune PR, aucun objet ancien | Perd l'historique des PR et des issues |
+| **Accepter le résidu** | Aucun travail | L'adresse reste récupérable par SHA une fois le dépôt public |
+
+Recommandation : **le dépôt neuf** si le résidu n'est pas acceptable, car c'est
+la seule option dont le résultat ne dépend pas d'un tiers. L'historique des PR
+a peu de valeur sur un projet à un seul mainteneur, et il n'existe aucune issue.
+
+### Branches Dependabot — résolues d'elles-mêmes
+
+Les six branches Dependabot et leurs PR (#8 à #13) ont été **fermées et
+supprimées par Dependabot lui-même** lorsque la base a été réécrite : elles
+étaient devenues non fusionnables. Cette mission n'a supprimé aucune branche.
+C'est exactement l'issue prévue par la décision humaine — Dependabot recréera
+les mises à jour encore pertinentes.
+
+La PR #15 a été fermée automatiquement par GitHub pour la même raison : elle
+référençait l'ancien HEAD de la branche M10 et ne pouvait plus être rouverte.
+Elle est remplacée par la **PR #16**.
 
 ---|---|---|
 | `Romain Bourbon <…@…>` (adresse professionnelle, redacted) | **85** | domaine d'entreprise |

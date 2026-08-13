@@ -55,14 +55,17 @@ de M11.
 - [ ] **Branches `feat/m*`** — à supprimer **après** le tag `v0.1.0` et
       **avant** le passage en public (décision humaine M10). Elles ont été
       réécrites et ne portent plus l'ancienne adresse.
-- [ ] ⚠️ **PR et branches Dependabot** — à fermer et supprimer avant le passage
-      en public. Elles n'ont pas été réécrites : leur ascendance porte encore
-      l'ancienne adresse, et elles entrent en conflit avec la réécriture comme
-      avec le déplacement du scan de secrets. Dependabot recréera les mises à
-      jour encore pertinentes.
-- [ ] ⚠️ **Anciennes références de pull request** (`refs/pull/14`, `refs/pull/15`)
-      — elles pointent vers les anciens commits et GitHub les conserve après un
-      force-push. Vérifier leur état avant le passage en public.
+- [x] **PR et branches Dependabot** — fermées et supprimées **par Dependabot
+      lui-même** lors de la réécriture de la base, les branches étant devenues
+      non fusionnables. Aucune suppression manuelle. Dependabot recréera les
+      mises à jour encore pertinentes.
+- [ ] 🔴 **BLOQUANT — références de pull request.** Les quinze
+      `refs/pull/N/head` pointent toujours vers les commits d'avant réécriture,
+      et un `git fetch origin <ancien-SHA>` **réussit encore**. L'ancienne
+      adresse reste donc récupérable dans le dépôt. Trancher entre : demander
+      une purge à GitHub Support, publier depuis un dépôt neuf, ou accepter le
+      résidu. Voir [`COMMUNITY_PUBLIC_READINESS.md`](COMMUNITY_PUBLIC_READINESS.md).
+      **Ne pas rendre le dépôt public avant cet arbitrage.**
 - [ ] Rejouer `gitleaks git --log-opts="--all"` sur le `main` final → 0 finding.
 
 ## 2. Activer avant, pas après
