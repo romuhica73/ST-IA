@@ -405,13 +405,13 @@ Détail et recommandations :
 
 | Identité | Commits | Nature |
 |---|---|---|
-| `Romain Bourbon <…@[domaine d entreprise redacted]>` | **85** | adresse **professionnelle**, domaine d'entreprise |
+| `Romain Bourbon <…@…>` (adresse professionnelle, redacted) | **85** | domaine d'entreprise |
 | `dependabot[bot]` | 6 | bot, adresse noreply |
 
 Deux identités, aucune faute de frappe, aucune adresse périmée — les
 métadonnées sont propres. Le point n'est pas leur qualité mais leur **nature** :
 l'adresse deviendra définitivement publique, rattachera ce projet personnel au
-domaine `[domaine d entreprise redacted]`, et sera récoltable.
+un domaine d'entreprise, et sera récoltable.
 
 L'auteur est déjà public par ailleurs (`LICENSE`, identifiant de bundle).
 L'exposition supplémentaire porte sur **l'adresse et le domaine**.

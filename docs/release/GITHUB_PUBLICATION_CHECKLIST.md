@@ -40,23 +40,29 @@ de M11.
 
 ### Décisions humaines encore ouvertes
 
-- [ ] ⚠️ **Métadonnées d'auteur** — 85 commits sur 91 sont attribués à
-      `[adresse professionnelle redacted]`, une **adresse professionnelle sur un
-      domaine d'entreprise**, pas un alias `@users.noreply.github.com`. Elle
-      deviendra définitivement publique dans chaque commit, clone et miroir.
-      **Décision requise avant publication** — voir
-      [`COMMUNITY_PUBLIC_READINESS.md`](COMMUNITY_PUBLIC_READINESS.md).
-      Toute correction impose une réécriture d'historique, hors périmètre M10.
-- [ ] **Transcriptions de la voix de l'auteur** (`spike/out/fr-*`,
-      `spike/out/m9-*`) — contenu professionnel, ne nomme personne, mais c'est
-      la parole de l'auteur publiée verbatim. Confirmer.
+- [x] ✅ **Métadonnées d'auteur — remédiée.** L'historique a été réécrit sur
+      décision humaine : toutes les branches destinées à la publication portent
+      désormais `studio@romain-bourbon.com`. Arbres, noms, dates, messages et
+      topologie sont inchangés. **Reste à faire avant le passage en public** :
+      fermer et supprimer les branches et PR Dependabot, dont l'ascendance
+      porte encore l'ancienne adresse.
+- [x] **Transcriptions de la voix de l'auteur** (`spike/out/fr-*`,
+      `spike/out/m9-*`) — conservées. Script de démonstration écrit pour le
+      test, ne nomme personne.
 - [ ] **`LEGAL_REVIEW_RECOMMENDED`** (LGPL FFmpeg, STIA-SEC-202) — traité ou
       accepté explicitement. Ne bloque pas la publication du **source** ; à
       trancher avant toute distribution binaire officielle.
-- [ ] **Branches `feat/m*`** — décider de leur suppression (recommandation :
-      après le tag `v0.1.0`).
-- [ ] **PR Dependabot** — les 6 sont à fusionner ou fermer. Noter le conflit
-      annoncé sur `security.yml`.
+- [ ] **Branches `feat/m*`** — à supprimer **après** le tag `v0.1.0` et
+      **avant** le passage en public (décision humaine M10). Elles ont été
+      réécrites et ne portent plus l'ancienne adresse.
+- [ ] ⚠️ **PR et branches Dependabot** — à fermer et supprimer avant le passage
+      en public. Elles n'ont pas été réécrites : leur ascendance porte encore
+      l'ancienne adresse, et elles entrent en conflit avec la réécriture comme
+      avec le déplacement du scan de secrets. Dependabot recréera les mises à
+      jour encore pertinentes.
+- [ ] ⚠️ **Anciennes références de pull request** (`refs/pull/14`, `refs/pull/15`)
+      — elles pointent vers les anciens commits et GitHub les conserve après un
+      force-push. Vérifier leur état avant le passage en public.
 - [ ] Rejouer `gitleaks git --log-opts="--all"` sur le `main` final → 0 finding.
 
 ## 2. Activer avant, pas après
