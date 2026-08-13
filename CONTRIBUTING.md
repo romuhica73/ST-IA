@@ -41,7 +41,9 @@ pnpm install
 pnpm tauri dev
 ```
 
-Au premier lancement, l'application demande le téléchargement du modèle (574 Mo).
+Au premier lancement, l'application demande le téléchargement du modèle de
+transcription (574 Mo). Le modèle de traduction anglaise (3,1 Go) n'est
+téléchargé que si vous demandez la sortie anglaise.
 
 ## Avant d'ouvrir une PR
 
@@ -95,8 +97,10 @@ Suivez [`SECURITY.md`](SECURITY.md).
 Si votre contribution touche une frontière de sécurité, dites-le explicitement dans la
 PR. Sont concernés :
 
-* toute nouvelle `#[tauri::command]`, ou tout nouvel argument à une commande existante ;
-* les capabilities dans `src-tauri/capabilities/default.json` ;
+* toute nouvelle `#[tauri::command]`, ou tout nouvel argument à une commande
+  existante — **et son entrée dans le manifeste ACL de `build.rs`**, sans lequel
+  la commande ne serait bornée par rien ;
+* les capabilities dans `src-tauri/capabilities/main.json` ;
 * la CSP dans `src-tauri/tauri.conf.json` ;
 * tout ce qui construit un chemin, supprime un fichier ou lance un processus ;
 * la vérification d'intégrité du modèle.

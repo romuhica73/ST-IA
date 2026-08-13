@@ -22,7 +22,7 @@ tout fichier dont la taille et l'empreinte ne correspondent pas exactement.
 | Identifiant | `large-v3-turbo-q5_0` | `large-v3` |
 | Fichier | `ggml-large-v3-turbo-q5_0.bin` | `ggml-large-v3.bin` |
 | Rôle | transcription française | traduction français → anglais |
-| Taille | 574 041 195 o (~547 Mo) | 3 095 033 483 o (~2,9 Gio) |
+| Taille | 574 041 195 o — 574 Mo (547 Mio) | 3 095 033 483 o — 3,1 Go (2,9 Gio) |
 | Quantisé | oui (`q5_0`) | non |
 | Requis | pour tout traitement | seulement si la version anglaise est demandée |
 | Inclus dans l'application | **non** | **non** |

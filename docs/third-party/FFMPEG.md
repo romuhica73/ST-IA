@@ -24,7 +24,12 @@ Build statique, minimal, arm64 (`aarch64-apple-darwin`), sans GPL ni composants 
 --arch=arm64 --target-os=darwin
 --enable-static --disable-shared
 --disable-gpl --disable-nonfree --disable-version3
+--disable-libwebp
 ```
+
+Ce bloc est la transcription littérale de `scripts/build-ffmpeg-sidecar.sh`, et
+se relit dans le binaire livré : `ffmpeg -version` réimprime sa propre
+configuration. En cas de doute, c'est le binaire qui fait foi, pas ce document.
 
 Le binaire produit ne sait faire que : démuxer MP4/MOV/M4A (conteneur `mov`), MP3, WAV, FLAC ; décoder AAC, MP3, PCM (plusieurs variantes), FLAC, ALAC ; encoder en PCM 16 bits ; écrire un conteneur WAV. Aucun décodeur/encodeur vidéo, aucun protocole réseau, aucun composant GPL/non-free activé.
 

@@ -1,152 +1,205 @@
 # ST-IA
 
-## Objectif
+**Turn an audio or video file into subtitles, entirely on your own Mac.**
 
-Application macOS locale transformant un média audio/vidéo en :
-
-* SRT ;
-* TXT.
-
-Deux versions au choix, dans le même traitement :
-
-* **Français** — la transcription originale ;
-* **English** — une traduction anglaise, produite **localement**, sans aucun service en ligne.
-
-La langue parlée doit être le français (seule langue qualifiée à ce stade). Voir [ADR-010](docs/architecture/ADR-010-local-english-translation.md).
-
-Le modèle de transcription (~547 Mo) est téléchargé une seule fois, sur action explicite de l'utilisateur, puis stocké localement (`Application Support`). La traduction anglaise utilise un **second** modèle (~3,1 Go), téléchargé uniquement si vous demandez cette version — jamais autrement. Après installation, tout fonctionne entièrement hors ligne : vos médias ne quittent jamais votre Mac.
-
-## Principes
-
-* local-first ;
-* privacy-first ;
-* Apple Silicon first ;
-* pas de cloud pour la transcription ;
-* pas de dépendance Python utilisateur.
-
-## Interface
-
-* Interface disponible en français et en anglais (Système / Français / English) ;
-* thème Système / Clair / Sombre, suit macOS en direct si « Système » est sélectionné ;
-* réduction des animations Système / Activé / Désactivé (accessibilité) ;
-* préférences enregistrées localement (`Application Support`), jamais envoyées nulle part ;
-* langue de l'interface et langue de transcription sont deux réglages indépendants — la transcription reste qualifiée en français quelle que soit la langue de l'interface.
-
-## Architecture cible
+ST-IA is a local-first macOS desktop application. You give it a media file, it
+gives you `.srt` and `.txt` — a French transcription, an English translation, or
+both. Nothing is uploaded: the speech recognition runs on your machine.
 
 ```text
-Tauri / React
-        ↓
-Rust
-        ↓
-FFmpeg sidecar
-        ↓
-WAV temporaire
-        ↓
-whisper.cpp sidecar
-   ├─ passe 1 — transcription française
-   └─ passe 2 — traduction anglaise (si demandée)
-        ↓
-SRT + TXT
+your media  →  FFmpeg (local)  →  whisper.cpp (local, Metal)  →  SRT + TXT
 ```
 
-Les passes sont **séquentielles** : jamais deux moteurs en parallèle, et FFmpeg n'extrait l'audio qu'une seule fois.
+> **Status: pre-release.** No version has been tagged and no release has been
+> published. `main` is the release candidate for `0.1.0`. To use ST-IA today you
+> build it from source — see [Build from source](#build-from-source).
 
-## Configuration requise
+*Documentation note: this README and [`docs/COMMUNITY_EDITION.md`](docs/COMMUNITY_EDITION.md)
+are in English. The rest of the project documentation is in French.*
 
-* macOS sur Apple Silicon (arm64) — M1 ou plus récent ;
-* environ 600 Mo d'espace disque pour le modèle de transcription, plus 3,1 Go pour le modèle de traduction si vous utilisez la sortie anglaise, plus l'espace de travail temporaire d'un traitement.
+---
 
-Intel n'est pas pris en charge. Il n'existe pas de build Windows.
+## Why ST-IA
 
-## Statut
+* **Local-first.** Transcription and translation happen on your Mac. Your media
+  never leaves it.
+* **No cloud media processing.** There is no inference endpoint in the code to
+  call, because the engine is an embedded executable.
+* **No account, no telemetry.** Nothing to sign up for, nothing reported back.
+* **French transcription** with a Whisper `large-v3-turbo` model.
+* **English translation** produced locally by a second, dedicated model — not by
+  an online service.
+* **Honest about the network.** ST-IA makes exactly one kind of network request:
+  downloading a model when you explicitly ask it to. See [Privacy](#privacy).
 
-Release candidate locale `0.1.0` : pipeline local complet, gestionnaire de modèle, annulation et récupération, endurance qualifiée jusqu'à 60 minutes, identité visuelle et motion (Mission 6), réglages/i18n FR-EN/À propos (Mission 7), revue de sécurité et licence MIT (Mission 8), écran de démarrage et packaging de release (Mission 9).
+## Platform status
 
-L'installation se fera à terme via une image disque `ST-IA-<version>-macos-arm64.dmg` publiée sur GitHub. **Aucune release n'est encore disponible** : les builds actuelles ne sont ni signées ni notariées, et macOS affichera un avertissement Gatekeeper à la première ouverture. En attendant, [construisez depuis les sources](docs/BUILDING.md). Voir la [checklist de release](docs/release/RELEASE_CHECKLIST.md).
+| Platform | Status |
+|---|---|
+| **macOS, Apple Silicon (arm64)** | **Qualified** — the only tested and supported target |
+| macOS, Intel | Not supported |
+| Windows | **Not yet supported** — [port plan](docs/platforms/WINDOWS_PORT_PLAN.md), no date announced |
+| Linux | Not supported, not planned |
 
-## Stack
+The committed sidecar binaries are arm64 Mach-O executables and the acceleration
+backend is Metal. Open source does not mean cross-platform.
 
-* Tauri 2 ;
-* React 19 + TypeScript ;
-* Vite ;
-* Rust ;
-* pnpm.
+## Quick start
 
-## Développement
+For a technical user on an Apple Silicon Mac. Full detail:
+[`docs/QUICKSTART.md`](docs/QUICKSTART.md).
 
-```bash
-pnpm install       # dépendances frontend
-pnpm tauri dev      # lance l'application desktop en mode développement
-pnpm build          # build frontend (tsc + vite)
-pnpm test            # tests frontend (Vitest — i18n, locale, réglages, splash)
-cargo check          # depuis src-tauri/
-cargo test           # depuis src-tauri/
-cargo fmt --check    # depuis src-tauri/
+```sh
+git clone https://github.com/romuhica73/ST-IA.git
+cd ST-IA
+pnpm install --frozen-lockfile
+pnpm tauri build
 ```
 
-Pour assembler les artefacts de release macOS (DMG, archive, `SHA256SUMS.txt`) après un
-`pnpm tauri build` :
+Then open `src-tauri/target/release/bundle/macos/ST-IA.app`.
 
-```bash
-scripts/package-release.sh          # collecte et audite une build existante
-scripts/package-release.sh --build  # construit d'abord
-```
+The build is **not signed or notarized**, so Gatekeeper will block it on first
+launch: right-click → **Open** → confirm. This is expected for a local build.
 
-### Sidecars et modèle (développement)
+On first run, ST-IA asks you to download the transcription model. Point it at a
+media file, choose which versions you want (French, English, or both), and the
+`.srt` and `.txt` files are written next to your media.
 
-Les sidecars FFmpeg/whisper.cpp sont commités dans `src-tauri/binaries/` ; pour les reconstruire :
+## Build from source
 
-```bash
-scripts/build-whisper-sidecar.sh   # nécessite le clone engine/whisper.cpp au SHA pinné (voir ADR-001)
-scripts/build-ffmpeg-sidecar.sh    # télécharge et compile FFmpeg depuis la source officielle
-```
+Prerequisites, reference tool versions, tests, sidecar rebuilds and
+troubleshooting: **[`docs/BUILDING.md`](docs/BUILDING.md)**.
 
-Le modèle Whisper n'est jamais commité. En usage normal, ST-IA le télécharge lui-même (écran « Modèle requis », voir ADR-004) — aucune manipulation manuelle n'est nécessaire. `scripts/provision-dev-model.sh` reste disponible comme **raccourci strictement développeur** (place un modèle déjà téléchargé à l'emplacement canonique, utile pour itérer sans retélécharger 547 Mo à chaque fois) :
+Requirements in short: macOS on Apple Silicon, Xcode Command Line Tools,
+Node.js 20 LTS, pnpm 10, Rust 1.96. No Homebrew package is needed at runtime —
+both sidecars are static and link only Apple system frameworks.
 
-```bash
-scripts/provision-dev-model.sh /chemin/vers/ggml-large-v3-turbo-q5_0.bin
-```
+## Models
+
+**No model ships with the application.** ST-IA downloads them on your explicit
+click, verifies them, and stores them under
+`~/Library/Application Support/com.romainbourbon.stia/models/`.
+
+| Model | Role | Size | Required |
+|---|---|---|---|
+| `ggml-large-v3-turbo-q5_0.bin` | French transcription | 574 MB | always |
+| `ggml-large-v3.bin` | French → English translation | 3.1 GB | only if you ask for English output |
+
+Both are fetched from a **pinned commit** of `huggingface.co/ggerganov/whisper.cpp`
+— never a branch pointer — and are rejected unless their exact size and SHA-256
+match the pinned manifest.
+
+Provenance, checksums, the engine that runs them, and the known limitations
+(technical vocabulary, translation repetition) are documented factually in
+**[`docs/AI_MODELS.md`](docs/AI_MODELS.md)**. That document is a disclosure, not
+a claim of regulatory conformity.
+
+## Privacy
+
+Stated precisely, because a vague privacy claim is worth nothing:
+
+* **Your media, transcripts and file paths never leave your machine.** They are
+  read locally, processed by local executables, and written back to disk next to
+  your media.
+* **There is no account, no telemetry, no analytics, no crash reporting and no
+  auto-update.**
+* **ST-IA does use the network — for one thing only:** downloading a Whisper
+  model, triggered by an explicit click. That request is a plain GET for a
+  pinned file. It carries no media, no transcript and no filename.
+* After the model is downloaded, the application runs fully offline. Turn off
+  Wi-Fi and check.
+* Preferences are stored locally in `Application Support` and are never sent
+  anywhere.
+
+The full threat model — assets, trust boundaries, what is actually guaranteed
+and which risks are knowingly accepted — is in
+[`docs/security/THREAT_MODEL.md`](docs/security/THREAT_MODEL.md).
+
+## Security
+
+Please report vulnerabilities through GitHub's private
+["Report a vulnerability"](https://github.com/romuhica73/ST-IA/security/advisories/new)
+form — **never in a public issue**. Scope, expectations and response times:
+[`SECURITY.md`](SECURITY.md).
+
+Reviews: [M8 security review](docs/security/M8_SECURITY_REVIEW.md),
+[M9 delta](docs/security/M9_SECURITY_DELTA.md),
+[M10 public release review](docs/security/M10_COMMUNITY_PUBLIC_SECURITY_REVIEW.md).
+
+## Contributing
+
+Contributions are welcome within a deliberately narrow scope. Read
+[`CONTRIBUTING.md`](CONTRIBUTING.md) first — especially the three
+non-negotiable rules (local-first, no telemetry, no cloud transcription), which
+decide whether a change can be merged at all.
+
+## License
+
+ST-IA's own code is [MIT](LICENSE).
+
+Third-party components shipped with the application keep their own licenses:
+
+* **FFmpeg** — LGPL-2.1, shipped as a separate executable
+  ([details](docs/third-party/FFMPEG.md));
+* **whisper.cpp** — MIT.
+
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). Whisper model weights are
+not redistributed here — they are downloaded from Hugging Face at your request.
+
+## This repository, and what may come later
+
+This is **ST-IA Community**: the complete application, MIT, for people able to
+build it themselves. It is not a trial or a cut-down edition — the full
+transcription and translation pipeline is here.
+
+Official ready-to-use distributions may be offered separately in the future.
+Nothing of the kind exists today — no release, no installer, no pricing. The
+boundary is documented in
+[`docs/COMMUNITY_EDITION.md`](docs/COMMUNITY_EDITION.md) and
+[ADR-012](docs/architecture/ADR-012-community-commercial-boundary.md).
+
+---
 
 ## Documentation
 
+**Getting started**
+
+* [Quick start](docs/QUICKSTART.md)
+* [Build from source](docs/BUILDING.md)
+* [AI models, provenance and limitations](docs/AI_MODELS.md)
+* [ST-IA Community — what this repository is](docs/COMMUNITY_EDITION.md)
+
+**Project**
+
 * [Roadmap](docs/ROADMAP.md)
-* [Index des ADR](docs/architecture/README.md)
-* [ADR-001 — Moteur de transcription](docs/architecture/ADR-001-transcription-engine.md)
-* [ADR-002 — Architecture desktop](docs/architecture/ADR-002-desktop-architecture.md)
-* [ADR-003 — Pipeline local et packaging des moteurs](docs/architecture/ADR-003-local-transcription-pipeline.md)
-* [ADR-004 — Gestion et intégrité du modèle local](docs/architecture/ADR-004-model-management.md)
-* [ADR-005 — Cycle de vie des jobs, annulation et nettoyage](docs/architecture/ADR-005-runtime-lifecycle-and-cancellation.md)
-* [ADR-006 — Identité de production, portabilité et migration](docs/architecture/ADR-006-release-identity-and-data-migration.md)
-* [ADR-007 — Préférences locales et localisation](docs/architecture/ADR-007-local-preferences-and-interface-localization.md)
-* [ADR-008 — Pipeline de sortie bilingue : constat sur le modèle turbo](docs/architecture/ADR-008-bilingual-output-pipeline.md)
-* [ADR-009 — Splashscreen et packaging de release](docs/architecture/ADR-009-splashscreen-and-release-packaging.md)
-* [ADR-010 — Traduction anglaise locale](docs/architecture/ADR-010-local-english-translation.md)
-* [Modèles IA et transparence](docs/AI_MODELS.md)
-* [Démarrage rapide](docs/QUICKSTART.md)
-* [Construire depuis les sources](docs/BUILDING.md)
-* [Contribuer](CONTRIBUTING.md)
-* [Politique de sécurité](SECURITY.md)
-* [Modèle de menace](docs/security/THREAT_MODEL.md)
-* [Revue de sécurité M8](docs/security/M8_SECURITY_REVIEW.md)
-* [Delta de sécurité M9](docs/security/M9_SECURITY_DELTA.md)
-* [Checklist de release](docs/release/RELEASE_CHECKLIST.md)
-* [Licence du projet (MIT)](LICENSE)
-* [Composants tiers et licences](THIRD_PARTY_NOTICES.md)
-* [FFmpeg — sidecar et licence](docs/third-party/FFMPEG.md)
 * [Changelog](CHANGELOG.md)
+* [Contributing](CONTRIBUTING.md)
+* [Security policy](SECURITY.md)
+* [Windows port plan](docs/platforms/WINDOWS_PORT_PLAN.md)
 
-## Licence
+**Architecture decisions** ([index](docs/architecture/README.md))
 
-ST-IA est distribué sous licence [MIT](LICENSE).
+| ADR | Decision |
+|---|---|
+| [001](docs/architecture/ADR-001-transcription-engine.md) | Local transcription engine |
+| [002](docs/architecture/ADR-002-desktop-architecture.md) | Desktop architecture |
+| [003](docs/architecture/ADR-003-local-transcription-pipeline.md) | Local pipeline and engine packaging |
+| [004](docs/architecture/ADR-004-model-management.md) | Model management and integrity |
+| [005](docs/architecture/ADR-005-runtime-lifecycle-and-cancellation.md) | Job lifecycle, cancellation, cleanup |
+| [006](docs/architecture/ADR-006-release-identity-and-data-migration.md) | Release identity and data migration |
+| [007](docs/architecture/ADR-007-local-preferences-and-interface-localization.md) | Local preferences and localization |
+| [008](docs/architecture/ADR-008-bilingual-output-pipeline.md) | Bilingual output — the turbo model finding |
+| [009](docs/architecture/ADR-009-splashscreen-and-release-packaging.md) | Integrated splash and release packaging |
+| [010](docs/architecture/ADR-010-local-english-translation.md) | Local English translation |
+| [011](docs/architecture/ADR-011-fixed-desktop-shell.md) | Fixed desktop shell and motion system |
+| [012](docs/architecture/ADR-012-community-commercial-boundary.md) | Community / Desktop / Plus boundary |
 
-Cette licence couvre **le code de ST-IA uniquement**. Les composants tiers distribués
-avec l'application conservent chacun leur propre licence — voir
-[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) :
+**Security and licensing**
 
-* **FFmpeg** — LGPL-2.1, distribué comme exécutable séparé
-  (voir [`docs/third-party/FFMPEG.md`](docs/third-party/FFMPEG.md)) ;
-* **whisper.cpp** — MIT.
-
-Le modèle Whisper n'est pas redistribué : il est téléchargé depuis Hugging Face à la
-demande explicite de l'utilisateur.
+* [Threat model](docs/security/THREAT_MODEL.md)
+* [M8 security review](docs/security/M8_SECURITY_REVIEW.md)
+* [M9 security delta](docs/security/M9_SECURITY_DELTA.md)
+* [M10 public release review](docs/security/M10_COMMUNITY_PUBLIC_SECURITY_REVIEW.md)
+* [Project license (MIT)](LICENSE)
+* [Third-party components and licenses](THIRD_PARTY_NOTICES.md)
+* [FFmpeg — sidecar and license](docs/third-party/FFMPEG.md)
