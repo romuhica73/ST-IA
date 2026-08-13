@@ -24,9 +24,10 @@
 //! splash. A watchdog covers the case where either signal never arrives.
 
 use crate::domain::settings::Settings;
+use crate::domain::shell;
 use std::sync::Mutex;
 use std::time::Duration;
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
 
 pub const SPLASH_LABEL: &str = "splashscreen";
 pub const MAIN_LABEL: &str = "main";
@@ -132,7 +133,7 @@ fn splash_url(settings: &Settings) -> String {
 /// dark theme or a forced reduced-motion setting on its very first frame
 /// without holding a settings capability. They are preferences, not user
 /// data — no path, no filename, no transcript ever reaches this window.
-pub fn create(app: &AppHandle, settings: &Settings) -> tauri::Result<()> {
+pub fn create(app: &AppHandle, settings: &Settings, size: shell::Size) -> tauri::Result<()> {
     let url = splash_url(settings);
 
     WebviewWindowBuilder::new(app, SPLASH_LABEL, WebviewUrl::App(url.into()))
@@ -158,7 +159,10 @@ pub fn create(app: &AppHandle, settings: &Settings) -> tauri::Result<()> {
             }
         })
         .title("ST-IA")
-        .inner_size(420.0, 280.0)
+        // Exactly the session shell geometry, so the cut to the main window
+        // is a pure swap: same size, same centred position, no perceptible
+        // change of shape between the two.
+        .inner_size(size.width, size.height)
         .resizable(false)
         .decorations(false)
         .center()
@@ -169,7 +173,9 @@ pub fn create(app: &AppHandle, settings: &Settings) -> tauri::Result<()> {
         .build()?;
 
     eprintln!(
-        "[st-ia] splash: window created (theme={}, motion={}, timeline={}ms)",
+        "[st-ia] splash: window created ({}x{}, theme={}, motion={}, timeline={}ms)",
+        size.width,
+        size.height,
         settings.theme.as_str(),
         settings.motion.as_str(),
         total_duration().as_millis()
@@ -191,6 +197,14 @@ fn reveal_main(app: &AppHandle) {
     }
     match app.get_webview_window(MAIN_LABEL) {
         Some(main) => {
+            // Applied while the window is still hidden, so the geometry is
+            // already final at the moment it appears — no resize is ever
+            // visible after the cut. In the ordinary case this matches what
+            // the config already created; it only does real work when a
+            // small monitor forced a reduced shell.
+            let size = *app.state::<shell::Size>();
+            let _ = main.set_size(LogicalSize::new(size.width, size.height));
+            let _ = main.center();
             let _ = main.show();
             let _ = main.set_focus();
         }

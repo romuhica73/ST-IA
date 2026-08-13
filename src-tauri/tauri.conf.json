@@ -14,11 +14,9 @@
       {
         "label": "main",
         "title": "ST-IA",
-        "width": 720,
-        "height": 520,
-        "minWidth": 480,
-        "minHeight": 400,
-        "resizable": true,
+        "width": 900,
+        "height": 640,
+        "resizable": false,
         "center": true,
         "dragDropEnabled": true,
         "visible": false

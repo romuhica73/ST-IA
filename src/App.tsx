@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MediaDropZone } from "./features/media-selection/MediaDropZone";
 import { SelectedMedia } from "./features/media-selection/SelectedMedia";
@@ -17,7 +17,7 @@ import { useModelManager } from "./features/model-manager/useModelManager";
 import { useSettings } from "./features/settings/useSettings";
 import { useApplySettings } from "./features/settings/useApplySettings";
 import { useSplashHandoff } from "./features/startup/useSplashHandoff";
-import { useFitWindow } from "./features/startup/useFitWindow";
+import { useLaunchEntrance } from "./features/startup/useLaunchEntrance";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { ThemeQuickAction } from "./features/settings/ThemeQuickAction";
 import { GearIcon } from "./features/settings/icons";
@@ -28,8 +28,9 @@ function App() {
   const { settings, setTheme, setMotion, setLanguage } = useSettings();
   useApplySettings(settings);
   const [showSettings, setShowSettings] = useState(false);
-  const contentRef = useRef<HTMLElement | null>(null);
-  useFitWindow(contentRef);
+  // Plays once, on the first screen after the splash cut — never again on
+  // navigation. See useLaunchEntrance for why the flag is process-wide.
+  const isLaunch = useLaunchEntrance();
 
   const { state: mediaState, selectViaDialog, reset: resetMedia } = useMediaSelection();
   // Verifying the 3.1 GB translation model costs seconds of I/O, so it is
@@ -113,11 +114,7 @@ function App() {
   // real answer arrives. Settings aren't reachable yet either; this state
   // is expected to last a handful of milliseconds.
   if (modelStatus === null) {
-    return (
-      <div className="app-viewport">
-        <main className="app" ref={contentRef} />
-      </div>
-    );
+    return <main className="app" />;
   }
 
   const modelReady = modelStatus.status === "ready";
@@ -210,20 +207,20 @@ function App() {
   }
 
   return (
-    <div className="app-viewport">
-      <main className="app" ref={contentRef}>
-        <div className="app-header">
-          <ThemeQuickAction theme={settings.theme} onChange={setTheme} />
-          <button
-            type="button"
-            className="app-header__button"
-            onClick={() => setShowSettings(true)}
-            aria-label={t("settings.open")}
-            title={t("settings.open")}
-          >
-            <GearIcon />
-          </button>
-        </div>
+    <main className={`app ${isLaunch ? "app--entrance" : ""}`}>
+      <div className="app-header">
+        <ThemeQuickAction theme={settings.theme} onChange={setTheme} />
+        <button
+          type="button"
+          className="app-header__button"
+          onClick={() => setShowSettings(true)}
+          aria-label={t("settings.open")}
+          title={t("settings.open")}
+        >
+          <GearIcon />
+        </button>
+      </div>
+      <div className="app-body">
         {showSettings ? (
           <SettingsPanel
             settings={settings}
@@ -236,8 +233,8 @@ function App() {
         ) : (
           renderScreen()
         )}
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
 
