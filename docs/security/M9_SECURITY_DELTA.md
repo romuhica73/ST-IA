@@ -2,7 +2,10 @@
 
 Statut : `FULL_DELTA_REVIEW_PENDING_M10`
 
-Date : 2026-08-12
+Date : 2026-08-12, mis à jour le 2026-08-13 (splash intégré).
+
+Qualification humaine de M9 : passée. Ce statut reste néanmoins inchangé —
+ce document est un delta ciblé, et la revue complète appartient à M10.
 
 Ce document couvre **uniquement les surfaces nouvelles ou modifiées par M9**.
 Il ne rejoue pas la [revue de sécurité M8](M8_SECURITY_REVIEW.md), qui reste

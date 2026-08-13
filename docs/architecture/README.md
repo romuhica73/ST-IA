@@ -10,6 +10,6 @@
 | [ADR-006](ADR-006-release-identity-and-data-migration.md) | Identité de production, portabilité du moteur et migration des données | ACCEPTED |
 | [ADR-007](ADR-007-local-preferences-and-interface-localization.md) | Préférences locales et localisation de l'interface | ACCEPTED |
 | [ADR-008](ADR-008-bilingual-output-pipeline.md) | Pipeline de sortie bilingue — constat sur le modèle turbo | SUPERSEDED par ADR-010 |
-| [ADR-009](ADR-009-splashscreen-and-release-packaging.md) | Splashscreen applicatif et packaging de release macOS | PROVISIONAL |
-| [ADR-010](ADR-010-local-english-translation.md) | Traduction anglaise locale par un second modèle | PROVISIONAL |
-| [ADR-011](ADR-011-fixed-desktop-shell.md) | Shell desktop fixe et layout interne responsive | PROVISIONAL |
+| [ADR-009](ADR-009-splashscreen-and-release-packaging.md) | Splashscreen intégré et packaging de release macOS | ACCEPTED |
+| [ADR-010](ADR-010-local-english-translation.md) | Traduction anglaise locale par un second modèle | ACCEPTED |
+| [ADR-011](ADR-011-fixed-desktop-shell.md) | Shell desktop fixe et layout interne responsive | ACCEPTED |

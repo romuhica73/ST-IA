@@ -201,7 +201,7 @@ voir [`docs/release/GITHUB_PUBLICATION_CHECKLIST.md`](release/GITHUB_PUBLICATION
 
 ## M9 — Bilingual Outputs, Splashscreen & Release Packaging
 
-Statut : `DONE`
+Statut : `DONE` — qualifiée humainement le 2026-08-13, prête à converger.
 
 ### Sortie bilingue française + anglaise
 
@@ -278,9 +278,30 @@ détient plus qu'**une seule**. Voir le
 
 ### Qualification
 
-20/20 lancements empaquetés (10 par mode de motion), 5/5 cas de démarrage
-robuste, **0 socket réseau** au repos comme pendant les deux passes, DMG monté
-et audité. 52 tests frontend et 134 tests Rust (33 et 79 avant cette mission).
+**Automatisée** — 20/20 lancements empaquetés du démarrage même-fenêtre
+(10 par mode de motion : une seule fenêtre native, géométrie identique
+pendant et après l'intro, aucun processus résiduel), 5/5 cas de démarrage
+robuste, **0 socket réseau** au repos comme pendant les deux passes Whisper,
+DMG monté et audité. 71 tests frontend et 155 tests Rust (33 et 79 avant
+cette mission), `fmt` et `clippy -D warnings` propres.
+
+**Humaine** — qualifiée en plusieurs passes successives par l'auteur :
+
+* transcription française, traduction anglaise, français + anglais
+  (4 fichiers groupés par version), annulation pendant la traduction puis
+  relance complète sans redémarrage ;
+* progression jugée fiable et lisible, y compris quand le pourcentage
+  n'avance pas ;
+* transparence des modèles IA jugée claire et suffisante ;
+* shell fixe, navigation Réglages, entrée de lancement, états de boutons,
+  erreurs de validation et Reduced Motion validés ;
+* démarrage même-fenêtre : chrome macOS présent dès l'intro, géométrie
+  strictement constante, décalage précédemment observé **disparu**, relances
+  sans flash blanc ni fenêtre résiduelle.
+
+Deux directions UI ont été abandonnées en cours de mission après mesure, et
+sont documentées comme décisions et non comme défauts (voir « Architecture UI
+finale »).
 
 ### Architecture UI finale
 

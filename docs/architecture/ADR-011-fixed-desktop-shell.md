@@ -1,6 +1,11 @@
 # ADR-011 — Shell desktop fixe et layout interne responsive
 
-Statut : `PROVISIONAL` — passe à `ACCEPTED` après la qualification humaine.
+Statut : `ACCEPTED` — qualifiée humainement le 2026-08-13.
+
+Gate humain : géométrie constante sur toute la navigation, navigation
+Réglages jugée naturelle et sans défilement en usage normal, succès FR+EN
+lisible, entrée de lancement et états de boutons validés, Reduced Motion
+confirmé clair sans mouvement décoratif.
 
 Date : 2026-08-13
 
@@ -53,16 +58,22 @@ moniteur et rend la taille de session. Elle est appelée **une fois**, dans
 Aucun `ResizeObserver`, aucune mesure de DOM, aucun `set_size` piloté par le
 contenu n'existe plus.
 
-## Décision 3 — Le splash partage exactement la géométrie du shell
+## Décision 3 — Une seule fenêtre, donc une seule géométrie
 
-Le splash est construit avec la taille de session et centré, comme la
-fenêtre principale. La bascule ne change donc que le contenu : même taille,
-même position, aucun redimensionnement perceptible.
+Il n'existe qu'une fenêtre native, construite une fois à la taille de session
+et centrée. L'écran de démarrage est une couche à l'intérieur de cette même
+fenêtre (voir [ADR-009](ADR-009-splashscreen-and-release-packaging.md),
+section « Splash intégré »), et non une seconde fenêtre à aligner sur la
+première.
 
-La fenêtre principale reçoit la même taille et est recentrée **pendant
-qu'elle est encore masquée**, juste avant `show()`. Dans le cas courant la
-configuration l'a déjà créée à cette taille et l'opération ne fait rien ;
-elle ne travaille réellement que sur un petit écran.
+Cette décision est ce qui rend la question de la géométrie sans objet : il n'y
+a plus deux cadres à faire correspondre, donc plus rien qui puisse diverger.
+
+*Version initiale de cette décision : le splash était une fenêtre distincte
+construite à la même taille, et la fenêtre principale était redimensionnée et
+recentrée pendant qu'elle était masquée. Cela produisait une géométrie
+identique au pixel — mesurée sur 20 lancements — mais le passage d'un cadre
+natif à l'autre restait perceptible. D'où la fenêtre unique.*
 
 ## Décision 4 — Fenêtre non redimensionnable
 
@@ -128,7 +139,7 @@ décrire. Aucune dépendance ajoutée : transitions et keyframes CSS.
 
 ## Décision 8 — L'entrée de lancement joue une fois
 
-Après la coupe du splash, les éléments entrent en cascade sur ~300 ms
+Au retrait de la couche d'intro, les éléments entrent en cascade sur ~300 ms
 (60 ms entre chacun). Ce n'est **pas** une transition de navigation : le
 verrou est un booléen au niveau du module, pas un état de composant, donc
 revenir à l'accueil, annuler un job ou fermer les réglages ne le rejouent
@@ -147,8 +158,8 @@ de ne pas tourner ; elles sont donc annulées explicitement.
 
 ## Conséquences
 
-* La fenêtre a une identité stable : même taille à chaque lancement, même
-  géométrie que le splash, aucun mouvement en navigation.
+* La fenêtre a une identité stable : même taille à chaque lancement, aucune
+  variation pendant l'intro, aucun mouvement en navigation.
 * Les réglages gagnent une vraie architecture desktop et perdent leur
   défilement permanent — le problème qui avait déclenché la mission
   précédente.

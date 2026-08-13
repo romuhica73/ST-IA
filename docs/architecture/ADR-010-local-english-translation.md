@@ -1,6 +1,12 @@
 # ADR-010 — Traduction anglaise locale par un second modèle
 
-Statut : `PROVISIONAL` — passe à `ACCEPTED` après la qualification humaine.
+Statut : `ACCEPTED` — qualifiée humainement le 2026-08-13.
+
+Gate humain : sortie anglaise seule, français + anglais (4 fichiers groupés
+par version), annulation pendant la traduction puis relance complète, et
+lecture des passages début / milieu / fin. Traduction jugée **utile**, la
+réserve « pas parfaite » de la section Réserves restant explicitement en
+vigueur.
 
 Date : 2026-08-12
 

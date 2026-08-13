@@ -1,8 +1,16 @@
 # ADR-009 — Splashscreen applicatif et packaging de release macOS
 
-Statut : `PARTIELLEMENT SUPERSEDED` — le packaging reste en vigueur ; la
-décision d'une **fenêtre splash séparée** est remplacée par un splash intégré
-à la fenêtre principale (voir « Mise à jour » ci-dessous).
+Statut : `ACCEPTED` — qualifiée humainement le 2026-08-13, dans sa forme
+finale : packaging inchangé, splash **intégré** à la fenêtre principale.
+
+La décision d'origine d'une **fenêtre splash séparée** est `SUPERSEDED` par
+la section « Splash intégré » en fin de document.
+
+Gate humain sur l'architecture finale : chrome macOS visible dès le splash,
+contour de fenêtre strictement identique du premier frame à l'application,
+décalage précédemment observé **disparu**, entrée des contrôles validée,
+Reduced Motion validé, et 3–5 relances sans flash blanc ni fenêtre
+résiduelle.
 
 > **Mise à jour — splash intégré (2026-08-13).** Le pattern « deux fenêtres
 > natives » décrit ci-dessous a été abandonné. Même avec une géométrie
