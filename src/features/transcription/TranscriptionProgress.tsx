@@ -3,6 +3,8 @@ import { AudioWaveIcon, LockIcon } from "../media-selection/icons";
 import { realProgress, stageState, stagesFor, type StageKey } from "./stages";
 import { audioPosition, formatDuration, isStalled, isWorking } from "./liveness";
 import { useElapsedSinceUpdate } from "./useElapsedSinceUpdate";
+import { useSmoothedProgress } from "./useSmoothedProgress";
+import { useReducedMotion } from "../settings/useReducedMotion";
 import type { JobStatus } from "./types";
 
 interface TranscriptionProgressProps {
@@ -35,6 +37,11 @@ export function TranscriptionProgress({
 }: TranscriptionProgressProps) {
   const { t } = useTranslation();
   const progress = realProgress(status);
+  const reducedMotion = useReducedMotion();
+  // Eases between two *measured* values so a burst of segments reads as one
+  // sweep instead of a series of jumps. It converges on the last real value
+  // and stops there — the bar never moves on its own.
+  const displayedProgress = useSmoothedProgress(progress, !reducedMotion);
   const cancelling = status.status === "cancelling";
   const stages = stagesFor(bilingual);
   const position = audioPosition(status);
@@ -51,7 +58,11 @@ export function TranscriptionProgress({
       ? t(status.variant === "englishTranslation" ? "progress.translation" : "progress.transcription")
       : t("progress.label");
 
+  // The announced figure stays the measured one; only the bar and the
+  // on-screen number are eased, and neither can exceed it.
   const percent = progress !== null ? Math.round(progress * 100) : null;
+  const displayedPercent =
+    displayedProgress !== null ? Math.floor(displayedProgress * 100) : null;
 
   // Screen readers get the phase and the position in one utterance, because
   // a bare "47%" is exactly the signal that proved insufficient visually.
@@ -81,7 +92,9 @@ export function TranscriptionProgress({
       <section className="progress-field">
         <div className="progress-field__header">
           <span className="field__label">{phaseLabel}</span>
-          {percent !== null && <span className="progress-field__percent">{percent} %</span>}
+          {displayedPercent !== null && (
+            <span className="progress-field__percent">{displayedPercent} %</span>
+          )}
         </div>
 
         {/* Real audio position — the honest answer to "is it still going?"
@@ -107,7 +120,11 @@ export function TranscriptionProgress({
         >
           <div
             className="progress-bar__fill"
-            style={progress !== null ? { width: `${progress * 100}%` } : undefined}
+            style={
+              displayedProgress !== null
+                ? { width: `${displayedProgress * 100}%` }
+                : undefined
+            }
           />
         </div>
 

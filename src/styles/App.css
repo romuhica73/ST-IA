@@ -1123,9 +1123,20 @@
 }
 
 :root[data-motion="reduce"] .progress-field__pulse {
+  /* Still a permanent, visible indicator — just not a moving one. The
+     sentence beside it carries the same meaning, so nothing is lost. */
   animation: none;
   opacity: 1;
   transform: none;
+}
+
+/* The bar's own width is eased in JavaScript (see useSmoothedProgress), not
+   by a CSS transition: the easing has to be cancellable when a new real
+   value lands mid-sweep, and it must be provably clamped to the measured
+   value. A `transition: width` would keep animating toward a stale target
+   after a burst. */
+.progress-bar__fill {
+  transition: none;
 }
 
 /* --- AI models transparency (M9 polish) --------------------------------
@@ -1205,4 +1216,20 @@
   font-size: 12px;
   line-height: 1.5;
   color: var(--muted);
+}
+
+.model-card__runtime {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.model-card__network {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.settings-section__note--limits {
+  margin-top: 12px;
 }
