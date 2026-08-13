@@ -52,7 +52,12 @@ Le sidecar `whisper-cli` est compilé avec `-mcpu=native` (auto-détecté par le
 
 ## Sécurité
 
-Le frontend appelle uniquement des commandes Rust métier (`start_transcription`, `get_transcription_status`, `open_output_folder`). Aucune capability `shell:allow-execute` n'est exposée au frontend ; l'exécution des sidecars passe par `tauri_plugin_shell::ShellExt` côté Rust (`app.shell().sidecar(...)`), pas par `@tauri-apps/plugin-shell` côté JavaScript. Les seules permissions shell déclarées dans les capabilities ciblent explicitement les deux sidecars nommés, jamais un binaire ou des arguments arbitraires. L'ouverture du dossier de sortie utilise `tauri-plugin-opener` (`opener:allow-open-path`, scope `$HOME/**` et `/Volumes/**`), pas l'API `shell.open` dépréciée.
+Le frontend appelle uniquement des commandes Rust métier (`start_transcription`, `get_transcription_status`, `open_output_folder`). L'exécution des sidecars passe par `tauri_plugin_shell::ShellExt` côté Rust (`app.shell().sidecar(...)`), pas par `@tauri-apps/plugin-shell` côté JavaScript — ce paquet n'est d'ailleurs pas une dépendance du frontend. Les permissions shell déclarées dans les capabilities ciblent explicitement les **deux sidecars nommés**, jamais un binaire arbitraire.
+
+> **Corrigé par M10 sur deux points où ce paragraphe ne décrivait plus le code.**
+>
+> 1. Il affirmait qu'« aucune capability `shell:allow-execute` n'est exposée au frontend ». C'est inexact : `capabilities/main.json` **accorde bien** `shell:allow-execute` à la fenêtre, borné aux deux sidecars nommés mais avec `"args": true`. La permission n'est pas nécessaire au fonctionnement — c'est Rust qui lance les sidecars, et un appel Rust ne traverse pas le système de capabilities — donc la retirer réduirait la surface sans rien casser. Voir le finding M10-F11.
+> 2. L'ouverture du dossier de sortie n'utilise plus `opener:allow-open-path` avec un scope `$HOME/**` et `/Volumes/**` : M8 (STIA-SEC-003) l'a remplacé par `opener:allow-reveal-item-in-dir` **seul**, sans scope de chemin. La surface réelle est donc plus étroite que ce que décrivait cette ligne.
 
 ## Modèle
 

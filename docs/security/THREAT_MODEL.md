@@ -38,7 +38,7 @@ que dans la mesure où il permet de les atteindre.
 └───────────────────────┬─────────────────────────────────┘
                         │  ❶ IPC Tauri (invoke) — FRONTIÈRE PRINCIPALE
 ┌───────────────────────▼─────────────────────────────────┐
-│ Backend Rust (11 commands)              ← DE CONFIANCE  │
+│ Backend Rust (12 commands)              ← DE CONFIANCE  │
 │   seul détenteur du fs, des process et du réseau        │
 └──┬──────────────┬───────────────┬───────────────┬───────┘
    │ ❷ argv       │ ❸ argv        │ ❹ fs          │ ❺ HTTPS

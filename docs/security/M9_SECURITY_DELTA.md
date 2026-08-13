@@ -1,11 +1,39 @@
 # M9 — Delta de sécurité
 
-Statut : `FULL_DELTA_REVIEW_PENDING_M10`
+Statut : `SUPERSEDED_BY_M10` — la revue complète a été effectuée par M10 :
+[`M10_COMMUNITY_PUBLIC_SECURITY_REVIEW.md`](M10_COMMUNITY_PUBLIC_SECURITY_REVIEW.md).
+Le gate `FULL_DELTA_REVIEW_PENDING_M10` est **fermé**.
 
-Date : 2026-08-12, mis à jour le 2026-08-13 (splash intégré).
+Date : 2026-08-12, mis à jour le 2026-08-13 (splash intégré), corrigé le
+2026-08-13 par M10.
 
-Qualification humaine de M9 : passée. Ce statut reste néanmoins inchangé —
-ce document est un delta ciblé, et la revue complète appartient à M10.
+> ## ⚠️ Corrections apportées par M10
+>
+> Ce document a été rédigé pendant M9 et **plusieurs de ses chiffres décrivent
+> un état intermédiaire**, antérieur au retrait de la fenêtre splash (`9c0f865`).
+> Sa section 1 annonce bien ce retrait, mais les sections rédigées avant n'ont
+> pas été réconciliées. Les erreurs sont conservées ci-dessous plutôt
+> qu'effacées — ce document est une trace historique — et corrigées ici :
+>
+> | Affirmation du document | Réalité mesurée à `9e55c65` |
+> |---|---|
+> | « manifeste ACL listant les **14** commandes » (§ ACL) | **12** commandes (`build.rs`) |
+> | « `capabilities/main.json` … et les **12 autres** commandes » | `main.json` accorde **12** permissions de commande au total |
+> | « `capabilities/splash.json` — **une seule** permission » | **Ce fichier n'existe plus.** `capabilities/` ne contient que `main.json` |
+> | « **Huit** tests d'intégration » (`capability_surface.rs`) | **6** tests dans ce fichier |
+> | « 12 commandes, **+1** (`notify_ui_ready`) » (tableau final) | `notify_ui_ready` a été supprimée ; le +1 réel est `get_model_cards` |
+> | « `tokio` … pour les timers du splash » | **Aucun appelant à `tokio` ne subsiste** — `splash.rs` n'existe plus (finding M10-F04) |
+> | « `"visible": false` sur la fenêtre `main` » | Aucune fenêtre n'est déclarée dans `tauri.conf.json` ; elle est construite à l'exécution dans `window.rs` |
+>
+> La réconciliation à trois voies a été refaite par M10 et est **exacte** :
+> `invoke_handler` = `build.rs` = `capabilities/main.json` = **12 commandes**,
+> nom par nom, sans orphelin dans aucun sens.
+>
+> Les autres affirmations vérifiées par M10 — nettoyage des `.download`,
+> épinglage des deux modèles, un seul processus enfant à la fois, absence de
+> modèle dans le `.app` et le `.dmg` — **tiennent**.
+
+Qualification humaine de M9 : passée.
 
 Ce document couvre **uniquement les surfaces nouvelles ou modifiées par M9**.
 Il ne rejoue pas la [revue de sécurité M8](M8_SECURITY_REVIEW.md), qui reste
@@ -303,9 +331,10 @@ explicite d'un modèle, et il n'envoie qu'une requête GET.
 
 ## Réserves
 
-* `FULL_DELTA_REVIEW_PENDING_M10` — ce document est un delta ciblé, pas une
-  revue complète. M10 (signature, notarisation, publication) devra reprendre
-  la revue globale avant toute distribution publique.
+* ~~`FULL_DELTA_REVIEW_PENDING_M10`~~ — **levée.** La revue complète a été
+  effectuée par M10 sur l'ensemble du delta M8 → M9, sur l'historique complet
+  et sur toutes les références distantes :
+  [`M10_COMMUNITY_PUBLIC_SECURITY_REVIEW.md`](M10_COMMUNITY_PUBLIC_SECURITY_REVIEW.md).
 * `PUBLIC_DISTRIBUTION_SIGNING_PENDING` — les artefacts produits ne sont ni
   signés ni notariés. Ils ne doivent pas être publiés en l'état.
 * Les réserves ouvertes en M8 restent ouvertes : revue juridique du mode de
