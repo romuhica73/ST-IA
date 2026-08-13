@@ -340,12 +340,92 @@ La suite est exclusivement :
 5. publication du dépôt ;
 6. release v0.1.0.
 
-## M10 — Signature, notarisation et publication (non commencée)
+## M10 — Community Public Release Readiness
 
-Signature Developer ID, notarisation Apple, revue delta complète
-(`FULL_DELTA_REVIEW_PENDING_M10`), publication GitHub. Dépend de la
-disponibilité d'une identité de signature et d'une décision explicite de
-rendre le repository public.
+Statut : `READY_FOR_HUMAN_QA` — en attente du gate humain.
+
+M10 répond à une seule question, de manière démontrable : *le dépôt peut-il
+devenir public sans exposer de secret, de donnée privée, d'artefact
+indésirable, de code commercial, de dépendance cachée ou de procédure de build
+non reproductible ?* **Aucune fonctionnalité produit n'a été ajoutée.**
+
+La mission n'a rendu aucun dépôt public, créé aucun tag, publié aucune release
+et supprimé aucune branche.
+
+### Stratégie de distribution
+
+La distribution s'articule désormais en trois produits et deux dépôts, décidés
+dans [ADR-012](architecture/ADR-012-community-commercial-boundary.md) :
+**Community** (ce dépôt, public, MIT, application complète),
+**Desktop** (futur dépôt privé, distribution officielle prête à installer) et
+**Plus** (future couche premium de Desktop).
+
+La règle structurelle est qu'aucune fonction propriétaire n'est jamais écrite
+dans le dépôt MIT — même désactivée, même derrière un drapeau. Un tel drapeau
+ne protégerait rien : le code serait publié sous MIT, donc utilisable et
+redistribuable drapeau retiré. L'extraction ne va que dans un sens, Community
+→ Desktop ([procédure](architecture/DESKTOP_UPSTREAM_STRATEGY.md), non
+exécutée).
+
+### Revue de sécurité complète du delta
+
+Le gate `FULL_DELTA_REVIEW_PENDING_M10` laissé ouvert par M9 est **fermé** :
+voir [`M10_COMMUNITY_PUBLIC_SECURITY_REVIEW.md`](security/M10_COMMUNITY_PUBLIC_SECURITY_REVIEW.md).
+
+L'audit couvre l'historique complet et **toutes les références distantes**, et
+non `main` seul — rendre un dépôt public expose aussi ses branches. `gitleaks`
+sur `--all --full-history` et trois balayages manuels indépendants ne trouvent
+**aucun secret** ; aucun modèle Whisper n'a jamais été committé (le plus gros
+blob de tout l'historique pèse 3,4 Mo).
+
+### Build depuis un clone propre
+
+Le gate majeur de la mission : cloner `origin`, suivre `BUILDING.md` à la
+lettre, et obtenir l'application — sans copier un seul fichier depuis l'arbre
+de développement.
+
+`pnpm install --frozen-lockfile` → 71 tests frontend → `fmt`, `clippy -D
+warnings` → 155 tests Rust → `pnpm tauri build` → `ST-IA.app` et
+`ST-IA_0.1.0_aarch64.dmg`. **Aucune dépendance cachée** : aucun paquet
+Homebrew, cache personnel, modèle préexistant ou outil non documenté. Le
+bundle n'embarque aucun modèle et ne référence ni Homebrew ni `/usr/local`.
+
+Reproductibilité qualifiée honnêtement de **`FUNCTIONALLY_REPRODUCIBLE`**, pas
+`BIT_REPRODUCIBLE` : horodatages, métadonnées de bundler et signature ad-hoc
+l'empêchent, et la chaîne d'outils ne le garantit pas.
+
+### Durcissement
+
+`.gitignore` requalifié — les médias privés n'étaient protégés que par
+répertoire, jamais par extension, sur un produit dont c'est précisément la
+matière ; le suffixe `.download` du gestionnaire de modèles échappait à la
+règle `*.bin`. Le scan de secrets, jusque-là filtré sur les fichiers de
+dépendances, ne tournait sur **aucune PR de code** : il a sa propre workflow.
+
+### Décisions humaines en attente
+
+* **métadonnées d'auteur** — 85 commits sur 91 portent une adresse
+  professionnelle qui deviendra définitivement publique
+  (`GIT_AUTHOR_METADATA_ACCEPTANCE_REQUIRED`) ;
+* transcriptions de la voix de l'auteur publiées ;
+* `LEGAL_REVIEW_RECOMMENDED` sur l'obligation de relink LGPL FFmpeg — ne
+  bloque pas le source, à trancher avant toute distribution binaire ;
+* sort des 10 branches `feat/m*` et des 6 PR Dependabot.
+
+### Statut de plateforme et de signature
+
+Windows reste **`NOT_YET_SUPPORTED`**, sans date annoncée ; le travail
+nécessaire est chiffré dans le
+[plan de portage](platforms/WINDOWS_PORT_PLAN.md).
+`APPLE_DEVELOPER_ID_NOT_AVAILABLE` et
+`WINDOWS_CODE_SIGNING_NOT_CONFIGURED` bloquent la **distribution binaire
+officielle**, pas la publication du source.
+
+## M11 — Publication et release 0.1.0 (non commencée)
+
+Application des réglages GitHub préparés par M10, passage du dépôt en public,
+puis signature Developer ID, notarisation et release `v0.1.0`. Dépend du gate
+humain M10 et de la disponibilité d'une identité de signature.
 
 ## Post-MVP
 
