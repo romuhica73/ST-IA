@@ -56,7 +56,7 @@ Le frontend appelle uniquement des commandes Rust métier (`start_transcription`
 
 > **Corrigé par M10 sur deux points où ce paragraphe ne décrivait plus le code.**
 >
-> 1. Il affirmait qu'« aucune capability `shell:allow-execute` n'est exposée au frontend ». C'est inexact : `capabilities/main.json` **accorde bien** `shell:allow-execute` à la fenêtre, borné aux deux sidecars nommés mais avec `"args": true`. La permission n'est pas nécessaire au fonctionnement — c'est Rust qui lance les sidecars, et un appel Rust ne traverse pas le système de capabilities — donc la retirer réduirait la surface sans rien casser. Voir le finding M10-F11.
+> 1. Il affirmait qu'« aucune capability `shell:allow-execute` n'est exposée au frontend ». C'était **faux au moment où la phrase a été écrite** : `capabilities/main.json` accordait bien cette permission à la fenêtre, bornée aux deux sidecars nommés mais avec `"args": true`. **M10 a retiré la permission** (finding M10-F11) plutôt que de corriger la phrase : elle n'était nécessaire à rien, puisque Rust lance les sidecars et qu'un appel Rust ne traverse pas le système de capabilities. La fenêtre ne détient désormais **aucune** permission `shell:`, ce qu'un test verrouille. **La phrase est devenue vraie.**
 > 2. L'ouverture du dossier de sortie n'utilise plus `opener:allow-open-path` avec un scope `$HOME/**` et `/Volumes/**` : M8 (STIA-SEC-003) l'a remplacé par `opener:allow-reveal-item-in-dir` **seul**, sans scope de chemin. La surface réelle est donc plus étroite que ce que décrivait cette ligne.
 
 ## Modèle

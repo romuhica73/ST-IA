@@ -52,14 +52,14 @@ Une distinction tenue tout au long de ce rapport :
 | M10-F01 | Garde de `install_model` en check-then-act, non atomique | Low | ouvert | non |
 | M10-F02 | Aucune garde d'espace disque avant un téléchargement de 3,1 Go | Low | ouvert | non |
 | M10-F03 | `core:default` accorde ~70 permissions là où 2 sont utilisées | Hardening | ouvert (hérité M8) | non |
-| M10-F04 | `tokio` déclaré en dépendance directe sans aucun appelant | Hardening | ouvert | non |
+| M10-F04 | `tokio` déclaré en dépendance directe sans aucun appelant | Hardening | **corrigé** | non |
 | M10-F05 | `package-release.sh` : quoting fragile et audit de chemins trompeur | Hardening | ouvert | non |
 | M10-F06 | Chemins de build développeur dans `whisper-cli` (M8 ne documentait que `ffmpeg`) | Informational | documenté | non |
 | M10-F07 | `M9_SECURITY_DELTA.md` décrivait un état intermédiaire | Informational | **corrigé** | non |
 | M10-F08 | Le scan de secrets ne tournait sur aucune PR de code | Low | **corrigé** | non |
 | M10-F09 | Fichiers de permissions ACL périmés dans l'arbre développeur | Informational | ouvert (sans impact) | non |
 | M10-F10 | `ADR-003` décrivait une capability opener qui n'existe plus | Informational | **corrigé** | non |
-| M10-F11 | `shell:allow-execute` accordé à la WebView sans nécessité | Hardening | ouvert | non |
+| M10-F11 | `shell:allow-execute` accordé à la WebView sans nécessité | Hardening | **corrigé** | non |
 
 ---
 
@@ -164,7 +164,7 @@ aucun canal d'exfiltration contournant la CSP.
 
 ### M10-F04 — `tokio` déclaré sans aucun appelant
 
-**Hardening** · `src-tauri/Cargo.toml` · ouvert · **recommandé avant publication**
+**Hardening** · `src-tauri/Cargo.toml` · **corrigé par M10**
 
 `tokio` est déclaré en dépendance directe avec ce commentaire :
 
@@ -184,8 +184,8 @@ prétexte qu'« on l'appelle directement », ce qui n'est plus vrai.
 *Remédiation.* Retirer la ligne, ou corriger le commentaire. Envisager
 `#![deny(unused_crate_dependencies)]` pour que cette dérive échoue en CI.
 
-> Non appliqué par M10 : la mission s'interdit de modifier le code. À traiter
-> au gate humain.
+> **Appliqué.** La ligne a été retirée ; `Cargo.lock` change d'exactement une
+> ligne, sans aucune mise à jour opportuniste de dépendance.
 
 ### M10-F05 — `package-release.sh` : audit de chemins trompeur
 
@@ -294,7 +294,7 @@ la réalité.
 
 ### M10-F11 — `shell:allow-execute` accordé à la WebView sans nécessité
 
-**Hardening** · `src-tauri/capabilities/main.json:9-15` · ouvert
+**Hardening** · `src-tauri/capabilities/main.json` · **corrigé par M10**
 
 `capabilities/main.json` accorde `shell:allow-execute` à la fenêtre, borné aux
 deux sidecars nommés mais avec `"args": true`.
@@ -322,8 +322,14 @@ qu'une transcription complète fonctionne toujours. Ajouter une assertion dans
 capability `shell:allow-execute` n'est exposée au frontend » — corriger la
 configuration rendrait cette phrase vraie.
 
-> Non appliqué par M10 : modification de configuration de sécurité, à qualifier
-> par une transcription réelle. À traiter au gate humain.
+> **Appliqué et qualifié sur le `.app` empaqueté**, pas par raisonnement seul :
+> transcription française et traduction anglaise du même média en un seul job
+> (4 fichiers, sortie FR en français et EN en anglais), annulation en cours de
+> passe tuant le sidecar sans publier de sortie partielle et sans laisser de
+> répertoire de travail temporaire, relance sans redémarrage de l'application,
+> et les deux modèles rapportés « Installé » par le panneau Modèles IA. L'argv
+> du sidecar a été observé directement pendant l'exécution. Le test de
+> capability affirme désormais qu'**aucune** permission `shell:` n'existe.
 
 ---
 
@@ -549,17 +555,25 @@ Reproductibilité : **`FUNCTIONALLY_REPRODUCIBLE`**, pas `BIT_REPRODUCIBLE`.
 Rien dans le delta M9 n'expose de secret, de donnée privée ou de chemin de code
 commercial.
 
-Recommandé avant le commit de publication, dans cet ordre :
+Cinq findings ont été traités avant le commit de publication :
 
-1. **M10-F07** — *fait*. Les documents de sécurité décrivent désormais `9e55c65`.
+1. **M10-F07** — *fait*. Les documents de sécurité décrivent désormais le code.
 2. **M10-F08** — *fait*. Scan de secrets sur toute PR.
 3. **M10-F10** — *fait*. ADR-003 corrigé.
-4. **M10-F04** — retirer `tokio` ou corriger sa justification. *Gate humain.*
-5. **M10-F11** — retirer `shell:allow-execute` de la capability. *Gate humain,
-   à requalifier par une transcription réelle.*
+4. **M10-F04** — *fait*. `tokio` retiré ; `Cargo.lock` change d'une ligne.
+5. **M10-F11** — *fait*. `shell:allow-execute` retiré de la capability et
+   requalifié sur le `.app` empaqueté (FR, EN, annulation, relance,
+   gestionnaire de modèles).
 
 M10-F01, F02, F03, F05 et F09 sont sans danger à planifier après la
 publication.
+
+**Remédiation de l'historique.** Sur décision humaine du gate M10,
+l'historique complet a été réécrit avant publication pour remplacer l'adresse
+de commit professionnelle par l'adresse publique du projet. Le détail, les
+preuves de vérification et les limites de cette remédiation côté GitHub sont
+dans
+[`COMMUNITY_PUBLIC_READINESS.md`](../release/COMMUNITY_PUBLIC_READINESS.md).
 
 **Distribution binaire : toujours BLOQUÉE** par les réserves portées, inchangées
 et correctement auto-déclarées par M9 : `PUBLIC_DISTRIBUTION_SIGNING_PENDING`,

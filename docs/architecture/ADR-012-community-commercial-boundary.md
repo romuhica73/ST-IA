@@ -1,6 +1,6 @@
 # ADR-012 — Frontière Community / Desktop / Plus
 
-Statut : `PROPOSED` — passe à `ACCEPTED` après le gate humain M10.
+Statut : `ACCEPTED` — validée au gate humain M10, le 2026-08-13.
 
 Date : 2026-08-13
 
