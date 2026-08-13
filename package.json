@@ -2,7 +2,17 @@
   "name": "st-ia",
   "private": true,
   "version": "0.1.0",
+  "description": "ST-IA — local-first macOS subtitle generator",
+  "author": "Romain Bourbon",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/romuhica73/ST-IA.git"
+  },
+  "homepage": "https://github.com/romuhica73/ST-IA#readme",
+  "bugs": {
+    "url": "https://github.com/romuhica73/ST-IA/issues"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

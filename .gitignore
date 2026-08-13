@@ -13,14 +13,34 @@
 # derived from them. Transcripts (SRT/TXT) and run logs are still tracked.
 /spike/samples/fr_sample_16k_mono.wav
 
+# Private media, by extension rather than by location. ST-IA is a media
+# transcription app: the directory rules below (/mockups/, test-media/) cover
+# the two known locations, but a personal recording dropped anywhere else in
+# the tree would have had no safety net at all. The public-domain JFK fixtures
+# used by the spike harness are the only media the repository ships.
+*.mov
+*.MOV
+*.mp4
+*.MP4
+*.m4a
+*.m4v
+*.mp3
+*.wav
+*.aac
+*.flac
+!/spike/samples/jfk_16k_mono.wav
+!/spike/samples/jfk_from_mp4_16k_mono.wav
+!/spike/samples/jfk_synthetic.mp4
+
 # UI mockups: reference-only working files (includes a personal video),
 # not part of the shipped repository.
 /mockups/
 
-# Node / frontend
+# Node / frontend. `dist` is anchored: unanchored, it would also swallow any
+# future source directory named `dist` anywhere in src/.
 node_modules
-dist
-dist-ssr
+/dist
+/dist-ssr
 *.local
 pnpm-debug.log*
 npm-debug.log*
@@ -40,9 +60,13 @@ yarn-error.log*
 # this intermediate tree is not.
 /build-tmp/
 
-# Editor
+# Editor and local agent tooling. These are per-contributor settings: on a
+# public repository nobody else has the maintainer's global gitignore, so the
+# rule has to live here.
 .vscode/*
 !.vscode/extensions.json
+.claude/settings.local.json
+settings.local.json
 .idea
 *.suo
 *.ntvs*
@@ -86,9 +110,13 @@ notarization-*.json
 /release-artifacts/
 
 # Downloaded Whisper models. The real location is Application Support, but a
-# 574 MB .bin must never be committable from anywhere in the tree.
+# 574 MB .bin must never be committable from anywhere in the tree. The
+# `.download` suffix is the partial-download name the model manager itself
+# writes (domain/model.rs) — `*.bin` does not match `*.bin.download`, because
+# the glob is anchored at the end of the name.
 *.bin
 !src-tauri/icons/*.bin
+*.download
 models/
 
 # Logs and crash dumps. The tracked spike logs under spike/out/ are

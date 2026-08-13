@@ -50,16 +50,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  secret-scan:
-    name: Secret scan (full history)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          # gitleaks a besoin de l'historique complet : un secret introduit puis
-          # supprimé reste dans les objets Git et n'apparaît pas dans un
-          # checkout superficiel.
-          fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+# Le scan de secrets vivait ici et héritait du filtre `paths` ci-dessus, donc ne
+# tournait pas sur une PR de code. Il a sa propre workflow, sans filtre :
+# .github/workflows/secret-scan.yml
