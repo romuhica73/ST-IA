@@ -15,8 +15,25 @@ use crate::model::compute_sha256;
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
 
-/// Bundle identifier used up to and including M4.
-pub const LEGACY_BUNDLE_ID: &str = "com.romainbourbon.st-ia.dev";
+/// Bundle identifiers this application has previously used, newest first.
+///
+/// Each rename moves the Application Support directory macOS resolves, which
+/// would otherwise strand a 574 MB model the user already downloaded. The list
+/// is searched in order and the first valid model found is adopted, so a user
+/// who skipped a release still keeps their model rather than being asked to
+/// download it again.
+///
+/// - `com.romainbourbon.stia` — the M5 release candidate, before the product
+///   took its public name.
+/// - `com.romainbourbon.st-ia.dev` — M0–M4 development builds.
+pub const LEGACY_BUNDLE_IDS: &[&str] = &[
+    "com.romainbourbon.stia",
+    "com.romainbourbon.st-ia.dev",
+];
+
+/// Retained for the tests that predate the chain.
+#[cfg(test)]
+pub const LEGACY_BUNDLE_ID: &str = LEGACY_BUNDLE_IDS[1];
 
 /// What the migration decided to do, based purely on what exists.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -51,12 +68,16 @@ fn models_dir_for(app_data_dir: &Path) -> PathBuf {
     app_data_dir.join("models")
 }
 
-/// Legacy Application Support directory, derived from the production one by
+/// Legacy Application Support directories, derived from the production one by
 /// swapping the last path component. Never hardcodes a home directory.
-fn legacy_app_data_dir(production_app_data_dir: &Path) -> Option<PathBuf> {
-    production_app_data_dir
-        .parent()
-        .map(|container| container.join(LEGACY_BUNDLE_ID))
+fn legacy_app_data_dirs(production_app_data_dir: &Path) -> Vec<PathBuf> {
+    let Some(container) = production_app_data_dir.parent() else {
+        return Vec::new();
+    };
+    LEGACY_BUNDLE_IDS
+        .iter()
+        .map(|id| container.join(id))
+        .collect()
 }
 
 pub fn run(app: &AppHandle) {
@@ -64,22 +85,31 @@ pub fn run(app: &AppHandle) {
         eprintln!("[st-ia] migration: no app data dir, skipping");
         return;
     };
-    let Some(legacy_dir) = legacy_app_data_dir(&prod_dir) else {
-        return;
-    };
-
     let prod_model = models_dir_for(&prod_dir).join(model::MODEL_FILE_NAME);
-    let legacy_model = models_dir_for(&legacy_dir).join(model::MODEL_FILE_NAME);
-
     let production_exists = prod_model.is_file();
-    let legacy_exists = legacy_model.is_file();
 
-    // Only pay for hashing when the answer can still depend on it.
-    let legacy_valid = if !production_exists && legacy_exists {
-        is_valid_model(&legacy_model)
-    } else {
-        false
-    };
+    // Search the identifier history newest-first and stop at the first legacy
+    // model that actually validates. A user who skipped a release still keeps
+    // their model instead of downloading 574 MB again.
+    let mut legacy_dir = PathBuf::new();
+    let mut legacy_model = PathBuf::new();
+    let mut legacy_exists = false;
+    let mut legacy_valid = false;
+
+    for candidate_dir in legacy_app_data_dirs(&prod_dir) {
+        let candidate = models_dir_for(&candidate_dir).join(model::MODEL_FILE_NAME);
+        if !candidate.is_file() {
+            continue;
+        }
+        legacy_dir = candidate_dir;
+        legacy_model = candidate;
+        legacy_exists = true;
+        // Only pay for hashing when the answer can still depend on it.
+        legacy_valid = !production_exists && is_valid_model(&legacy_model);
+        if legacy_valid || production_exists {
+            break;
+        }
+    }
 
     match decide(production_exists, legacy_exists, legacy_valid) {
         MigrationAction::AlreadyPresent => {
@@ -236,11 +266,16 @@ mod tests {
     }
 
     #[test]
-    fn legacy_dir_is_a_sibling_of_the_production_dir() {
-        let prod = Path::new("/Users/x/Library/Application Support/com.romainbourbon.stia");
+    fn legacy_dirs_are_siblings_of_the_production_dir_newest_first() {
+        let prod = Path::new("/Users/x/Library/Application Support/com.somyuren.desktop");
+        let dirs = legacy_app_data_dirs(prod);
         assert_eq!(
-            legacy_app_data_dir(prod).unwrap(),
-            Path::new("/Users/x/Library/Application Support/com.romainbourbon.st-ia.dev")
+            dirs,
+            vec![
+                PathBuf::from("/Users/x/Library/Application Support/com.romainbourbon.stia"),
+                PathBuf::from("/Users/x/Library/Application Support/com.romainbourbon.st-ia.dev"),
+            ],
+            "every previously shipped identifier must still be searched, newest first"
         );
     }
 
