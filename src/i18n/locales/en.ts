@@ -43,7 +43,7 @@ const en = {
   progress: {
     label: "Progress",
     analysedOf: "{{processed}} analysed of {{total}}",
-    stillWorking: "ST-IA is still analysing the audio",
+    stillWorking: "SOMYUREN is still analysing the audio",
     stalledHint: "Some sections take longer to analyse.",
     audioPreparation: "Preparing audio",
     transcription: "French transcription",
@@ -175,7 +175,7 @@ const en = {
   aiModels: {
     title: "AI models",
     purpose:
-      "ST-IA uses Whisper models that run locally on your Mac. Your media and transcripts are not sent to any provider during processing. Only the initial download of a model uses the network.",
+      "SOMYUREN uses Whisper models that run locally on your Mac. Your media and transcripts are not sent to any provider during processing. Only the initial download of a model uses the network.",
     role: {
       transcription: "French transcription",
       translation: "English translation",

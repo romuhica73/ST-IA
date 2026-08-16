@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Collects the macOS release artifacts for ST-IA into release-artifacts/,
+# Collects the macOS release artifacts for SOMYUREN into release-artifacts/,
 # under deterministic names, with checksums — and audits what it collected.
 #
 #   scripts/package-release.sh            # package an existing build
 #   scripts/package-release.sh --build    # run `pnpm tauri build` first
 #
 # Produces:
-#   release-artifacts/ST-IA-<version>-macos-arm64.dmg
-#   release-artifacts/ST-IA-<version>-macos-arm64.app.tar.gz
+#   release-artifacts/SOMYUREN-<version>-macos-arm64.dmg
+#   release-artifacts/SOMYUREN-<version>-macos-arm64.app.tar.gz
 #   release-artifacts/SHA256SUMS.txt
 #
 # The version is read from tauri.conf.json — the same source of truth the
@@ -23,7 +23,12 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 OUT_DIR="$ROOT_DIR/release-artifacts"
-BUNDLE_DIR="$ROOT_DIR/src-tauri/target/release/bundle"
+# Prefer the explicitly-targeted output. Building with
+# `--target aarch64-apple-darwin` is more reproducible than relying on the
+# host default, but Cargo then writes to a triple-qualified directory; accept
+# either so the script works whichever way the build was invoked.
+BUNDLE_DIR="$ROOT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle"
+[ -d "$BUNDLE_DIR" ] || BUNDLE_DIR="$ROOT_DIR/src-tauri/target/release/bundle"
 ARCH="arm64"
 PLATFORM="macos"
 
@@ -33,7 +38,7 @@ step() { echo; echo "==> $*"; }
 command -v jq >/dev/null || die "jq is required (brew install jq)"
 command -v shasum >/dev/null || die "shasum is required"
 
-[ "$(uname -s)" = "Darwin" ] || die "macOS only — ST-IA ships for Apple Silicon exclusively"
+[ "$(uname -s)" = "Darwin" ] || die "macOS only — SOMYUREN ships for Apple Silicon exclusively"
 [ "$(uname -m)" = "arm64" ] || die "this script builds the Apple Silicon artifact and must run on arm64"
 
 # --- Version: one source of truth, cross-checked -------------------------
@@ -46,8 +51,8 @@ CARGO_VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head
 [ "$VERSION" = "$PACKAGE_VERSION" ] || die "version mismatch: tauri.conf.json=$VERSION package.json=$PACKAGE_VERSION"
 [ "$VERSION" = "$CARGO_VERSION" ] || die "version mismatch: tauri.conf.json=$VERSION Cargo.toml=$CARGO_VERSION"
 
-BASENAME="ST-IA-$VERSION-$PLATFORM-$ARCH"
-echo "==> ST-IA $VERSION ($PLATFORM $ARCH)"
+BASENAME="SOMYUREN-$VERSION-$PLATFORM-$ARCH"
+echo "==> SOMYUREN $VERSION ($PLATFORM $ARCH)"
 
 # --- Build (opt-in) -------------------------------------------------------
 
@@ -60,10 +65,10 @@ fi
 
 # --- Locate what the bundler produced ------------------------------------
 
-APP_PATH="$BUNDLE_DIR/macos/ST-IA.app"
+APP_PATH="$BUNDLE_DIR/macos/SOMYUREN.app"
 [ -d "$APP_PATH" ] || die "no app bundle at $APP_PATH — run: pnpm tauri build"
 
-# Tauri names the DMG ST-IA_<version>_aarch64.dmg; match on the pattern
+# Tauri names the DMG SOMYUREN_<version>_aarch64.dmg; match on the pattern
 # rather than the exact string so a bundler rename does not silently produce
 # an empty release.
 DMG_SRC="$(find "$BUNDLE_DIR/dmg" -maxdepth 1 -name '*.dmg' -print -quit 2>/dev/null || true)"

@@ -43,7 +43,7 @@ const fr = {
   progress: {
     label: "Progression",
     analysedOf: "{{processed}} analysées sur {{total}}",
-    stillWorking: "ST-IA analyse toujours l'audio",
+    stillWorking: "SOMYUREN analyse toujours l'audio",
     stalledHint: "Certains passages demandent plus de calcul.",
     audioPreparation: "Préparation de l'audio",
     transcription: "Transcription française",
@@ -176,7 +176,7 @@ const fr = {
   aiModels: {
     title: "Modèles IA",
     purpose:
-      "ST-IA utilise des modèles Whisper exécutés localement sur votre Mac. Vos médias et vos transcriptions ne sont envoyés à aucun fournisseur pendant le traitement. Seul le téléchargement initial d'un modèle utilise le réseau.",
+      "SOMYUREN utilise des modèles Whisper exécutés localement sur votre Mac. Vos médias et vos transcriptions ne sont envoyés à aucun fournisseur pendant le traitement. Seul le téléchargement initial d'un modèle utilise le réseau.",
     role: {
       transcription: "Transcription française",
       translation: "Traduction vers l'anglais",
